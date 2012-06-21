@@ -58,6 +58,16 @@ post '/api/v1/comments/:comment_id' do |comment_id|
   end
 end
 
+# get the information of a single comment
+get '/api/v1/comments/:comment_id' do |comment_id|
+  comment = Comment.find_by_id(comment_id)
+  if comment.nil? or comment.is_root?
+    error 400, {:error => "invalid comment id"}.to_json
+  else
+    comment.to_json
+  end
+end
+
 # delete the comment and the associated sub comments only if the comment is NOT the super comment
 delete '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find_by_id(comment_id)

@@ -96,6 +96,29 @@ describe "app" do
         children["updated_at"].should_not be_nil
       end
     end
+    describe "GET on /api/v1/comments/:comment_id" do
+      it "returns information for a single comment" do
+        comment_thread = CommentThread.create! :commentable_type => "questions", :commentable_id => 1
+        comment = []
+        sub_comment = []
+        comment << (comment_thread.root_comments.create :body => "top comment", :title => "top 0", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id)
+        sub_comment << (comment[0].children.create :body => "comment body", :title => "comment title 0", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id)
+        sub_comment << (comment[0].children.create :body => "comment body", :title => "comment title 1", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id)
+        get "/api/v1/comments/#{comment[0].id}"
+        last_response.should be_ok
+        c = Yajl::Parser.parse last_response.body
+        c["title"].should == "top 0"
+        c["body"].should == "top comment"
+        c["user_id"].should == 1
+        c["course_id"].should == 1
+        c["comment_thread_id"].should == comment_thread.id
+        c["created_at"].should_not be_nil
+        c["updated_at"].should_not be_nil
+        c["votes"]["up"].should == 0
+        c["votes"]["down"].should == 0
+        c["children"].should be_nil
+      end
+    end
     describe "DELETE on /api/v1/commentables/:commentable_type/:commentable_id" do
       before :each do
         comment_thread = CommentThread.create! :commentable_type => "questions", :commentable_id => 1

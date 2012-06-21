@@ -17,24 +17,19 @@ class Comment < ActiveRecord::Base
   validates_presence_of :comment_thread_id
 
   def self.hash_tree(nodes)
-    nodes.map do |node, sub_nodes|
-      {
-        :id => node.id,
-        :body => node.body, 
-        :title => node.title, 
-        :user_id => node.user_id, 
-        :course_id => node.course_id,
-        :created_at => node.created_at,
-        :updated_at => node.updated_at,
-        :comment_thread_id => node.comment_thread_id,
-        :children => hash_tree(sub_nodes).compact,
-        :votes => {:up => Vote.comment_id(node.id).up.count, :down => Vote.comment_id(node.id).down.count},
-      }
-    end
+    nodes.map {|node, sub_nodes| node.to_hash.merge(:children => hash_tree(sub_nodes).compact)}
   end
 
   def to_hash_tree
     self.class.hash_tree(self.subtree.arrange(:order => "updated_at DESC"))
+  end
+
+  def to_hash
+    attributes.merge(:votes => {:up => Vote.comment_id(id).up.count, :down => Vote.comment_id(id).down.count})
+  end
+
+  def to_json
+    to_hash.to_json
   end
 
 end
