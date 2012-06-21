@@ -89,10 +89,11 @@ describe "app" do
         c["created_at"].should_not be_nil
         c["updated_at"].should_not be_nil
         c["children"].length.should == 2
-        c["children"][0]["title"].should == "comment title 0"
-        c["children"][0]["id"].should == sub_comment[0].id
-        c["children"][0]["created_at"].should_not be_nil
-        c["children"][0]["updated_at"].should_not be_nil
+        children = c["children"].reject{|comment| comment["title"] != "comment title 0"}.first
+        children.should_not be_nil
+        children["id"].should == sub_comment[0].id
+        children["created_at"].should_not be_nil
+        children["updated_at"].should_not be_nil
       end
     end
     describe "DELETE on /api/v1/commentables/:commentable_type/:commentable_id" do

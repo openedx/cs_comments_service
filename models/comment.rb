@@ -34,7 +34,7 @@ class Comment < ActiveRecord::Base
   end
 
   def to_hash_tree
-    self.class.hash_tree(self.subtree.arrange)
+    self.class.hash_tree(self.subtree.arrange(:order => "updated_at DESC"))
   end
 
 end
