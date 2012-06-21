@@ -168,8 +168,10 @@ describe "app" do
     end
     describe "PUT on /api/v1/votes/comments/:comment_id/users/:user_id" do
       before :each do
-        CommentThread.create! :commentable_type => "questions", :commentable_id => 1
-        CommentThread.first.root_comments.create :body => "top comment", :title => "top", :user_id => 1, :course_id => 1
+        comment_thread = CommentThread.create! :commentable_type => "questions", :commentable_id => 1
+        comment = CommentThread.first.root_comments.create :body => "top comment", :title => "top", :user_id => 1, :course_id => 1
+        comment.comment_thread = comment_thread
+        comment.save!
       end
       it "votes up on a comment" do
         comment = CommentThread.first.comments.first

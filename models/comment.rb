@@ -11,6 +11,11 @@ class Comment < ActiveRecord::Base
 
   belongs_to :comment_thread
 
+  validates_presence_of :body, :unless => :is_root?
+  validates_presence_of :user_id, :unless => :is_root?
+  validates_presence_of :course_id, :unless => :is_root?
+  validates_presence_of :comment_thread_id
+
   def self.hash_tree(nodes)
     nodes.map do |node, sub_nodes|
       {
