@@ -13,6 +13,7 @@ env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
 env = env_arg || ENV["SINATRA_ENV"] || "development"
 databases = YAML.load_file("config/database.yml")
+config = YAML.load_file("config/application.yml")
 ActiveRecord::Base.establish_connection(databases[env])
 
 # retrive all comments of a commentable object
@@ -49,6 +50,8 @@ post '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find_by_id(comment_id)
   if comment.nil? or comment.is_root?
     error 400, {:error => "invalid comment id"}.to_json
+  elsif comment.depth - 1 >= config["depth_limit"] # The depth should be subtracted by 1 because we are counting the super comment
+    error 400, {:error => "depth limit exceeded"}.to_json
   else
     comment_params = params.select {|key, value| %w{body title user_id course_id}.include? key}.merge({:comment_thread_id => comment.comment_thread_id})
     sub_comment = comment.children.create(comment_params)
