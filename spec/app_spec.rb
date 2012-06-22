@@ -69,13 +69,14 @@ describe "app" do
         comment << (comment_thread.root_comments.create :body => "top comment", :title => "top 0", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id)
         sub_comment << (comment[0].children.create :body => "comment body", :title => "comment title 0", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id)
         sub_comment << (comment[0].children.create :body => "comment body", :title => "comment title 1", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id)
-        Vote.create! :value => "up", :comment_id => comment[0].id, :user_id => 1
-        Vote.create! :value => "up", :comment_id => comment[0].id, :user_id => 2
-        Vote.create! :value => "up", :comment_id => comment[0].id, :user_id => 3
-        Vote.create! :value => "up", :comment_id => comment[0].id, :user_id => 4
-        Vote.create! :value => "down", :comment_id => comment[0].id, :user_id => 5
-        Vote.create! :value => "down", :comment_id => comment[0].id, :user_id => 6
-        Vote.create! :value => "down", :comment_id => comment[0].id, :user_id => 7
+        (1..4).each do |id|
+          user = User.find_or_create_by_id(id)
+          user.vote_for(comment[0])
+        end
+        (5..7).each do |id|
+          user = User.find_or_create_by_id(id)
+          user.vote_against(comment[0])
+        end
         get "/api/v1/commentables/questions/1/comments"
         last_response.should be_ok
         comments = Yajl::Parser.parse last_response.body
@@ -196,16 +197,18 @@ describe "app" do
         comment = CommentThread.first.root_comments.create :body => "top comment", :title => "top", :user_id => 1, :course_id => 1
         comment.comment_thread = comment_thread
         comment.save!
+        Vote.delete_all
       end
       it "votes up on a comment" do
         comment = CommentThread.first.comments.first
         put "/api/v1/votes/comments/#{comment.id}/users/1", :value => "up"
         last_response.should be_ok
         vote = Vote.first
+        puts vote
         vote.should_not be_nil
-        vote.user_id.should == 1
-        vote.comment_id.should == comment.id
-        vote.value.should == "up"
+        vote.voter_id.should == 1
+        vote.voteable_id.should == comment.id
+        vote.vote.should be_true
       end
       it "votes down on a comment" do
         comment = CommentThread.first.comments.first
@@ -213,9 +216,10 @@ describe "app" do
         last_response.should be_ok
         vote = Vote.first
         vote.should_not be_nil
-        vote.user_id.should == 1
-        vote.comment_id.should == comment.id
-        vote.value.should == "down"
+        vote.voter_id.should == 1
+        vote.voteable_id.should == comment.id
+        vote.vote.should be_false
+        
       end
       it "rejects invalid vote value" do
         comment = CommentThread.first.comments.first
@@ -229,10 +233,11 @@ describe "app" do
       end
       it "change vote on comment" do
         comment = CommentThread.first.comments.first
-        Vote.create! :value => "up", :user_id => 1, :comment_id => comment.id
+        user = User.find_or_create_by_id(1)
+        user.vote_for(comment)
         put "/api/v1/votes/comments/#{comment.id}/users/1", :value => "down"
         last_response.should be_ok
-        Vote.first.value.should == "down"
+        Vote.first.vote.should be_false
       end
     end
     describe "DELETE on /api/v1/votes/comments/:comment_id/users/:user_id" do
@@ -242,15 +247,16 @@ describe "app" do
       end
       it "deletes vote" do
         comment = CommentThread.first.comments.first 
-        Vote.create! :value => "up", :user_id => 1, :comment_id => comment.id
+        user = User.find_or_create_by_id(1)
+        user.vote_for(comment)
         delete "/api/v1/votes/comments/#{comment.id}/users/1"
         last_response.should be_ok
         Vote.count.should == 0
       end
-      it "returns 400 for nonexisted vote" do
+      it "does nothing for nonexisted vote" do
         comment = CommentThread.first.comments.first 
         delete "/api/v1/votes/comments/#{comment.id}/users/1"
-        last_response.status.should == 400
+        last_response.should be_ok
       end
     end
   end

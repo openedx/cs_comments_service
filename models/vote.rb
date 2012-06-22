@@ -1,30 +1,17 @@
 require 'active_record'
 
-# Adapted from "Service-Oriented Design with Ruby and Rails"
 class Vote < ActiveRecord::Base
 
-  attr_accessible :value, :user_id, :comment_id
-  
-  belongs_to :comment
+  scope :for_voter, lambda { |*args| where(["voter_id = ? AND voter_type = ?", args.first.id, args.first.class.base_class.name]) }
+  scope :for_voteable, lambda { |*args| where(["voteable_id = ? AND voteable_type = ?", args.first.id, args.first.class.base_class.name]) }
+  scope :recent, lambda { |*args| where(["created_at > ?", (args.first || 2.weeks.ago)]) }
+  scope :descending, order("created_at DESC")
 
-  validates_inclusion_of :value, :in => %w{up down}
-  validates_uniqueness_of :user_id, :scope => :comment_id
-  validates_presence_of :comment_id, :user_id
+  belongs_to :voteable, :polymorphic => true
+  belongs_to :voter, :polymorphic => true
 
-  scope :up, :conditions => ["value = ?", "up"]
-  scope :down, :conditions => ["value = ?", "down"]
-  scope :user_id, lambda {|user_id| {:conditions => ["user_id = ?", user_id]}}
-  scope :comment_id, lambda {|comment_id| {:conditions => ["comment_id = ?", comment_id]}}
+  attr_accessible :vote, :voter, :voteable
 
-  def self.create_or_update(attributes)
-    vote = Vote.find_by_comment_id_and_user_id(attributes[:comment_id], attributes[:user_id])
-    if vote
-      vote.value = attributes[:value]
-      vote.save
-      vote
-    else
-      Vote.create(attributes)
-    end
-  end
-  
+  # Comment out the line below to allow multiple votes per user.
+  validates_uniqueness_of :voteable_id, :scope => [:voteable_type, :voter_type, :voter_id]
 end

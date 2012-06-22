@@ -2,10 +2,12 @@ require 'rubygems'
 require 'yajl'
 require 'active_record'
 require 'sinatra'
+require 'thumbs_up'
 
 require_relative 'models/comment'
 require_relative 'models/comment_thread'
 require_relative 'models/vote'
+require_relative 'models/user'
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
@@ -103,11 +105,12 @@ put '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
     if comment.nil?
       error 400, {:error => "invalid comment id"}.to_json
     else
-      vote = Vote.create_or_update :user_id => user_id, :comment_id => comment_id, :value => params["value"]
-      if vote
+      if %w[up down].include? params["value"]
+        user = User.find_or_create_by_id(user_id)
+        vote = user.vote(comment, { :direction => (params["value"] == "up" ? :up : :down ), :exclusive => :true})
         vote.to_json
       else
-        error 400, vote.errors.to_json
+        error 400, {:error => "value must be up or down"}
       end
     end
   end
@@ -115,12 +118,13 @@ end
 
 # undo the vote on the comment by the user
 delete '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
-  vote = Vote.find_by_comment_id_and_user_id(comment_id, user_id)
-  if vote.nil?
-    error 400, {:error => "vote does not exist"}.to_json
-  else
-    vote.destroy
+  user = User.find_by_id(user_id.to_i)
+  comment = Comment.find_by_id(comment_id)
+  if user and comment and not comment.is_root?
+    vote = user.unvote_for(comment)
     vote.to_json
+  else
+    error 400, {:error => "invalid user or comment id"}
   end
 end
 

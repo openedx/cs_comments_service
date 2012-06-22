@@ -1,5 +1,6 @@
 require 'active_record'
 require 'ancestry'
+require 'thumbs_up'
 
 class Comment < ActiveRecord::Base
 
@@ -7,9 +8,9 @@ class Comment < ActiveRecord::Base
 
   has_ancestry
 
-  has_many :votes
-
   belongs_to :comment_thread
+
+  acts_as_voteable
 
   validates_presence_of :body, :unless => :is_root?
   validates_presence_of :user_id, :unless => :is_root?
@@ -25,7 +26,7 @@ class Comment < ActiveRecord::Base
   end
 
   def to_hash
-    attributes.merge(:votes => {:up => Vote.comment_id(id).up.count, :down => Vote.comment_id(id).down.count})
+    attributes.merge(:votes => {:up => votes_for, :down => votes_against})
   end
 
   def to_json
