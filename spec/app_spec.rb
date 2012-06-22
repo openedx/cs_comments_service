@@ -86,6 +86,7 @@ describe "app" do
         c["id"].should == comment[0].id
         c["votes"]["up"].should == 4
         c["votes"]["down"].should == 3
+        c["votes"]["plusminus"].should == 1
         c["comment_thread_id"].should == comment_thread.id
         c["created_at"].should_not be_nil
         c["updated_at"].should_not be_nil
@@ -117,6 +118,7 @@ describe "app" do
         c["updated_at"].should_not be_nil
         c["votes"]["up"].should == 0
         c["votes"]["down"].should == 0
+        c["votes"]["plusminus"].should == 0
         c["children"].should be_nil
       end
     end
@@ -204,7 +206,6 @@ describe "app" do
         put "/api/v1/votes/comments/#{comment.id}/users/1", :value => "up"
         last_response.should be_ok
         vote = Vote.first
-        puts vote
         vote.should_not be_nil
         vote.voter_id.should == 1
         vote.voteable_id.should == comment.id
