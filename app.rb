@@ -110,7 +110,7 @@ put '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
         vote = user.vote(comment, { :direction => (params["value"] == "up" ? :up : :down ), :exclusive => :true})
         vote.to_json
       else
-        error 400, {:error => "value must be up or down"}
+        error 400, {:error => "value must be up or down"}.to_json
       end
     end
   end
@@ -124,7 +124,7 @@ delete '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_
     vote = user.unvote_for(comment)
     vote.to_json
   else
-    error 400, {:error => "invalid user or comment id"}
+    error 400, {:error => "invalid user or comment id"}.to_json
   end
 end
 
