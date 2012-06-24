@@ -18,7 +18,7 @@ class Comment < ActiveRecord::Base
   validates_presence_of :comment_thread_id
 
   def self.hash_tree(nodes)
-    nodes.map {|node, sub_nodes| node.to_hash.merge(:children => hash_tree(sub_nodes).compact)}
+    nodes.map {|node, sub_nodes| node.to_hash.merge(:children => hash_tree(sub_nodes).compact, :depth => node.depth)}
   end
 
   def to_hash_tree
@@ -26,7 +26,7 @@ class Comment < ActiveRecord::Base
   end
 
   def to_hash
-    attributes.merge(:votes => {:up => votes_for, :down => votes_against})
+    attributes.merge(:votes => {:up => votes_for, :down => votes_against, :plusminus => plusminus})
   end
 
   def to_json

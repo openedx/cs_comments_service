@@ -27,15 +27,16 @@ namespace :db do
     Vote.delete_all
     User.delete_all
     depth_limit = YAML.load_file("config/application.yml")["depth_limit"]
-    comment_thread = CommentThread.create! :commentable_type => "questions", :commentable_id => 1
-    5.times do
-      comment_thread.root_comments.create :body => "top comment", :title => "top #{rand(10)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id
+    (1..3).each do |question_id|
+      comment_thread = CommentThread.create! :commentable_type => "questions", :commentable_id => question_id
+      5.times do
+        comment_thread.root_comments.create :body => "top comment", :title => "top #{rand(10)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id
+      end
+      10.times do
+        comment = Comment.all.reject{|c| c.is_root? or c.depth - 1 >= depth_limit or c.comment_thread_id != comment_thread.id}.sample
+        comment.children.create :body => "comment body", :title => "comment title #{rand(50)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id
+      end
     end
-    10.times do
-      comment = Comment.all.reject{|c| c.is_root? or c.depth - 1 >= depth_limit}.sample
-      comment.children.create :body => "comment body", :title => "comment title #{rand(50)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id
-    end
-
     Comment.all.reject{|c| c.is_root?}.each do |c|
       (1..20).each do |id|
         user = User.find_or_create_by_id(id)
