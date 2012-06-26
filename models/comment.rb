@@ -6,7 +6,7 @@ class Comment < ActiveRecord::Base
 
   attr_accessible :body, :title, :user_id, :course_id, :comment_thread_id
 
-  has_ancestry
+  has_ancestry :cache_depth => true
 
   belongs_to :comment_thread
 
@@ -18,7 +18,7 @@ class Comment < ActiveRecord::Base
   validates_presence_of :comment_thread_id
 
   def self.hash_tree(nodes)
-    nodes.map {|node, sub_nodes| node.to_hash.merge(:children => hash_tree(sub_nodes).compact, :depth => node.depth)}
+    nodes.map {|node, sub_nodes| node.to_hash.merge(:children => hash_tree(sub_nodes).compact)}
   end
 
   def to_hash_tree
