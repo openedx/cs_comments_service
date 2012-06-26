@@ -50,7 +50,7 @@ post '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find_by_id(comment_id)
   if comment.nil? or comment.is_root?
     error 400, {:error => "invalid comment id"}.to_json
-  elsif comment.depth - 1 >= config["depth_limit"] # The depth should be subtracted by 1 because we are counting the super comment
+  elsif comment.depth >= config["level_limit"]
     error 400, {:error => "depth limit exceeded"}.to_json
   else
     comment_params = params.select {|key, value| %w{body title user_id course_id}.include? key}.merge({:comment_thread_id => comment.comment_thread_id})
