@@ -29,8 +29,8 @@ class CommentThread < ActiveRecord::Base
     super_comment.descendants
   end
 
-  def json_comments
-    super_comment.to_hash_tree.first[:children].to_json
+  def json_comments(args=nil)
+    super_comment.to_hash_tree(args).first[:children].to_json
   end
 
 end

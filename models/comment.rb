@@ -21,8 +21,12 @@ class Comment < ActiveRecord::Base
     nodes.map {|node, sub_nodes| node.to_hash.merge(:children => hash_tree(sub_nodes).compact)}
   end
 
-  def to_hash_tree
-    self.class.hash_tree(self.subtree.arrange(:order => "updated_at DESC"))
+  def to_hash_tree(args=nil)
+    if args and args[:to_depth]
+      self.class.hash_tree(self.subtree(to_depth: args[:to_depth]).arrange(:order => "updated_at DESC"))
+    else
+      self.class.hash_tree(self.subtree.arrange(:order => "updated_at DESC"))
+    end
   end
 
   def to_hash

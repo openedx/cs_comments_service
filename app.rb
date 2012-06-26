@@ -19,7 +19,11 @@ ActiveRecord::Base.establish_connection(databases[env])
 # retrive all comments of a commentable object
 get '/api/v1/commentables/:commentable_type/:commentable_id/comments' do |commentable_type, commentable_id|
   comment_thread = CommentThread.find_or_create_by_commentable_type_and_commentable_id(commentable_type, commentable_id)
-  comment_thread.json_comments
+  if params["to_depth"]
+    comment_thread.json_comments(to_depth: params["to_depth"].to_i)
+  else
+    comment_thread.json_comments
+  end
 end
 
 # create a new top-level comment
@@ -65,11 +69,20 @@ end
 
 # get the information of a single comment
 get '/api/v1/comments/:comment_id' do |comment_id|
+  puts params
   comment = Comment.find_by_id(comment_id)
   if comment.nil? or comment.is_root?
     error 400, {:error => "invalid comment id"}.to_json
   else
-    comment.to_json
+    if params["recursive"] == "true"
+      if params["to_depth"]
+        comment.to_hash_tree(to_depth: params["to_depth"].to_i).to_json
+      else
+        comment.to_hash_tree.to_json
+      end
+    else
+      comment.to_json
+    end
   end
 end
 
