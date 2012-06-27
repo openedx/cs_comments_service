@@ -12,8 +12,8 @@ class Comment < ActiveRecord::Base
 
   acts_as_voteable
 
-  validates_presence_of :title, :unless => Proc.new{|c| c.is_root? or c.body}
-  validates_presence_of :body, :unless => Proc.new{|c| c.is_root? or c.title}
+  validates_presence_of :title, :unless => Proc.new{|c| c.is_root? or not c.body.blank?}
+  validates_presence_of :body, :unless => Proc.new{|c| c.is_root? or not c.title.blank?}
   validates_presence_of :user_id, :unless => :is_root?
   validates_presence_of :course_id, :unless => :is_root?
   validates_presence_of :comment_thread_id

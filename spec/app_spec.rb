@@ -18,6 +18,30 @@ describe "app" do
         comment.user_id.should == 1
         comment.user_id.should == 1
       end
+      it "should create a top-level comment with only title" do
+        post "/api/v1/commentables/questions/1/comments", :body => "", :title => "comment title", :user_id => 1, :course_id => 1
+        last_response.should be_ok
+        comment = CommentThread.first.root_comments.first
+        comment.should_not be_nil
+        comment.body.should == ""
+        comment.title.should == "comment title"
+        comment.user_id.should == 1
+        comment.user_id.should == 1
+      end
+      it "should create a top-level comment with only body" do
+        post "/api/v1/commentables/questions/1/comments", :body => "comment body", :title => "", :user_id => 1, :course_id => 1
+        last_response.should be_ok
+        comment = CommentThread.first.root_comments.first
+        comment.should_not be_nil
+        comment.body.should == "comment body"
+        comment.title.should == ""
+        comment.user_id.should == 1
+        comment.user_id.should == 1
+      end
+      it "should not create a top-level comment with neither title nor body" do
+        post "/api/v1/commentables/questions/1/comments", :body => "", :title => "", :user_id => 1, :course_id => 1
+        last_response.status.should == 400
+      end
     end
     describe "POST on /api/v1/comments/:comment_id" do
       before :each do
