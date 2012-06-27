@@ -30,7 +30,7 @@ class Comment < ActiveRecord::Base
   end
 
   def to_hash
-    attributes.merge(:votes => {:up => votes_for, :down => votes_against, :plusminus => plusminus})
+    attributes.merge(:votes => {:up => votes_for, :down => votes_against, :plusminus => plusminus}, :children => [])
   end
 
   def to_json
