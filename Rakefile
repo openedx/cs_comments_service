@@ -27,8 +27,9 @@ namespace :db do
     Vote.delete_all
     User.delete_all
     level_limit = YAML.load_file("config/application.yml")["level_limit"]
-    (1..3).each do |question_id|
-      comment_thread = CommentThread.create! :commentable_type => "questions", :commentable_id => question_id
+
+    def generate_comments(commentable_type, commentable_id, level_limit)
+      comment_thread = CommentThread.create! :commentable_type => commentable_type, :commentable_id => commentable_id
       5.times do
         comment_thread.root_comments.create :body => "top comment", :title => "top #{rand(10)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id
       end
@@ -37,6 +38,15 @@ namespace :db do
         comment.children.create :body => "comment body", :title => "comment title #{rand(50)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id
       end
     end
+
+    generate_comments("questions" , 1, level_limit)
+    generate_comments("questions" , 2, level_limit)
+    generate_comments("questions" , 3, level_limit)
+    generate_comments("courses"   , 1, level_limit)
+    generate_comments("lectures"  , 1, level_limit)
+    generate_comments("lectures"  , 2, level_limit)
+    generate_comments("lectures"  , 3, level_limit)
+
     Comment.all.reject{|c| c.is_root?}.each do |c|
       (1..20).each do |id|
         user = User.find_or_create_by_id(id)
@@ -44,4 +54,5 @@ namespace :db do
       end
     end
   end
+  
 end

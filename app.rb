@@ -69,7 +69,6 @@ end
 
 # get the information of a single comment
 get '/api/v1/comments/:comment_id' do |comment_id|
-  puts params
   comment = Comment.find_by_id(comment_id)
   if comment.nil? or comment.is_root?
     error 400, {:error => "invalid comment id"}.to_json
@@ -124,7 +123,7 @@ put '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
       if %w[up down].include? params["value"]
         user = User.find_or_create_by_id(user_id)
         vote = user.vote(comment, { :direction => (params["value"] == "up" ? :up : :down ), :exclusive => :true})
-        vote.to_json
+        comment.to_json
       else
         error 400, {:error => "value must be up or down"}.to_json
       end
@@ -138,7 +137,7 @@ delete '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_
   comment = Comment.find_by_id(comment_id)
   if user and comment and not comment.is_root?
     vote = user.unvote_for(comment)
-    vote.to_json
+    comment.to_json
   else
     error 400, {:error => "invalid user or comment id"}.to_json
   end
