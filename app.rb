@@ -59,10 +59,10 @@ post '/api/v1/comments/:comment_id' do |comment_id|
   else
     comment_params = params.select {|key, value| %w{body title user_id course_id}.include? key}.merge({:comment_thread_id => comment.comment_thread_id})
     sub_comment = comment.children.create(comment_params)
-    if comment.valid?
-      comment.to_json
+    if sub_comment.valid?
+      sub_comment.to_json
     else
-      error 400, comment.errors.to_json
+      error 400, sub_comment.errors.to_json
     end
   end
 end

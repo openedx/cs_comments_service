@@ -119,7 +119,7 @@ describe "app" do
         c["votes"]["up"].should == 0
         c["votes"]["down"].should == 0
         c["votes"]["plusminus"].should == 0
-        c["children"].should be_nil
+        c["children"].length.should == 0
       end
     end
     describe "DELETE on /api/v1/commentables/:commentable_type/:commentable_id" do
