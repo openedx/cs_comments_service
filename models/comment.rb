@@ -4,7 +4,7 @@ require 'thumbs_up'
 
 class Comment < ActiveRecord::Base
 
-  attr_accessible :body, :title, :user_id, :course_id, :comment_thread_id
+  attr_accessible :body, :title, :user_id, :course_id, :endorsed, :comment_thread_id
 
   has_ancestry :cache_depth => true
 
