@@ -196,6 +196,15 @@ describe "app" do
         comment.body.should == "new body"
         comment.title.should == "new title"
       end
+      it "should update endorsement status" do
+        comment = CommentThread.first.comments.first
+        put "/api/v1/comments/#{comment.id}", :endorsed => true
+        comment = CommentThread.first.comments.first
+        comment.endorsed.should be_true
+        put "/api/v1/comments/#{comment.id}", :endorsed => false
+        comment = CommentThread.first.comments.first
+        comment.endorsed.should be_false
+      end
       it "should not update the super comment" do
         comment = CommentThread.first.super_comment
         put "/api/v1/comments/#{comment.id}", :body => "new body", :title => "new title"
