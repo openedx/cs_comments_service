@@ -102,7 +102,7 @@ put '/api/v1/comments/:comment_id' do |comment_id|
   if comment.nil? or comment.is_root?
     error 400, {:error => "invalid comment id"}.to_json
   else
-    comment_params = params.select {|key, value| %w{body title}.include? key}
+    comment_params = params.select {|key, value| %w{body title endorsed}.include? key}
     if comment.update_attributes(comment_params)
       comment.to_json
     else

@@ -31,11 +31,11 @@ namespace :db do
     def generate_comments(commentable_type, commentable_id, level_limit)
       comment_thread = CommentThread.create! :commentable_type => commentable_type, :commentable_id => commentable_id
       5.times do
-        comment_thread.root_comments.create :body => "top comment", :title => "top #{rand(10)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id
+        comment_thread.root_comments.create :body => "top comment", :title => "top #{rand(10)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id, :endorsed => [true, false].sample
       end
       10.times do
         comment = Comment.all.reject{|c| c.is_root? or c.depth  >= level_limit or c.comment_thread_id != comment_thread.id}.sample
-        comment.children.create :body => "comment body", :title => "comment title #{rand(50)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id
+        comment.children.create :body => "comment body", :title => "comment title #{rand(50)}", :user_id => 1, :course_id => 1, :comment_thread_id => comment_thread.id, :endorsed => [true, false].sample
       end
     end
 
