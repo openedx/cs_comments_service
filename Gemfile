@@ -19,6 +19,11 @@ gem 'mongo'
 gem 'bson'
 gem 'bson_ext'
 
+gem 'mongoid'
+
+gem 'voteable_mongo'
+gem 'mongoid-tree'
+
 group :test do
   gem 'rspec'
   gem 'rack-test', :require => "rack/test"

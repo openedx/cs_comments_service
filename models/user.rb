@@ -1,7 +1,6 @@
-require 'active_record'
-require 'thumbs_up'
-
-class User < ActiveRecord::Base
-  acts_as_voter
-
+class User
+  include Mongoid::Document
+  include Mongo::Voter
+  field :external_id, type: String
+  has_many :comments
 end
