@@ -1,153 +1,198 @@
 require 'rubygems'
-require 'yajl'
-require 'active_record'
+require 'mongo'
+require 'mongoid'
+require 'yaml'
+require 'logger'
+require 'active_support/all'
 require 'sinatra'
-require 'thumbs_up'
+require 'mongoid/tree'
+require 'voteable_mongo'
 
 require_relative 'models/comment'
 require_relative 'models/comment_thread'
-require_relative 'models/vote'
+require_relative 'models/commentable'
 require_relative 'models/user'
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
 env = env_arg || ENV["SINATRA_ENV"] || "development"
-databases = YAML.load_file("config/database.yml")
+
+Mongoid.load!("config/mongoid.yml")
+Mongoid.logger.level = Logger::INFO
+
 config = YAML.load_file("config/application.yml")
-ActiveRecord::Base.establish_connection(databases[env])
 
-# retrive all comments of a commentable object
-get '/api/v1/commentables/:commentable_type/:commentable_id/comments' do |commentable_type, commentable_id|
-  comment_thread = CommentThread.find_or_create_by_commentable_type_and_commentable_id(commentable_type, commentable_id)
-  if params["to_depth"]
-    comment_thread.json_comments(to_depth: params["to_depth"].to_i)
-  else
-    comment_thread.json_comments
-  end
-end
+# DELETE /api/v1/commentables/:commentable_type/:commentable_id
 
-# create a new top-level comment
-post '/api/v1/commentables/:commentable_type/:commentable_id/comments' do |commentable_type, commentable_id|
-  comment_thread = CommentThread.find_or_create_by_commentable_type_and_commentable_id(commentable_type, commentable_id)
-  comment_params = params.select {|key, value| %w{body title user_id course_id}.include? key}.merge({:comment_thread_id => comment_thread.id})
-  comment = comment_thread.root_comments.create(comment_params)
-  if comment.valid?
-    comment.to_json
-  else
-    error 400, comment.errors.to_json
-  end
-end
+# GET /api/v1/commentables/:commentable_type/:commentable_id/comment_threads
+# POST /api/v1/commentables/:commentable_type/:commentable_id/comment_threads
+#
+# GET /api/v1/comment_threads/:comment_thread_id
+# PUT /api/v1/comment_threads/:comment_thread_id
+# POST /api/v1/comment_threads/:comment_thread_id/comments
+# DELETE /api/v1/comment_threads/:comment_thread_id
+#
+# GET /api/v1/comments/:comment_id
+# PUT /api/v1/comments/:comment_id
+# POST /api/v1/comments/:comment_id
+# DELETE /api/v1/comments/:comment_id
+#
+# PUT /api/v1/votes/comments/:comment_id/users/:user_id
+# DELETE /api/v1/votes/comments/:comment_id/users/:user_id
+#
+# PUT /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
+# DELETE /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
+#
+# GET /api/v1/users/:user_id/feeds
+# POST /api/v1/users/:user_id/feeds/subscribe
+#
 
-# delete a commentable object and its associated comments
+
+
+# DELETE /api/v1/commentables/:commentable_type/:commentable_id
+# delete the commentable object and all of its associated comment threads and comments
+
 delete '/api/v1/commentables/:commentable_type/:commentable_id' do |commentable_type, commentable_id|
-  comment_thread = CommentThread.find_by_commentable_type_and_commentable_id(commentable_type, commentable_id)
-  if comment_thread.nil?
-    error 400, {:error => "commentable object does not exist"}.to_json
-  else
-    comment_thread.destroy
-    comment_thread.to_json
-  end
+  commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
+  commentable.destroy
+  commentable.to_hash.to_json
 end
 
-# create a new subcomment (reply to comment) only if the comment is NOT a super comment
-post '/api/v1/comments/:comment_id' do |comment_id|
-  comment = Comment.find_by_id(comment_id)
-  if comment.nil? or comment.is_root?
-    error 400, {:error => "invalid comment id"}.to_json
-  elsif comment.depth >= config["level_limit"]
-    error 400, {:error => "depth limit exceeded"}.to_json
-  else
-    comment_params = params.select {|key, value| %w{body title user_id course_id}.include? key}.merge({:comment_thread_id => comment.comment_thread_id})
-    sub_comment = comment.children.create(comment_params)
-    if sub_comment.valid?
-      sub_comment.to_json
-    else
-      error 400, sub_comment.errors.to_json
-    end
-  end
+# GET /api/v1/commentables/:commentable_type/:commentable_id/comment_threads
+# get all comment threads associated with a commentable object
+# additional parameters accepted: recursive
+
+get '/api/v1/commentables/:commentable_type/:commentable_id/comment_threads' do |commentable_type, commentable_id|
+  commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
+  commentable.comment_threads.map{|t| t.to_hash(recursive: params["recursive"])}.to_json
 end
 
-# get the information of a single comment
+# POST /api/v1/commentables/:commentable_type/:commentable_id/comment_threads
+# create a new comment thread for the commentable object
+
+post '/api/v1/commentables/:commentable_type/:commentable_id/comment_threads' do |commentable_type, commentable_id|
+  commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
+  comment_thread = commentable.comment_threads.new(params.slice(*%w[title body course_id]))
+  comment_thread.author = User.find_or_create_by(external_id: params["user_id"])
+  comment_thread.save!
+  comment_thread.to_hash.to_json
+end
+
+# GET /api/v1/comment_threads/:comment_thread_id
+# get information of a single comment thread
+# additional parameters accepted: recursive
+
+get '/api/v1/comment_threads/:comment_thread_id' do |comment_thread_id|
+  comment_thread = CommentThread.find(comment_thread_id)
+  comment_thread.to_hash(recursive: params["recursive"]).to_json
+end
+
+# PUT /api/v1/comment_threads/:comment_thread_id
+# update information of comment thread
+
+put '/api/v1/comment_threads/:comment_thread_id' do |comment_thread_id|
+  comment_thread = CommentThread.find(comment_thread_id)
+  comment_thread.update!(params.slice(*%w[title body endorsed])).to_hash.to_json
+end
+
+# POST /api/v1/comment_threads/:comment_thread_id/comments
+# create a comment to the comment thread
+post '/api/v1/comment_threads/:comment_thread_id/comments' do |comment_thread_id|
+  comment_thread = CommentThread.find(comment_thread_id)
+  comment = comment_thread.comments.new(params.slice(*%w[body course_id]))
+  comment.author = User.find_or_create_by(external_id: params["user_id"])
+  comment.save!
+  comment.to_hash.to_json
+end
+
+# DELETE /api/v1/comment_threads/:comment_thread_id
+# delete the comment thread and its comments
+
+delete '/api/v1/comment_threads/:comment_thread_id' do |comment_thread_id|
+  comment_thread = CommentThread.find(comment_thread_id)
+  comment_thread.destroy
+  comment_thread.to_hash.to_json
+end
+
+# GET /api/v1/comments/:comment_id
+# retrieve information of a single comment
+# additional parameters accepted: recursive
+
 get '/api/v1/comments/:comment_id' do |comment_id|
-  comment = Comment.find_by_id(comment_id)
-  if comment.nil? or comment.is_root?
-    error 400, {:error => "invalid comment id"}.to_json
-  else
-    if params["recursive"] == "true"
-      if params["to_depth"]
-        comment.to_hash_tree(to_depth: params["to_depth"].to_i).to_json
-      else
-        comment.to_hash_tree.to_json
-      end
-    else
-      comment.to_json
-    end
-  end
+  comment = Comment.find(comment_id)
+  comment.to_hash(recursive: params["recursive"]).to_json
 end
 
-# delete the comment and the associated sub comments only if the comment is NOT the super comment
-delete '/api/v1/comments/:comment_id' do |comment_id|
-  comment = Comment.find_by_id(comment_id)
-  if comment.nil? or comment.is_root?
-    error 400, {:error => "invalid comment id"}.to_json
-  else
-    comment.destroy
-    comment.to_json
-  end
-end
+# PUT /api/v1/comments/:comment_id
+# update information of the comment
 
-# update the body / title (or both) of a comment provided the comment is NOT the super comment
 put '/api/v1/comments/:comment_id' do |comment_id|
-  comment = Comment.find_by_id(comment_id)
-  if comment.nil? or comment.is_root?
-    error 400, {:error => "invalid comment id"}.to_json
-  else
-    comment_params = params.select {|key, value| %w{body title endorsed}.include? key}
-    if comment.update_attributes(comment_params)
-      comment.to_json
-    else
-      error 400, comment.errors.to_json
-    end
-  end
+  comment = Comment.find(comment_id)
+  comment.update!(params.slice(*%w[body endorsed])).to_hash.to_json
 end
 
-# create or update the vote on the comment by the user
+# POST /api/v1/comments/:comment_id
+# create a sub comment to the comment
+
+post '/api/v1/comments/:comment_id' do |comment_id|
+  comment = Comment.find(comment_id)
+  sub_comment = comment.children.new(params.slice(*%w[body]))
+  sub_comment.author = User.find_or_create_by(external_id: params["user_id"])
+  sub_comment.save!
+  sub_comment.to_hash.to_json
+end
+
+# DELETE /api/v1/comments/:comment_id
+# delete the comment and its sub comments
+
+delete '/api/v1/comments/:comment_id' do |comment_id|
+  comment = Comment.find(comment_id)
+  comment.destroy
+  comment.to_hash.to_json
+end
+
+# PUT /api/v1/votes/comments/:comment_id/users/:user_id
+# create or update the vote on the comment
+
 put '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
-  if not %w{up down}.include? params["value"]
-    error 400, {:error => "value must be up or down"}.to_json
-  else
-    comment = Comment.find_by_id(comment_id)
-    if comment.nil?
-      error 400, {:error => "invalid comment id"}.to_json
-    else
-      if %w[up down].include? params["value"]
-        user = User.find_or_create_by_id(user_id)
-        vote = user.vote(comment, { :direction => (params["value"] == "up" ? :up : :down ), :exclusive => :true})
-        comment.to_json
-      else
-        error 400, {:error => "value must be up or down"}.to_json
-      end
-    end
-  end
+  comment = Comment.find(comment_id)
+  user = User.find_or_create_by(external_id: user_id)
+  user.vote(comment, params["value"].intern)
 end
 
-# undo the vote on the comment by the user
+# DELETE /api/v1/votes/comments/:comment_id/users/:user_id
+# unvote on the comment
+
 delete '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
-  user = User.find_by_id(user_id.to_i)
-  comment = Comment.find_by_id(comment_id)
-  if user and comment and not comment.is_root?
-    vote = user.unvote_for(comment)
-    comment.to_json
-  else
-    error 400, {:error => "invalid user or comment id"}.to_json
-  end
+  comment = Comment.find(comment_id)
+  user = User.find_or_create_by(external_id: user_id)
+  user.unvote(comment)
+end
+
+# PUT /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
+# create or update the vote on the comment thread
+
+put '/api/v1/votes/comment_threads/:comment_thread_id/users/:user_id' do |comment_thread_id, user_id|
+  comment_thread = CommentThread.find(comment_thread_id)
+  user = User.find_or_create_by(external_id: user_id)
+  user.vote(comment_thread, params["value"].intern)
+end
+
+# DELETE /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
+# unvote on the comment thread
+
+delete '/api/v1/votes/comment_threads/:comment_thread_id/users/:user_id' do |comment_thread_id, user_id|
+  comment_thread = CommentThread.find(comment_thread_id)
+  user = User.find_or_create_by(external_id: user_id)
+  user.unvote(comment_thread)
 end
 
 if env.to_s == "development"
   get '/api/v1/clean' do
     Comment.delete_all
     CommentThread.delete_all
-    Vote.delete_all
+    Commentable.delete_all
+    User.delete_all
     {}.to_json
   end
 end

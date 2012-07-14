@@ -8,21 +8,28 @@ class CommentThread
   field :title, type: String
   field :body, type: String
   field :course_id, type: String, index: true
-  field :commentable_id, type: String
-  field :commentable_type, type: String
 
   belongs_to :author, class_name: "User", index: true
+  belongs_to :commentable, index: true
   has_many :comments, dependent: :destroy # Use destroy to envoke callback on the top-level comments
 
-  attr_accessible :title, :body, :course_id, :commentable_id, :commentable_type
+  attr_accessible :title, :body, :course_id
 
   validates_presence_of :title
   validates_presence_of :body
-  validates_presence_of :course_id
-  validates_presence_of :commentable_id
-  validates_presence_of :commentable_type
+  validates_presence_of :course_id # do we really need this?
+  #validates_presence_of :author #allow anonymity?
   
-  index [:commentable_type, :commentable_id]
   #after_create :create_feeds
+  
+  def to_hash(params={})
+    doc = as_document.slice(*%w[title body course_id _id]).
+                      merge("user_id" => author.external_id).
+                      merge("votes" => votes.slice(*%w[count up_count down_count point]))
+    if params[:recursive]
+      doc = doc.merge("children" => comments.map{|c| c.to_hash(recursive: true)})
+    end
+    doc
+  end
 
 end

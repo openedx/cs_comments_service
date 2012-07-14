@@ -2,12 +2,87 @@ require 'spec_helper'
 require 'yajl'
 
 describe "app" do
-  describe "comments" do
-    before :each do
-      Comment.delete_all
-      CommentThread.delete_all
+  before :each do
+    Comment.delete_all
+    CommentThread.delete_all
+    Commentable.delete_all
+    User.delete_all
+    
+    commentable = Commentable.create!(commentable_type: "questions", commentable_id: "1")
+
+    user = User.create!(external_id: "1")
+
+    comment_thread = commentable.comment_threads.create!(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
+    comment_thread.author = user
+    comment_thread.save!
+
+    comment = comment_thread.comments.create!(body: "this problem is so easy", course_id: "1")
+    comment.author = user
+    comment.save!
+    comment = comment.children.create!(body: "not for me!", course_id: "1")
+    comment.author = user
+    comment.save!
+    comment = comment_thread.comments.create!(body: "see the textbook on page 69. it's quite similar", course_id: "1")
+    comment.author = user
+    comment.save!
+    comment = comment.children.create!(body: "thank you!", course_id: "1")
+    comment.author = user
+    comment.save!
+
+    comment_thread = commentable.comment_threads.create!(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
+    comment_thread.author = user
+    comment_thread.save!
+
+    comment = comment_thread.comments.create!(body: "how do you know?", course_id: "1")
+    comment.author = user
+    comment.save!
+    comment = comment.children.create!(body: "because blablabla", course_id: "1")
+    comment.author = user
+    comment.save!
+    comment = comment_thread.comments.create!(body: "no wonder I can't solve it", course_id: "1")
+    comment.author = user
+    comment.save!
+    comment = comment.children.create!(body: "+1", course_id: "1")
+    comment.author = user
+    comment.save!
+
+    Comment.all.each do |c|
+      (1..10).each do |id|
+        User.find_or_create_by(external_id: id.to_s).vote(c, [:up, :down].sample)
+      end
     end
-    describe "POST on /api/v1/commentables/:commentable_type/:commentable_id/comments" do
+    CommentThread.all.each do |c|
+      (1..10).each do |id|
+        User.find_or_create_by(external_id: id.to_s).vote(c, [:up, :down].sample)
+      end
+    end
+  end
+
+  describe "comments" do
+    
+    describe "GET /api/v1/commentables/:commentable_type/:commentable_id/comment_threads" do
+      it "get all comment threads associated with a commentable object" do
+        get "/api/v1/commentables/questions/1/comment_threads"
+        last_response.should be_ok
+        comment_threads = Yajl::Parser.parse last_response.body
+        comment_threads.length.should == 2
+        comment_threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
+        comment_threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
+      end
+      it "get all comment threads and comments associated with a commentable object" do
+        get "/api/v1/commentables/questions/1/comment_threads", recursive: true
+        last_response.should be_ok
+        comment_threads = Yajl::Parser.parse last_response.body
+        comment_threads.length.should == 2
+        comment_threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
+        comment_threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
+        comment_thread = comment_threads.first
+        comment_thread["children"].length.should == 2
+      end
+    end
+
+=begin
+    describe "POST on /api/v1/commentables/:commentable_type/:commentable_id/comment_threads" do
       it "should create a top-level comment with correct body, title, user_id, and course_id" do
         post "/api/v1/commentables/questions/1/comments", :body => "comment body", :title => "comment title", :user_id => 1, :course_id => 1
         last_response.should be_ok
@@ -293,5 +368,6 @@ describe "app" do
         last_response.should be_ok
       end
     end
+=end
   end
 end

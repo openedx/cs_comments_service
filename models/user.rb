@@ -3,7 +3,9 @@ class User
   include Mongo::Voter
 
   field :external_id, type: String
+
   has_many :comments
+  has_many :commentable
 
   attr_accessible :external_id
 

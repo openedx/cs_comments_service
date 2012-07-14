@@ -3,6 +3,7 @@ require 'mongo'
 require 'mongoid'
 require 'yaml'
 require 'logger'
+require 'active_support/all'
 require 'sinatra'
 require 'mongoid/tree'
 require 'voteable_mongo'
@@ -21,7 +22,9 @@ namespace :db do
     require_relative 'models/comment.rb'
     require_relative 'models/comment_thread.rb'
     require_relative 'models/user.rb'
+    require_relative 'models/commentable.rb'
 
+    Commentable.delete_all
     Comment.delete_all
     CommentThread.delete_all
     User.delete_all
@@ -33,27 +36,26 @@ namespace :db do
     user = User.create!(external_id: "1")
 
     def generate_comments(commentable_type, commentable_id, level_limit, user)
+      commentable = Commentable.create!(commentable_type: commentable_type, commentable_id: commentable_id)
       5.times do
-        comment_thread = CommentThread.new(
+        comment_thread = commentable.comment_threads.new(
                           commentable_type: commentable_type, commentable_id: commentable_id,
                           body: "This is a post", title: "Post No.#{rand(10)}",
                           course_id: "1")
         comment_thread.author = user
         comment_thread.save!
         3.times do
-          comment = Comment.new(body: "top comment", course_id: "1")
-          comment.comment_thread = comment_thread
+          comment = comment_thread.comments.new(body: "top comment", course_id: "1")
           comment.author = user
           comment.endorsed = [true, false].sample
           comment.save!
         end
-        100.times do
+        10.times do
           comment = Comment.where(comment_thread_id: comment_thread.id).reject{|c| c.depth >= level_limit}.sample
-          sub_comment = Comment.new(body: "comment body", course_id: "1")
+          sub_comment = comment.children.new(body: "comment body", course_id: "1")
           sub_comment.author = user
           sub_comment.endorsed = [true, false].sample
           sub_comment.save!
-          comment.children << sub_comment
         end
         puts "Generating a comment thread for #{commentable_type} No.#{commentable_id}"
       end
@@ -61,28 +63,27 @@ namespace :db do
 
     generate_comments("questions" , 1, level_limit, user)
     generate_comments("questions" , 2, level_limit, user)
-    generate_comments("questions" , 3, level_limit, user)
     generate_comments("courses"   , 1, level_limit, user)
     generate_comments("lectures"  , 1, level_limit, user)
     generate_comments("lectures"  , 2, level_limit, user)
-    generate_comments("lectures"  , 3, level_limit, user)
-=begin
+
     puts "voting"
     users = []
-    (1..20).each do |id|
+    (1..10).each do |id|
       users << User.find_or_create_by(external_id: id.to_s)
     end
 
-    current = 0
-    total = Comment.count
-    Comment.all.each do |c|
-      (0...20).each do |i|
+    CommentThread.all.each do |c|
+      (0...10).each do |i|
         users[i].vote(c, [:up, :down].sample)
       end
-      current += 1
-      puts "voted #{current}/#{total}"
     end
-=end
+
+    Comment.all.each do |c|
+      (0...10).each do |i|
+        users[i].vote(c, [:up, :down].sample)
+      end
+    end
 
     end_time = Time.now
 
