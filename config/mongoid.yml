@@ -1,0 +1,7 @@
+development:
+  host: localhost
+  database: cs_comments_service_development
+
+test:
+  host: localhost
+  database: cs_comments_service_test
