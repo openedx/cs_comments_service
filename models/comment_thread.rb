@@ -2,7 +2,7 @@ class CommentThread
   include Mongoid::Document
   include Mongo::Voteable
   include Mongoid::Timestamps
-  include Mongoid::Watchable
+  include Mongoid::FeedStream::Watchable
 
   voteable self, :up => +1, :down => -1
 

@@ -1,19 +1,16 @@
 require 'rubygems'
-require 'mongo'
-require 'mongoid'
-require 'yaml'
-require 'logger'
-require 'active_support/all'
-require 'sinatra'
-require 'mongoid/tree'
-require 'voteable_mongo'
-require './lib/followable'
-require './lib/watchable'
+require 'bundler'
+
+Bundler.setup
+Bundler.require
+
+require './lib/feedstream'
 
 require './models/comment'
 require './models/comment_thread'
 require './models/commentable'
 require './models/user'
+require './models/feed'
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index

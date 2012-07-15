@@ -1,14 +1,16 @@
 require 'rubygems'
-require 'mongo'
-require 'mongoid'
-require 'yaml'
-require 'logger'
-require 'active_support/all'
-require 'sinatra'
-require 'mongoid/tree'
-require 'voteable_mongo'
-require './lib/watchable'
-require './lib/followable'
+require 'bundler'
+
+Bundler.setup
+Bundler.require
+
+require './lib/feedstream'
+
+require './models/comment.rb'
+require './models/comment_thread.rb'
+require './models/user.rb'
+require './models/commentable.rb'
+require './models/feed.rb'
 
 desc "Load the environment"
 task :environment do
@@ -19,12 +21,18 @@ task :environment do
 end
 
 namespace :db do
-  task :seed => :environment do
+  task :init => :environment do
+    puts "creating indexes..."
+    Comment.create_indexes
+    CommentThread.create_indexes
+    User.create_indexes
+    Commentable.create_indexes
+    Feed.create_indexes
+    Delayed::Backend::Mongoid::Job.create_indexes
+    puts "finished"
+  end
 
-    require './models/comment.rb'
-    require './models/comment_thread.rb'
-    require './models/user.rb'
-    require './models/commentable.rb'
+  task :seed => :environment do
 
     Commentable.delete_all
     Comment.delete_all

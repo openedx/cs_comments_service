@@ -1,8 +1,9 @@
 class User
   include Mongoid::Document
   include Mongo::Voter
-  include Mongoid::Watcher
-  include Mongoid::Followable
+  include Mongoid::FeedStream::Watcher
+  include Mongoid::FeedStream::Actor
+  include Mongoid::FeedStream::Followable
 
   field :external_id, type: String
   
