@@ -20,10 +20,14 @@ class Comment
   #validates_presence_of :author # allow anonymity?
 
   before_destroy :delete_descendants
-  #after_create :create_feeds
+  after_create :generate_feeds
   
   def self.hash_tree(nodes)
     nodes.map{|node, sub_nodes| node.to_hash.merge("children" => hash_tree(sub_nodes).compact)}
+  end
+
+  def comment_thread
+    comment_thread || root.comment_thread
   end
 
   def to_hash(params={})
@@ -35,5 +39,23 @@ class Comment
                   merge("votes" => votes.slice(*%w[count up_count down_count point]))
     end
   end
+
+  def generate_feeds
+    feed = Feed.new(
+      feed_type: "post_reply",
+      info: {
+        comment_thread_id: comment_thread.id,
+        comment_thread_title: comment_thread.title,
+        comment_id: id,
+      },
+    )
+    feed.actor = author
+    feed.target = self
+    feed.subscribers << comment_thread.watchers
+    feed.subscribers << author.followers
+    feed.save!
+  end
+
+  handle_asynchronously :generate_feeds
 
 end

@@ -21,7 +21,7 @@ class CommentThread
   validates_presence_of :course_id # do we really need this?
   #validates_presence_of :author #allow anonymity?
   
-  #after_create :create_feeds
+  after_create :generate_feeds
   
   def to_hash(params={})
     doc = as_document.slice(*%w[title body course_id _id]).
@@ -33,4 +33,22 @@ class CommentThread
     doc
   end
 
+  def generate_feeds
+    feed = Feed.new(
+      feed_type: "post_topic",
+      info: {
+        commentable_id: commentable.id,
+        commentable_type: commentable.type,
+        comment_thread_id: comment_thread.id,
+        comment_thread_title: comment_thread.title,
+      },
+    )
+    feed.actor = author
+    feed.target = self
+    feed.subscribers << commentable.watchers
+    feed.subscribers << author.followers
+    feed.save!
+  end
+
+  handle_asynchronously :generate_feeds
 end

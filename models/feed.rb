@@ -10,5 +10,9 @@ class Feed
 
   attr_accessible :feed_type, :info
 
+  validates_presence_of :feed_type
+  validates_presence_of :actor
+  validates_presence_of :target
+
   has_and_belongs_to_many :subscribers, class_name: "User", inverse_of: :subscribed_feeds
 end
