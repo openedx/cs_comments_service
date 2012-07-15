@@ -19,7 +19,7 @@ class Comment
   validates_presence_of :course_id # do we really need this?
   #validates_presence_of :author # allow anonymity?
 
-  before_destroy :delete_descendants
+  before_destroy :delete_descendants # TODO async
   after_create :generate_feeds
   
   def self.hash_tree(nodes)

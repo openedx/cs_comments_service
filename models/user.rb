@@ -19,13 +19,15 @@ class User
   index :external_id, unique: true
 
   def follow(user)
-    if self.id != user.id and not self.following.include? user
-      self.following << user
+    if id != user.id and not following.include? user
+      following << user
+      save!
     end
   end
 
   def unfollow(user)
-    self.following.delete(user)
+    following.delete(user)
+    save!
   end
 
   def self.watching(class_plural_sym)
@@ -38,13 +40,15 @@ class User
 
     self.class_eval <<-END
       def watch_#{class_single}(watching_object)
-        if not self.watched_#{class_plural}.include? watching_object
-          self.watched_#{class_plural} << watching_object
+        if not watched_#{class_plural}.include? watching_object
+          watched_#{class_plural} << watching_object
+          save!
         end
       end
 
       def unwatch_#{class_single}(watching_object)
-        self.watched_#{class_plural}.delete(watching_object)
+        watched_#{class_plural}.delete(watching_object)
+        save!
       end
     END
   end
