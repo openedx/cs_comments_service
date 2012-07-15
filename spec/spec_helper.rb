@@ -2,6 +2,7 @@ require File.join(File.dirname(__FILE__), '..', 'app')
 
 require 'sinatra'
 require 'rack/test'
+require 'yajl'
 
 # setup test environment
 set :environment, :test

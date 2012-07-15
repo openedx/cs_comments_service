@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'yajl'
 
 describe "app" do
   before :each do
@@ -23,6 +22,10 @@ describe "app" do
     comment = comment.children.create!(body: "not for me!", course_id: "1")
     comment.author = user
     comment.save!
+    comment = comment.children.create!(body: "not for me neither!", course_id: "1")
+    comment.author = user
+    comment.save!
+
     comment = comment_thread.comments.create!(body: "see the textbook on page 69. it's quite similar", course_id: "1")
     comment.author = user
     comment.save!
@@ -47,15 +50,15 @@ describe "app" do
     comment.author = user
     comment.save!
 
+
+    users = (1..10).map{|id| User.find_or_create_by(external_id: id.to_s)}
+
     Comment.all.each do |c|
-      (1..10).each do |id|
-        User.find_or_create_by(external_id: id.to_s).vote(c, [:up, :down].sample)
-      end
+      users.each {|user| user.vote(c, [:up, :down].sample)}
     end
+
     CommentThread.all.each do |c|
-      (1..10).each do |id|
-        User.find_or_create_by(external_id: id.to_s).vote(c, [:up, :down].sample)
-      end
+      users.each {|user| user.vote(c, [:up, :down].sample)}
     end
   end
 
@@ -77,8 +80,17 @@ describe "app" do
         comment_threads.length.should == 2
         comment_threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         comment_threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
-        comment_thread = comment_threads.first
-        comment_thread["children"].length.should == 2
+        comment_thread = comment_threads.select{|c| c["body"] == "can anyone help me?"}.first
+        children = comment_thread["children"]
+        children.length.should == 2
+        children.index{|c| c["body"] == "this problem is so easy"}.should_not be_nil
+        children.index{|c| c["body"] =~ /^see the textbook/}.should_not be_nil
+        so_easy = children.select{|c| c["body"] == "this problem is so easy"}.first
+        so_easy["children"].length.should == 1
+        not_for_me = so_easy["children"].first
+        not_for_me["body"].should == "not for me!"
+        not_for_me["children"].length.should == 1
+        not_for_me["children"].first["body"].should == "not for me neither!"
       end
     end
 

@@ -32,7 +32,7 @@ class Comment
 
   def to_hash(params={})
     if params[:recursive]
-      self.class.hash_tree(subtree(order_by: [[:parent_ids, :asc], [:created_at, :asc]]))
+      self.class.hash_tree(subtree(order_by: [[:parent_ids, :asc], [:created_at, :asc]])).first
     else
       as_document.slice(*%w[body course_id endorsed _id]).
                   merge("user_id" => author.external_id).
