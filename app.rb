@@ -194,7 +194,7 @@ end
 
 get '/api/v1/users/:user_id/feeds' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  user.feeds.to_json
+  user.feeds.map(&:to_hash).to_json
 end
 
 # POST /api/v1/users/:user_id/follow
@@ -265,6 +265,7 @@ if env.to_s == "development"
     CommentThread.delete_all
     Commentable.delete_all
     User.delete_all
+    Feed.delete_all
     {}.to_json
   end
 end

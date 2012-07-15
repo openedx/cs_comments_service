@@ -18,6 +18,10 @@ class User
 
   index :external_id, unique: true
 
+  def to_hash(params={})
+    as_document.slice(*%w[_id external_id])
+  end
+
   def follow(user)
     if id != user.id and not following.include? user
       following << user

@@ -15,4 +15,8 @@ class Feed
   validates_presence_of :target
 
   has_and_belongs_to_many :subscribers, class_name: "User", inverse_of: :subscribed_feeds
+
+  def to_hash(params={})
+    as_document.slice(*%w[_id feed_type info actor target])
+  end
 end

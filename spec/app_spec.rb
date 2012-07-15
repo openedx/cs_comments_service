@@ -7,6 +7,7 @@ describe "app" do
     CommentThread.delete_all
     Commentable.delete_all
     User.delete_all
+    Feed.delete_all
     
     commentable = Commentable.create!(commentable_type: "questions", commentable_id: "1")
 

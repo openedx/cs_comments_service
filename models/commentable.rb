@@ -15,8 +15,8 @@ class Commentable
 
   index [[:commentable_type, Mongo::ASCENDING], [:commentable_id, Mongo::ASCENDING]]
 
-  def to_hash
-    as_document
+  def to_hash(params={})
+    as_document.slice(*%w[_id commentable_type commentable_id])
   end
 
 end
