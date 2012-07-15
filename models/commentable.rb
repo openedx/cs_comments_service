@@ -1,11 +1,11 @@
 class Commentable
   include Mongoid::Document
-  include Mongoid::FeedStream::Watchable 
 
   field :commentable_type, type: String
   field :commentable_id, type: String
 
   has_many :comment_threads, dependent: :destroy
+  has_and_belongs_to_many :watchers, class_name: "User", inverse_of: :watched_commentables
 
   attr_accessible :commentable_type, :commentable_id
 

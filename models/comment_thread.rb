@@ -2,7 +2,6 @@ class CommentThread
   include Mongoid::Document
   include Mongo::Voteable
   include Mongoid::Timestamps
-  include Mongoid::FeedStream::Watchable
 
   voteable self, :up => +1, :down => -1
 
@@ -13,6 +12,7 @@ class CommentThread
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true
   belongs_to :commentable, index: true
   has_many :comments, dependent: :destroy # Use destroy to envoke callback on the top-level comments
+  has_and_belongs_to_many :watchers, class_name: "User", inverse_of: :watched_comment_threads
 
   attr_accessible :title, :body, :course_id
 

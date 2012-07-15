@@ -4,8 +4,6 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
-require './lib/feedstream'
-
 require './models/comment'
 require './models/comment_thread'
 require './models/commentable'

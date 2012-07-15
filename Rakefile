@@ -4,8 +4,6 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
-require './lib/feedstream'
-
 require './models/comment.rb'
 require './models/comment_thread.rb'
 require './models/user.rb'
