@@ -1,6 +1,7 @@
 class Commentable
   include Mongoid::Document
-  
+  include Mongoid::Watchable 
+
   field :commentable_type, type: String
   field :commentable_id, type: String
 

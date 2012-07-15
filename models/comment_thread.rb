@@ -2,6 +2,7 @@ class CommentThread
   include Mongoid::Document
   include Mongo::Voteable
   include Mongoid::Timestamps
+  include Mongoid::Watchable
 
   voteable self, :up => +1, :down => -1
 
@@ -9,7 +10,7 @@ class CommentThread
   field :body, type: String
   field :course_id, type: String, index: true
 
-  belongs_to :author, class_name: "User", index: true
+  belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true
   belongs_to :commentable, index: true
   has_many :comments, dependent: :destroy # Use destroy to envoke callback on the top-level comments
 

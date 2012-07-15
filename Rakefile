@@ -7,6 +7,8 @@ require 'active_support/all'
 require 'sinatra'
 require 'mongoid/tree'
 require 'voteable_mongo'
+require './lib/watchable'
+require './lib/followable'
 
 desc "Load the environment"
 task :environment do
@@ -19,10 +21,10 @@ end
 namespace :db do
   task :seed => :environment do
 
-    require_relative 'models/comment.rb'
-    require_relative 'models/comment_thread.rb'
-    require_relative 'models/user.rb'
-    require_relative 'models/commentable.rb'
+    require './models/comment.rb'
+    require './models/comment_thread.rb'
+    require './models/user.rb'
+    require './models/commentable.rb'
 
     Commentable.delete_all
     Comment.delete_all

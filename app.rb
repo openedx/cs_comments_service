@@ -7,11 +7,13 @@ require 'active_support/all'
 require 'sinatra'
 require 'mongoid/tree'
 require 'voteable_mongo'
+require './lib/followable'
+require './lib/watchable'
 
-require_relative 'models/comment'
-require_relative 'models/comment_thread'
-require_relative 'models/commentable'
-require_relative 'models/user'
+require './models/comment'
+require './models/comment_thread'
+require './models/commentable'
+require './models/user'
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
@@ -46,8 +48,6 @@ config = YAML.load_file("config/application.yml")
 # GET /api/v1/users/:user_id/feeds
 # POST /api/v1/users/:user_id/feeds/subscribe
 #
-
-
 
 # DELETE /api/v1/commentables/:commentable_type/:commentable_id
 # delete the commentable object and all of its associated comment threads and comments
