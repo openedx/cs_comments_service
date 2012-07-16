@@ -158,6 +158,7 @@ put '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
   comment = Comment.find(comment_id)
   user = User.find_or_create_by(external_id: user_id)
   user.vote(comment, params["value"].intern)
+  Comment.find(comment_id).to_hash.to_json
 end
 
 # DELETE /api/v1/votes/comments/:comment_id/users/:user_id
@@ -167,6 +168,7 @@ delete '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_
   comment = Comment.find(comment_id)
   user = User.find_or_create_by(external_id: user_id)
   user.unvote(comment)
+  Comment.find(comment_id).to_hash.to_json
 end
 
 # PUT /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
@@ -176,6 +178,7 @@ put '/api/v1/votes/comment_threads/:comment_thread_id/users/:user_id' do |commen
   comment_thread = CommentThread.find(comment_thread_id)
   user = User.find_or_create_by(external_id: user_id)
   user.vote(comment_thread, params["value"].intern)
+  CommentThread.find(comment_thread_id).to_hash.to_json
 end
 
 # DELETE /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
@@ -185,6 +188,7 @@ delete '/api/v1/votes/comment_threads/:comment_thread_id/users/:user_id' do |com
   comment_thread = CommentThread.find(comment_thread_id)
   user = User.find_or_create_by(external_id: user_id)
   user.unvote(comment_thread)
+  CommentThread.find(comment_thread_id).to_hash.to_json
 end
 
 # GET /api/v1/users/:user_id/feeds
