@@ -20,7 +20,7 @@ task :environment do
 end
 
 namespace :test do
-  task :check_nested_comments => :environment do
+  task :nested_comments => :environment do
     puts "checking"
     50.times do
       Comment.delete_all
@@ -31,19 +31,19 @@ namespace :test do
       
       commentable = Commentable.create!(commentable_type: "questions", commentable_id: "1")
 
-      user = User.create!(id: "1")
+      user = User.create!(external_id: "1")
 
-      comment_thread = commentable.comment_threads.create!(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
+      comment_thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
       comment_thread.author = user
       comment_thread.save!
 
-      comment = comment_thread.comments.create!(body: "this problem is so easy", course_id: "1")
+      comment = comment_thread.comments.new(body: "this problem is so easy", course_id: "1")
       comment.author = user
       comment.save!
-      comment1 = comment.children.create!(body: "not for me!", course_id: "1")
+      comment1 = comment.children.new(body: "not for me!", course_id: "1")
       comment1.author = user
       comment1.save!
-      comment2 = comment1.children.create!(body: "not for me neither!", course_id: "1")
+      comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
       comment2.author = user
       comment2.save!
 
