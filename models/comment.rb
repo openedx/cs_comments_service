@@ -10,8 +10,8 @@ class Comment
   field :course_id, type: String
   field :endorsed, type: Boolean, default: false
 
-  belongs_to :author, class_name: "User", index: true
-  belongs_to :comment_thread, index: true
+  belongs_to :author, class_name: "User", index: true, autosave: true
+  belongs_to :comment_thread, index: true, autosave: true
 
   attr_accessible :body, :course_id, :endorsed
 
@@ -63,8 +63,7 @@ class Comment
     )
     feed.actor = author
     feed.target = self
-    feed.subscribers << get_comment_thread.watchers
-    feed.subscribers << author.followers
+    feed.subscribers << (get_comment_thread.watchers + author.followers).uniq_by(&:id).delete(author) # doesn't send notification to author
     feed.save!
   end
 

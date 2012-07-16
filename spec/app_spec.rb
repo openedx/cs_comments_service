@@ -71,6 +71,43 @@ def init_without_feeds
   end
 end
 
+def init_with_feeds
+  Comment.delete_all
+  CommentThread.delete_all
+  Commentable.delete_all
+  User.delete_all
+  Feed.delete_all
+  
+  user1 = User.create!(id: "1")
+  user2 = User.create!(id: "2")
+
+  user1.followers << user2
+
+  commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
+  commentable.watchers << [user1, user2]
+  commentable.save!
+
+  comment_thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
+  comment_thread.author = user1
+  comment_thread.watchers << user1
+  comment_thread.save!
+
+  comment = comment_thread.comments.new(body: "this problem is so easy", course_id: "1")
+  comment.author = user1
+  comment.save!
+  comment1 = comment.children.new(body: "not for me!", course_id: "1")
+  comment1.author = user1
+  comment1.save!
+  comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
+  comment2.author = user1
+  comment2.save!
+
+  comment_thread = commentable.comment_threads.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
+  comment_thread.author = user
+  comment_thread.save!
+
+end
+
 describe "app" do
   describe "commentables" do
     before(:each) { init_without_feeds }
@@ -295,9 +332,9 @@ describe "app" do
     end
   end
   describe "feeds" do
+    #before(:each) { init_with_feeds }
     describe "GET /api/v1/users/:user_id/feeds" do
       it "get all subscribed feeds for the user" do
-
       end
     end
     describe "POST /api/v1/users/:user_id/follow" do

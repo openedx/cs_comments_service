@@ -7,9 +7,9 @@ class User
   has_many :comments
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Feed", inverse_of: :actor
-  has_and_belongs_to_many :subscribed_feeds, class_name: "Feed", inverse_of: :subscribers
-  has_and_belongs_to_many :followers, class_name: "User", inverse_of: :followings
-  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers
+  has_and_belongs_to_many :subscribed_feeds, class_name: "Feed", inverse_of: :subscribers, autosave: true
+  has_and_belongs_to_many :followers, class_name: "User", inverse_of: :followings, autosave: true
+  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers, autosave: true
 
   def to_hash(params={})
     as_document.slice(*%w[_id])
@@ -18,13 +18,11 @@ class User
   def follow(user)
     if id != user.id and not following.include? user
       following << user
-      save!
     end
   end
 
   def unfollow(user)
     following.delete(user)
-    save!
   end
 
   def self.watching(class_plural_sym)
@@ -39,13 +37,11 @@ class User
       def watch_#{class_single}(watching_object)
         if not watched_#{class_plural}.include? watching_object
           watched_#{class_plural} << watching_object
-          save!
         end
       end
 
       def unwatch_#{class_single}(watching_object)
         watched_#{class_plural}.delete(watching_object)
-        save!
       end
     END
   end

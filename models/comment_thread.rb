@@ -9,10 +9,10 @@ class CommentThread
   field :body, type: String
   field :course_id, type: String, index: true
 
-  belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true
-  belongs_to :commentable, index: true
+  belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
+  belongs_to :commentable, index: true, autosave: true
   has_many :comments, dependent: :destroy # Use destroy to envoke callback on the top-level comments TODO async
-  has_and_belongs_to_many :watchers, class_name: "User", inverse_of: :watched_comment_threads
+  has_and_belongs_to_many :watchers, class_name: "User", inverse_of: :watched_comment_threads, autosave: true
 
   attr_accessible :title, :body, :course_id
 
@@ -45,8 +45,7 @@ class CommentThread
     )
     feed.actor = author
     feed.target = self
-    feed.subscribers << commentable.watchers
-    feed.subscribers << author.followers
+    feed.subscribers << (commentable.watchers + author.followers).uniq_by(&:id).delete(author) # doesn't send notification to author
     feed.save!
   end
 
