@@ -8,73 +8,72 @@ def parse(text)
   Yajl::Parser.parse text
 end
 
-describe "app" do
-  before :each do
-    Comment.delete_all
-    CommentThread.delete_all
-    Commentable.delete_all
-    User.delete_all
-    Feed.delete_all
-    
-    commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
+def init_without_feeds
+  Comment.delete_all
+  CommentThread.delete_all
+  Commentable.delete_all
+  User.delete_all
+  Feed.delete_all
+  
+  commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
+  commentable.save!
 
-    user = User.create!(external_id: "1")
+  user = User.create!(external_id: "1")
 
-    commentable.watchers << user
-    commentable.save!
+  comment_thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
+  comment_thread.author = user
+  comment_thread.save!
 
-    comment_thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
-    comment_thread.author = user
-    comment_thread.watchers << user
-    comment_thread.save!
+  comment = comment_thread.comments.new(body: "this problem is so easy", course_id: "1")
+  comment.author = user
+  comment.save!
+  comment1 = comment.children.new(body: "not for me!", course_id: "1")
+  comment1.author = user
+  comment1.save!
+  comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
+  comment2.author = user
+  comment2.save!
 
-    comment = comment_thread.comments.new(body: "this problem is so easy", course_id: "1")
-    comment.author = user
-    comment.save!
-    comment1 = comment.children.new(body: "not for me!", course_id: "1")
-    comment1.author = user
-    comment1.save!
-    comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
-    comment2.author = user
-    comment2.save!
+  comment = comment_thread.comments.new(body: "see the textbook on page 69. it's quite similar", course_id: "1")
+  comment.author = user
+  comment.save!
+  comment1 = comment.children.new(body: "thank you!", course_id: "1")
+  comment1.author = user
+  comment1.save!
 
-    comment = comment_thread.comments.new(body: "see the textbook on page 69. it's quite similar", course_id: "1")
-    comment.author = user
-    comment.save!
-    comment1 = comment.children.new(body: "thank you!", course_id: "1")
-    comment1.author = user
-    comment1.save!
+  comment_thread = commentable.comment_threads.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
+  comment_thread.author = user
+  comment_thread.save!
 
-    comment_thread = commentable.comment_threads.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
-    comment_thread.author = user
-    comment_thread.save!
+  comment = comment_thread.comments.new(body: "how do you know?", course_id: "1")
+  comment.author = user
+  comment.save!
+  comment1 = comment.children.new(body: "because blablabla", course_id: "1")
+  comment1.author = user
+  comment1.save!
+  comment = comment_thread.comments.new(body: "no wonder I can't solve it", course_id: "1")
+  comment.author = user
+  comment.save!
+  comment1 = comment.children.new(body: "+1", course_id: "1")
+  comment1.author = user
+  comment1.save!
 
-    comment = comment_thread.comments.new(body: "how do you know?", course_id: "1")
-    comment.author = user
-    comment.save!
-    comment1 = comment.children.new(body: "because blablabla", course_id: "1")
-    comment1.author = user
-    comment1.save!
-    comment = comment_thread.comments.new(body: "no wonder I can't solve it", course_id: "1")
-    comment.author = user
-    comment.save!
-    comment1 = comment.children.new(body: "+1", course_id: "1")
-    comment1.author = user
-    comment1.save!
+  users = (2..10).map{|id| User.find_or_create_by(external_id: id.to_s)}
 
-
-    users = (1..10).map{|id| User.find_or_create_by(external_id: id.to_s)}
-
-    Comment.all.each do |c|
-      users.each {|user| user.vote(c, [:up, :down].sample)}
-    end
-
-    CommentThread.all.each do |c|
-      users.each {|user| user.vote(c, [:up, :down].sample)}
-    end
+  Comment.all.each do |c|
+    user.vote(c, :up) # make the first user always vote up for convenience
+    users.each {|user| user.vote(c, [:up, :down].sample)}
   end
 
+  CommentThread.all.each do |c|
+    user.vote(c, :up) # make the first user always vote up for convenience
+    users.each {|user| user.vote(c, [:up, :down].sample)}
+  end
+end
+
+describe "app" do
   describe "commentables" do
+    before(:each) { init_without_feeds }
     describe "DELETE /api/v1/commentables/:commentable_type/:commentable_id" do
       it "delete the commentable object and all of its associated comment threads and comments" do
         delete '/api/v1/commentables/questions/1'
@@ -122,6 +121,7 @@ describe "app" do
   end
 
   describe "comment threads" do
+    before(:each) { init_without_feeds }
     describe "GET /api/v1/comment_threads/:comment_thread_id" do
       it "get information of a single comment thread" do
         comment_thread = CommentThread.first
@@ -131,6 +131,7 @@ describe "app" do
         comment_thread.title.should == response_thread["title"]
         comment_thread.body.should == response_thread["body"]
         comment_thread.course_id.should == response_thread["course_id"]
+        comment_thread.votes_point.should == response_thread["votes"]["point"]
         response_thread["children"].should be_nil
       end
       it "get information of a single comment thread with its comments" do
@@ -141,6 +142,7 @@ describe "app" do
         comment_thread.title.should == response_thread["title"]
         comment_thread.body.should == response_thread["body"]
         comment_thread.course_id.should == response_thread["course_id"]
+        comment_thread.votes_point.should == response_thread["votes"]["point"]
         response_thread["children"].should_not be_nil
         response_thread["children"].length.should == comment_thread.comments.length
         response_thread["children"].index{|c| c["body"] == comment_thread.comments.first.body}.should_not be_nil
@@ -181,6 +183,7 @@ describe "app" do
   end
 
   describe "comments" do
+    before(:each) { init_without_feeds }
     describe "GET /api/v1/comments/:comment_id" do
       it "retrieve information of a single comment" do
         comment = Comment.first
@@ -191,6 +194,7 @@ describe "app" do
         retrieved["endorsed"].should == comment.endorsed
         retrieved["_id"].should == comment.id.to_s
         retrieved["children"].should be_nil
+        retrieved["votes"]["point"].should == comment.votes_point
       end
       it "retrieve information of a single comment with its sub comments" do
         comment = Comment.first
@@ -200,6 +204,7 @@ describe "app" do
         retrieved["body"].should == comment.body
         retrieved["endorsed"].should == comment.endorsed
         retrieved["_id"].should == comment.id.to_s
+        retrieved["votes"]["point"].should == comment.votes_point
         retrieved["children"].length.should == comment.children.length
         retrieved["children"].select{|c| c["body"] == comment.children.first.body}.first.should_not be_nil
       end
@@ -238,23 +243,92 @@ describe "app" do
       end
     end
   end
-
   describe "votes" do
-
-    # PUT /api/v1/votes/comments/:comment_id/users/:user_id
-    # DELETE /api/v1/votes/comments/:comment_id/users/:user_id
-    #
-    # PUT /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
-    # DELETE /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
+    before(:each) { init_without_feeds }
+    describe "PUT /api/v1/votes/comments/:comment_id/users/:user_id" do
+      it "create or update the vote on the comment" do
+        user = User.first
+        comment = Comment.first
+        prev_up_votes = comment.up_votes_count
+        prev_down_votes = comment.down_votes_count
+        put "/api/v1/votes/comments/#{comment.id}/users/#{user.external_id}", value: "down"
+        comment = Comment.find(comment.id)
+        comment.up_votes_count.should == prev_up_votes - 1
+        comment.down_votes_count.should == prev_down_votes + 1
+      end
+    end
+    describe "DELETE /api/v1/votes/comments/:comment_id/users/:user_id" do
+      it "unvote on the comment" do
+        user = User.first
+        comment = Comment.first
+        prev_up_votes = comment.up_votes_count
+        prev_down_votes = comment.down_votes_count
+        delete "/api/v1/votes/comments/#{comment.id}/users/#{user.external_id}"
+        comment = Comment.find(comment.id)
+        comment.up_votes_count.should == prev_up_votes - 1
+        comment.down_votes_count.should == prev_down_votes
+      end
+    end
+    describe "PUT /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id" do
+      it "create or update the vote on the comment thread" do
+        user = User.first
+        comment_thread = CommentThread.first
+        prev_up_votes = comment_thread.up_votes_count
+        prev_down_votes = comment_thread.down_votes_count
+        put "/api/v1/votes/comment_threads/#{comment_thread.id}/users/#{user.external_id}", value: "down"
+        comment_thread = CommentThread.find(comment_thread.id)
+        comment_thread.up_votes_count.should == prev_up_votes - 1
+        comment_thread.down_votes_count.should == prev_down_votes + 1
+      end
+    end
+    describe "DELETE /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id" do
+      it "unvote on the comment thread" do
+        user = User.first
+        comment_thread = CommentThread.first
+        prev_up_votes = comment_thread.up_votes_count
+        prev_down_votes = comment_thread.down_votes_count
+        delete "/api/v1/votes/comment_threads/#{comment_thread.id}/users/#{user.external_id}"
+        comment_thread = CommentThread.find(comment_thread.id)
+        comment_thread.up_votes_count.should == prev_up_votes - 1
+        comment_thread.down_votes_count.should == prev_down_votes
+      end
+    end
   end
-
   describe "feeds" do
-    # GET /api/v1/users/:user_id/feeds
-    # POST /api/v1/users/:user_id/follow
-    # POST /api/v1/users/:user_id/unfollow
-    # POST /api/v1/users/:user_id/watch/commentable
-    # POST /api/v1/users/:user_id/unwatch/commentable
-    # POST /api/v1/users/:user_id/watch/comment_thread
-    # POST /api/v1/users/:user_id/unwatch/comment_thread
+    describe "GET /api/v1/users/:user_id/feeds" do
+      it "get all subscribed feeds for the user" do
+
+      end
+    end
+    describe "POST /api/v1/users/:user_id/follow" do
+      it "follow user" do
+
+      end
+    end
+    describe "POST /api/v1/users/:user_id/unfollow" do
+      it "unfollow user" do
+
+      end
+    end
+    describe "POST /api/v1/users/:user_id/watch/commentable" do
+      it "watch a commentable" do
+
+      end
+    end
+    describe "POST /api/v1/users/:user_id/unwatch/commentable" do
+      it "unwatch a commentable" do
+
+      end
+    end
+    describe "POST /api/v1/users/:user_id/watch/comment_thread" do
+      it "watch a comment thread" do
+
+      end
+    end
+    describe "POST /api/v1/users/:user_id/unwatch/comment_thread" do
+      it "unwatch a comment thread" do
+
+      end
+    end
   end
 end
