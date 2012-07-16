@@ -8,8 +8,8 @@ class User
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Feed", inverse_of: :actor
   has_and_belongs_to_many :subscribed_feeds, class_name: "Feed", inverse_of: :subscribers
-  has_and_belongs_to_many :followers, class_name: "User", inverse_of: :followings
-  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers, autosave: true
+  has_and_belongs_to_many :followers, class_name: "User", inverse_of: :followings, autosave: true
+  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers#, autosave: true
 
   validates_presence_of :external_id
   validates_uniqueness_of :external_id

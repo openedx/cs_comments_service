@@ -4,7 +4,6 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
-Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
 desc "Load the environment"
 task :environment do
@@ -12,6 +11,12 @@ task :environment do
   Sinatra::Base.environment = env
   Mongoid.load!("config/mongoid.yml")
   Mongoid.logger.level = Logger::INFO
+  module CommentService
+    class << self; attr_accessor :config; end
+  end
+
+  CommentService.config = YAML.load_file("config/application.yml")
+  Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 end
 
 namespace :test do
@@ -78,27 +83,31 @@ namespace :db do
 
     level_limit = YAML.load_file("config/application.yml")["level_limit"]
 
-    user = User.create!(id: "1")
+    users = (1..10).map {|id| User.find_or_create_by(external_id: id.to_s)}
 
-    def generate_comments(commentable_type, commentable_id, level_limit, user)
+    10.times do
+      users.sample.follow(users.sample)
+    end
+    
+    def generate_comments(commentable_type, commentable_id, level_limit, users)
       commentable = Commentable.create!(commentable_type: commentable_type, commentable_id: commentable_id)
       5.times do
         comment_thread = commentable.comment_threads.new(
                           commentable_type: commentable_type, commentable_id: commentable_id,
                           body: "This is a post", title: "Post No.#{rand(10)}",
                           course_id: "1")
-        comment_thread.author = user
+        comment_thread.author = users.sample
         comment_thread.save!
         3.times do
           comment = comment_thread.comments.new(body: "top comment", course_id: "1")
-          comment.author = user
+          comment.author = users.sample
           comment.endorsed = [true, false].sample
           comment.save!
         end
         10.times do
           comment = Comment.where(comment_thread_id: comment_thread.id).reject{|c| c.depth >= level_limit}.sample
           sub_comment = comment.children.new(body: "comment body", course_id: "1")
-          sub_comment.author = user
+          sub_comment.author = users.sample
           sub_comment.endorsed = [true, false].sample
           sub_comment.save!
         end
@@ -106,16 +115,16 @@ namespace :db do
       end
     end
 
-    generate_comments("questions" , 1, level_limit, user)
-    generate_comments("questions" , 2, level_limit, user)
-    generate_comments("courses"   , 1, level_limit, user)
-    generate_comments("lectures"  , 1, level_limit, user)
-    generate_comments("lectures"  , 2, level_limit, user)
+    generate_comments("questions" , 1, level_limit, users)
+    generate_comments("questions" , 2, level_limit, users)
+    generate_comments("courses"   , 1, level_limit, users)
+    generate_comments("lectures"  , 1, level_limit, users)
+    generate_comments("lectures"  , 2, level_limit, users)
 
     puts "voting"
     users = []
     (1..10).each do |id|
-      users << User.find_or_create_by(id: id.to_s)
+      users << User.find_or_create_by(external_id: id.to_s)
     end
 
     CommentThread.all.each do |c|
