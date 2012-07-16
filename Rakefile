@@ -27,7 +27,7 @@ namespace :test do
       CommentThread.delete_all
       Commentable.delete_all
       User.delete_all
-      Feed.delete_all
+      Notification.delete_all
       
       commentable = Commentable.create!(commentable_type: "questions", commentable_id: "1")
 
@@ -67,7 +67,7 @@ namespace :db do
     CommentThread.create_indexes
     User.create_indexes
     Commentable.create_indexes
-    Feed.create_indexes
+    Notification.create_indexes
     Delayed::Backend::Mongoid::Job.create_indexes
     puts "finished"
   end

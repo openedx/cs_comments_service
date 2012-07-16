@@ -34,10 +34,10 @@ class CommentThread
   end
 
 private
-  def generate_feeds
+  def generate_notifications
     if watchers or (author.followers if author)
-      feed = Feed.new(
-        feed_type: "post_topic",
+      notification = Notification.new(
+        notification_type: "post_topic",
         info: {
           commentable_id: commentable.commentable_id,
           commentable_type: commentable.commentable_type,
@@ -45,11 +45,11 @@ private
           thread_title: title,
         },
       )
-      feed.actor = author
-      feed.target = self
-      feed.subscribers << (commentable.watchers + (author.followers if author).to_a).uniq_by(&:id)
-      feed.subscribers.delete(author) if not CommentService.config["send_notifications_to_author"] and author
-      feed.save!
+      notification.actor = author
+      notification.target = self
+      notification.receivers << (commentable.watchers + (author.followers if author).to_a).uniq_by(&:id)
+      notification.receivers.delete(author) if not CommentService.config["send_notifications_to_author"] and author
+      notification.save!
     end
   end
 
@@ -60,7 +60,7 @@ private
   end
 
   def handle_after_create
-    generate_feeds
+    generate_notifications
     auto_watch_comment_thread
   end
 

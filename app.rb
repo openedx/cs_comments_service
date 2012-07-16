@@ -19,25 +19,16 @@ Mongoid.logger.level = Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
-# DELETE /api/v1/commentables/:commentable_type/:commentable_id
-# delete the commentable object and all of its associated comment threads and comments
-delete '/api/v1/:commentable_type/:commentable_id/comments' do |commentable_type, commentable_id|
+delete '/api/v1/:commentable_type/:commentable_id/threads' do |commentable_type, commentable_id|
   commentable = Commentable.find_or_initialize_by(commentable_type: commentable_type, commentable_id: commentable_id)
   commentable.destroy
   commentable.to_hash.to_json
 end
 
-# GET /api/v1/commentables/:commentable_type/:commentable_id/threads
-# get all comment threads associated with a commentable object
-# additional parameters accepted: recursive
-
 get '/api/v1/:commentable_type/:commentable_id/threads' do |commentable_type, commentable_id|
   commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
   commentable.comment_threads.map{|t| t.to_hash(recursive: params["recursive"])}.to_json
 end
-
-# POST /api/v1/commentables/:commentable_type/:commentable_id/threads
-# create a new comment thread for the commentable object
 
 post '/api/v1/:commentable_type/:commentable_id/threads' do |commentable_type, commentable_id|
   commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
@@ -47,17 +38,10 @@ post '/api/v1/:commentable_type/:commentable_id/threads' do |commentable_type, c
   thread.to_hash.to_json
 end
 
-# GET /api/v1/threads/:thread_id
-# get information of a single comment thread
-# additional parameters accepted: recursive
-
 get '/api/v1/threads/:thread_id' do |thread_id|
   thread = CommentThread.find(thread_id)
   thread.to_hash(recursive: params["recursive"]).to_json
 end
-
-# PUT /api/v1/threads/:thread_id
-# update information of comment thread
 
 put '/api/v1/threads/:thread_id' do |thread_id|
   thread = CommentThread.find(thread_id)
@@ -65,8 +49,6 @@ put '/api/v1/threads/:thread_id' do |thread_id|
   thread.to_hash.to_json
 end
 
-# POST /api/v1/threads/:thread_id/comments
-# create a comment to the comment thread
 post '/api/v1/threads/:thread_id/comments' do |thread_id|
   thread = CommentThread.find(thread_id)
   comment = thread.comments.new(params.slice(*%w[body course_id]))
@@ -75,35 +57,22 @@ post '/api/v1/threads/:thread_id/comments' do |thread_id|
   comment.to_hash.to_json
 end
 
-# DELETE /api/v1/threads/:thread_id
-# delete the comment thread and its comments
-
 delete '/api/v1/threads/:thread_id' do |thread_id|
   thread = CommentThread.find(thread_id)
   thread.destroy
   thread.to_hash.to_json
 end
 
-# GET /api/v1/comments/:comment_id
-# retrieve information of a single comment
-# additional parameters accepted: recursive
-
 get '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find(comment_id)
   comment.to_hash(recursive: params["recursive"]).to_json
 end
-
-# PUT /api/v1/comments/:comment_id
-# update information of the comment
 
 put '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find(comment_id)
   comment.update_attributes!(params.slice(*%w[body endorsed]))
   comment.to_hash.to_json
 end
-
-# POST /api/v1/comments/:comment_id
-# create a sub comment to the comment
 
 post '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find(comment_id)
@@ -113,123 +82,61 @@ post '/api/v1/comments/:comment_id' do |comment_id|
   sub_comment.to_hash.to_json
 end
 
-# DELETE /api/v1/comments/:comment_id
-# delete the comment and its sub comments
-
 delete '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find(comment_id)
   comment.destroy
   comment.to_hash.to_json
 end
 
-# PUT /api/v1/votes/comments/:comment_id/users/:user_id
-# create or update the vote on the comment
-
-put '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
+put '/api/v1/comments/:comment_id/votes' do |comment_id|
   comment = Comment.find(comment_id)
-  user = User.find_or_create_by(external_id: user_id)
-  user.vote(comment, params["value"].intern)
-  Comment.find(comment_id).to_hash.to_json
+  handle_vote_for comment
 end
 
-# DELETE /api/v1/votes/comments/:comment_id/users/:user_id
-# unvote on the comment
-
-delete '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
+delete '/api/v1/comments/:comment_id/votes' do |comment_id|
   comment = Comment.find(comment_id)
-  user = User.find_or_create_by(external_id: user_id)
-  user.unvote(comment)
-  Comment.find(comment_id).to_hash.to_json
+  handle_unvote_for comment
 end
 
-# PUT /api/v1/votes/threads/:thread_id/users/:user_id
-# create or update the vote on the comment thread
-
-put '/api/v1/votes/threads/:thread_id/users/:user_id' do |thread_id, user_id|
+put '/api/v1/threads/:thread_id/votes' do |thread_id|
   thread = CommentThread.find(thread_id)
-  user = User.find_or_create_by(external_id: user_id)
-  user.vote(thread, params["value"].intern)
-  CommentThread.find(thread_id).to_hash.to_json
+  handle_vote_for thread
 end
 
-# DELETE /api/v1/votes/threads/:thread_id/users/:user_id
-# unvote on the comment thread
-
-delete '/api/v1/votes/threads/:thread_id/users/:user_id' do |thread_id, user_id|
+delete '/api/v1/threads/:thread_id/votes' do |thread_id|
   thread = CommentThread.find(thread_id)
-  user = User.find_or_create_by(external_id: user_id)
-  user.unvote(thread)
-  CommentThread.find(thread_id).to_hash.to_json
+  handle_unvote_for thread
 end
 
-# GET /api/v1/users/:user_id/feeds
-# get all subscribed feeds for the user
-
-get '/api/v1/users/:user_id/feeds' do |user_id|
+get '/api/v1/users/:user_id/notifications' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  user.subscribed_feeds.map(&:to_hash).to_json
+  user.notifications.map(&:to_hash).to_json
 end
 
-# POST /api/v1/users/:user_id/follow
-# follow user
-
-post '/api/v1/users/:user_id/follow' do |user_id|
+post '/api/v1/users/:user_id/subscriptions' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  followed_user = User.find_or_create_by(external_id: params["follow_user_id"])
-  user.follow(followed_user)
-  user.to_hash.to_json
+  case params["subscribed_type"]
+    when "user"
+      user.follow(User.find_or_create_by(external_id: params["subscribed_id"]))
+    when "thread"
+      user.watch_comment_thread(CommentThread.find(params["subscribed_id"]))
+    else
+      user.watch_commentable(Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"]))
+  end
+  user.reload.to_hash.to_json
 end
 
-# POST /api/v1/users/:user_id/unfollow
-# unfollow user
-
-post '/api/v1/users/:user_id/unfollow' do |user_id|
+delete '/api/v1/users/:user_id/subscriptions' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  followed_user = User.find_or_create_by(external_id: params["follow_user_id"])
-  user.unfollow(followed_user)
-  user.to_hash.to_json
-end
-
-# POST /api/v1/users/:user_id/watch/commentable
-# watch a commentable
-
-post '/api/v1/users/:user_id/watch/commentable' do |user_id|
-  user = User.find_or_create_by(external_id: user_id)
-  commentable = Commentable.find_or_create_by(commentable_type: params[:commentable_type],
-                                              commentable_id: params[:commentable_id])
-  user.watch_commentable(commentable)
-  user.to_hash.to_json
-end
-
-# POST /api/v1/users/:user_id/unwatch/commentable
-# unwatch a commentable
-
-post '/api/v1/users/:user_id/unwatch/commentable' do |user_id|
-  user = User.find_or_create_by(external_id: user_id)
-  commentable = Commentable.find_or_create_by(commentable_type: params["commentable_type"],
-                                              commentable_id: params["commentable_id"])
-  user.unwatch_commentable(commentable)
-  user.to_hash.to_json
-end
-
-# POST /api/v1/users/:user_id/watch/thread
-# watch a comment thread
-
-post '/api/v1/users/:user_id/watch/thread' do |user_id|
-  user = User.find_or_create_by(external_id: user_id)
-  thread = CommentThread.find(params["thread_id"])
-  user.watch_comment_thread(thread)
-  user.to_hash.to_json
-end
-
-# POST /api/v1/users/:user_id/unwatch/thread
-# unwatch a comment thread
-
-post '/api/v1/users/:user_id/unwatch/thread' do |user_id|
-  user = User.find_or_create_by(external_id: user_id)
-  thread = CommentThread.find(params["thread_id"])
-  user.unwatch_comment_thread(thread)
-  user.to_hash.to_json
+  case params["subscribed_type"]
+    when "user"
+      user.unfollow(User.find_or_create_by(external_id: params["subscribed_id"]))
+    when "thread"
+      user.unwatch_comment_thread(CommentThread.find(params["subscribed_id"]))
+    else
+      user.unwatch_commentable(Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"]))
+  end
+  user.reload.to_hash.to_json
 end
 
 if env.to_s == "development"
@@ -238,7 +145,19 @@ if env.to_s == "development"
     CommentThread.delete_all
     Commentable.delete_all
     User.delete_all
-    Feed.delete_all
+    Notification.delete_all
     {}.to_json
   end
+end
+
+def handle_vote_for(obj)
+  user = User.find_or_create_by(external_id: params["user_id"])
+  user.vote(obj, params["value"].to_sym)
+  obj.reload.to_hash.to_json
+end
+
+def handle_unvote_for(obj)
+  user = User.find_or_create_by(external_id: params["user_id"])
+  user.unvote(obj)
+  obj.reload.to_hash.to_json
 end
