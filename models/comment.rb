@@ -31,8 +31,16 @@ class Comment
   end
 
   def to_hash(params={})
+    sort_by_parent_and_time = Proc.new do |x, y|
+      arr_cmp = x.parent_ids <=> y.parent_ids
+      if arr_cmp != 0
+        arr_cmp
+      else
+        x.created_at <=> y.created_at
+      end
+    end
     if params[:recursive]
-      self.class.hash_tree(subtree(order_by: [[:parent_ids, :asc], [:created_at, :asc]])).first
+      self.class.hash_tree(subtree(sort: sort_by_parent_and_time)).first
     else
       as_document.slice(*%w[body course_id endorsed _id]).
                   merge("user_id" => author.external_id).

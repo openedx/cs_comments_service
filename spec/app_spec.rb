@@ -1,5 +1,13 @@
 require 'spec_helper'
 
+# TODO all api covered
+# TODO spec for error handling
+# TODO check response for non-retrieval api calls
+
+def parse(text)
+  Yajl::Parser.parse text
+end
+
 describe "app" do
   before :each do
     Comment.delete_all
@@ -19,19 +27,19 @@ describe "app" do
     comment = comment_thread.comments.create!(body: "this problem is so easy", course_id: "1")
     comment.author = user
     comment.save!
-    comment = comment.children.create!(body: "not for me!", course_id: "1")
-    comment.author = user
-    comment.save!
-    comment = comment.children.create!(body: "not for me neither!", course_id: "1")
-    comment.author = user
-    comment.save!
+    comment1 = comment.children.create!(body: "not for me!", course_id: "1")
+    comment1.author = user
+    comment1.save!
+    comment2 = comment1.children.create!(body: "not for me neither!", course_id: "1")
+    comment2.author = user
+    comment2.save!
 
     comment = comment_thread.comments.create!(body: "see the textbook on page 69. it's quite similar", course_id: "1")
     comment.author = user
     comment.save!
-    comment = comment.children.create!(body: "thank you!", course_id: "1")
-    comment.author = user
-    comment.save!
+    comment1 = comment.children.create!(body: "thank you!", course_id: "1")
+    comment1.author = user
+    comment1.save!
 
     comment_thread = commentable.comment_threads.create!(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
     comment_thread.author = user
@@ -40,15 +48,15 @@ describe "app" do
     comment = comment_thread.comments.create!(body: "how do you know?", course_id: "1")
     comment.author = user
     comment.save!
-    comment = comment.children.create!(body: "because blablabla", course_id: "1")
-    comment.author = user
-    comment.save!
+    comment1 = comment.children.create!(body: "because blablabla", course_id: "1")
+    comment1.author = user
+    comment1.save!
     comment = comment_thread.comments.create!(body: "no wonder I can't solve it", course_id: "1")
     comment.author = user
     comment.save!
-    comment = comment.children.create!(body: "+1", course_id: "1")
-    comment.author = user
-    comment.save!
+    comment1 = comment.children.create!(body: "+1", course_id: "1")
+    comment1.author = user
+    comment1.save!
 
 
     users = (1..10).map{|id| User.find_or_create_by(external_id: id.to_s)}
@@ -62,8 +70,14 @@ describe "app" do
     end
   end
 
-  describe "comments" do
-    
+  describe "commentables" do
+    describe "DELETE /api/v1/commentables/:commentable_type/:commentable_id" do
+      it "delete the commentable object and all of its associated comment threads and comments" do
+        delete '/api/v1/commentables/questions/1'
+        last_response.should be_ok
+        Commentable.count.should == 0
+      end
+    end
     describe "GET /api/v1/commentables/:commentable_type/:commentable_id/comment_threads" do
       it "get all comment threads associated with a commentable object" do
         get "/api/v1/commentables/questions/1/comment_threads"
@@ -77,6 +91,7 @@ describe "app" do
         get "/api/v1/commentables/questions/1/comment_threads", recursive: true
         last_response.should be_ok
         comment_threads = Yajl::Parser.parse last_response.body
+        pp comment_threads
         comment_threads.length.should == 2
         comment_threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         comment_threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
@@ -86,6 +101,7 @@ describe "app" do
         children.index{|c| c["body"] == "this problem is so easy"}.should_not be_nil
         children.index{|c| c["body"] =~ /^see the textbook/}.should_not be_nil
         so_easy = children.select{|c| c["body"] == "this problem is so easy"}.first
+        pp so_easy
         so_easy["children"].length.should == 1
         not_for_me = so_easy["children"].first
         not_for_me["body"].should == "not for me!"
@@ -93,6 +109,62 @@ describe "app" do
         not_for_me["children"].first["body"].should == "not for me neither!"
       end
     end
+    describe "POST /api/v1/commentables/:commentable_type/:commentable_id/comment_threads" do
+      it "create a new comment thread for the commentable object" do
+        post '/api/v1/commentables/questions/1/comment_threads', title: "Interesting question", body: "cool", course_id: "1"
+        last_response.should be_ok
+        CommentThread.count.should == 3
+        CommentThread.where(title: "Interesting question").first.should_not be_nil
+      end
+    end
+  end
+
+  describe "comment threads" do
+    describe "GET /api/v1/comment_threads/:comment_thread_id" do
+      it "get information of a single comment thread" do
+        comment_thread = CommentThread.first
+        get "/api/v1/comment_threads/#{comment_thread.id}"
+        last_response.should be_ok
+        response_thread = parse last_response.body
+        comment_thread.title.should == response_thread["title"]
+        comment_thread.body.should == response_thread["body"]
+        comment_thread.course_id.should == response_thread["course_id"]
+      end
+    end
+    # PUT /api/v1/comment_threads/:comment_thread_id
+    # POST /api/v1/comment_threads/:comment_thread_id/comments
+    # DELETE /api/v1/comment_threads/:comment_thread_id
+    #
+  end
+
+  describe "comments" do
+    # GET /api/v1/comments/:comment_id
+    # PUT /api/v1/comments/:comment_id
+    # POST /api/v1/comments/:comment_id
+    # DELETE /api/v1/comments/:comment_id
+    #
+  end
+
+  describe "votes" do
+
+    # PUT /api/v1/votes/comments/:comment_id/users/:user_id
+    # DELETE /api/v1/votes/comments/:comment_id/users/:user_id
+    #
+    # PUT /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
+    # DELETE /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
+  end
+
+  describe "feeds" do
+    # GET /api/v1/users/:user_id/feeds
+    # POST /api/v1/users/:user_id/follow
+    # POST /api/v1/users/:user_id/unfollow
+    # POST /api/v1/users/:user_id/watch/commentable
+    # POST /api/v1/users/:user_id/unwatch/commentable
+    # POST /api/v1/users/:user_id/watch/comment_thread
+    # POST /api/v1/users/:user_id/unwatch/comment_thread
+  end
+
+    
 
 =begin
     describe "POST on /api/v1/commentables/:commentable_type/:commentable_id/comment_threads" do
@@ -382,5 +454,4 @@ describe "app" do
       end
     end
 =end
-  end
 end

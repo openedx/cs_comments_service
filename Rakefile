@@ -18,6 +18,47 @@ task :environment do
   Mongoid.logger.level = Logger::INFO
 end
 
+namespace :test do
+  task :check_nested_comments => :environment do
+    puts "checking"
+    50.times do
+      Comment.delete_all
+      CommentThread.delete_all
+      Commentable.delete_all
+      User.delete_all
+      Feed.delete_all
+      
+      commentable = Commentable.create!(commentable_type: "questions", commentable_id: "1")
+
+      user = User.create!(external_id: "1")
+
+      comment_thread = commentable.comment_threads.create!(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
+      comment_thread.author = user
+      comment_thread.save!
+
+      comment = comment_thread.comments.create!(body: "this problem is so easy", course_id: "1")
+      comment.author = user
+      comment.save!
+      comment1 = comment.children.create!(body: "not for me!", course_id: "1")
+      comment1.author = user
+      comment1.save!
+      comment2 = comment1.children.create!(body: "not for me neither!", course_id: "1")
+      comment2.author = user
+      comment2.save!
+
+      children = comment_thread.comments.first.to_hash(recursive: true)["children"]
+      if children.length == 2
+        pp comment_thread.to_hash(recursive: true)
+        pp comment_thread.comments.first.descendants_and_self.to_a
+        puts "error!"
+        break
+      end
+      puts "passed once"
+    end
+    puts "passed"
+  end
+end
+
 namespace :db do
   task :init => :environment do
     puts "creating indexes..."
