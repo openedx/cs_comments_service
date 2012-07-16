@@ -20,38 +20,6 @@ Mongoid.logger.level = Logger::INFO
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
 # DELETE /api/v1/commentables/:commentable_type/:commentable_id
-
-# GET /api/v1/commentables/:commentable_type/:commentable_id/comment_threads
-# POST /api/v1/commentables/:commentable_type/:commentable_id/comment_threads
-#
-# GET /api/v1/comment_threads/:comment_thread_id
-# PUT /api/v1/comment_threads/:comment_thread_id
-# POST /api/v1/comment_threads/:comment_thread_id/comments
-# DELETE /api/v1/comment_threads/:comment_thread_id
-#
-# GET /api/v1/comments/:comment_id
-# PUT /api/v1/comments/:comment_id
-# POST /api/v1/comments/:comment_id
-# DELETE /api/v1/comments/:comment_id
-#
-# PUT /api/v1/votes/comments/:comment_id/users/:user_id
-# DELETE /api/v1/votes/comments/:comment_id/users/:user_id
-#
-# PUT /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
-# DELETE /api/v1/votes/comment_threads/:comment_thread_id/users/:user_id
-#
-# GET /api/v1/users/:user_id/feeds
-# POST /api/v1/users/:user_id/follow
-# POST /api/v1/users/:user_id/unfollow
-# POST /api/v1/users/:user_id/watch/commentable
-# POST /api/v1/users/:user_id/unwatch/commentable
-# POST /api/v1/users/:user_id/watch/comment_thread
-# POST /api/v1/users/:user_id/unwatch/comment_thread
-#
-#
-#
-
-# DELETE /api/v1/commentables/:commentable_type/:commentable_id
 # delete the commentable object and all of its associated comment threads and comments
 
 delete '/api/v1/commentables/:commentable_type/:commentable_id' do |commentable_type, commentable_id|
@@ -208,7 +176,7 @@ end
 
 post '/api/v1/users/:user_id/follow' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  followed_user = User.find_or_create_by(external_id: params[:user_id])
+  followed_user = User.find_or_create_by(external_id: params["follow_user_id"])
   user.follow(followed_user)
   user.to_hash.to_json
 end
@@ -218,7 +186,7 @@ end
 
 post '/api/v1/users/:user_id/unfollow' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  followed_user = User.find_or_create_by(external_id: params[:user_id])
+  followed_user = User.find_or_create_by(external_id: params["follow_user_id"])
   user.unfollow(followed_user)
   user.to_hash.to_json
 end
@@ -229,7 +197,7 @@ end
 post '/api/v1/users/:user_id/watch/commentable' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
   commentable = Commentable.find_or_create_by(commentable_type: params[:commentable_type],
-                                              commentable_id: parasm[:commentable_id])
+                                              commentable_id: params[:commentable_id])
   user.watch_commentable(commentable)
   user.to_hash.to_json
 end
@@ -239,8 +207,8 @@ end
 
 post '/api/v1/users/:user_id/unwatch/commentable' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  commentable = Commentable.find_or_create_by(commentable_type: params[:commentable_type],
-                                              commentable_id: parasm[:commentable_id])
+  commentable = Commentable.find_or_create_by(commentable_type: params["commentable_type"],
+                                              commentable_id: params["commentable_id"])
   user.unwatch_commentable(commentable)
   user.to_hash.to_json
 end
@@ -250,7 +218,7 @@ end
 
 post '/api/v1/users/:user_id/watch/comment_thread' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  comment_thread = CommentThread.find(params[:comment_thread_id])
+  comment_thread = CommentThread.find(params["comment_thread_id"])
   user.watch_comment_thread(comment_thread)
   user.to_hash.to_json
 end
@@ -260,7 +228,7 @@ end
 
 post '/api/v1/users/:user_id/unwatch/comment_thread' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  comment_thread = CommentThread.find(params[:comment_thread_id])
+  comment_thread = CommentThread.find(params["comment_thread_id"])
   user.unwatch_comment_thread(comment_thread)
   user.to_hash.to_json
 end

@@ -82,8 +82,7 @@ def init_with_feeds
   user1 = User.create!(external_id: "1")
   user2 = User.create!(external_id: "2")
 
-  user1.followers << user2
-  user1.save!
+  user2.followings << user1
 
   commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
   commentable.watchers << [user1, user2]
@@ -105,11 +104,8 @@ def init_with_feeds
   comment2.save!
 
   comment_thread = commentable.comment_threads.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
-  comment_thread.author = user1
+  comment_thread.author = user2
   comment_thread.save!
-
-  user1.save!
-  user2.save!
 
 end
 
@@ -338,7 +334,7 @@ describe "app" do
   describe "feeds" do
     before(:each) { init_with_feeds }
     describe "GET /api/v1/users/:user_id/feeds" do
-      it "get all subscribed feeds for the user" do
+      it "get all subscribed feeds on the watched comment threads for the user" do
         user = User.find("1")
         get "/api/v1/users/#{user.external_id}/feeds"
         last_response.should be_ok
@@ -349,41 +345,73 @@ describe "app" do
         feed_so_easy.should_not be_nil
         feed_not_for_me_neither = feeds.select{|f| f["feed_type"] == "post_reply" and f["info"]["comment_id"] == not_for_me_neither.id.to_s}.first
         feed_not_for_me_neither.should_not be_nil
-        feeds.each do |feed|
-          if feed["feed_type"] == "post_reply"
-            feed["info"]["comment_body"] = Comment.find(feed["info"]["comment_id"]).body
-          end
-        end
+      end
+      it "get all subscribed feeds on the watched commentable for the user" do
+        user = User.find("1")
+        get "/api/v1/users/#{user.external_id}/feeds"
+        last_response.should be_ok
+        feeds = parse last_response.body
+        feeds.select{|f| f["feed_type"] == "post_topic"}.length.should == 1
+        problem_wrong = feeds.select{|f| f["feed_type"] == "post_topic"}.first
+        problem_wrong["info"]["comment_thread_title"].should == "This problem is wrong"
       end
     end
     describe "POST /api/v1/users/:user_id/follow" do
       it "follow user" do
-
+        user1 = User.find("1")
+        user2 = User.find("2")
+        post "/api/v1/users/#{user1.external_id}/follow", follow_user_id: user2.external_id
+        last_response.should be_ok
+        User.find("1").followers.length.should == 1
+        User.find("1").followers.should include user2
       end
     end
     describe "POST /api/v1/users/:user_id/unfollow" do
       it "unfollow user" do
-
+        user1 = User.find("1")
+        user2 = User.find("2")
+        post "/api/v1/users/#{user2.external_id}/unfollow", follow_user_id: user1.external_id
+        last_response.should be_ok
+        User.find("1").followers.length.should == 0
       end
     end
     describe "POST /api/v1/users/:user_id/watch/commentable" do
       it "watch a commentable" do
-
+        user3 = User.find_or_create_by(external_id: "3")
+        post "/api/v1/users/#{user3.external_id}/watch/commentable", commentable_type: "questions", commentable_id: "1"
+        last_response.should be_ok
+        Commentable.first.watchers.length.should == 3
+        Commentable.first.watchers.should include user3
       end
     end
     describe "POST /api/v1/users/:user_id/unwatch/commentable" do
       it "unwatch a commentable" do
-
+        user2 = User.find_or_create_by(external_id: "2")
+        post "/api/v1/users/#{user2.external_id}/unwatch/commentable", commentable_type: "questions", commentable_id: "1"
+        last_response.should be_ok
+        Commentable.first.watchers.length.should == 1
+        Commentable.first.watchers.should_not include user2
       end
     end
     describe "POST /api/v1/users/:user_id/watch/comment_thread" do
       it "watch a comment thread" do
-
+        user1 = User.find_or_create_by(external_id: "1")
+        comment_thread = CommentThread.where(body: "it is unsolvable").first
+        post "/api/v1/users/#{user1.external_id}/watch/comment_thread", comment_thread_id: comment_thread.id
+        last_response.should be_ok
+        comment_thread = CommentThread.where(body: "it is unsolvable").first
+        comment_thread.watchers.length.should == 2
+        comment_thread.watchers.should include user1
       end
     end
     describe "POST /api/v1/users/:user_id/unwatch/comment_thread" do
       it "unwatch a comment thread" do
-
+        user2 = User.find_or_create_by(external_id: "2")
+        comment_thread = CommentThread.where(body: "it is unsolvable").first
+        post "/api/v1/users/#{user2.external_id}/unwatch/comment_thread", comment_thread_id: comment_thread.id
+        last_response.should be_ok
+        comment_thread = CommentThread.where(body: "it is unsolvable").first
+        comment_thread.watchers.length.should == 0
       end
     end
   end

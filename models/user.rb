@@ -19,13 +19,13 @@ class User
   end
 
   def follow(user)
-    if id != user.id and not following.include? user
-      following << user
+    if id != user.id and not followings.include? user
+      followings << user
     end
   end
 
   def unfollow(user)
-    following.delete(user)
+    followings.delete(user)
   end
 
   def self.watching(class_plural_sym)
