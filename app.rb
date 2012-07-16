@@ -4,16 +4,20 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
-Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
-
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
 env = env_arg || ENV["SINATRA_ENV"] || "development"
 
+module CommentService
+  class << self; attr_accessor :config; end
+end
+
+CommentService.config = YAML.load_file("config/application.yml")
+
 Mongoid.load!("config/mongoid.yml")
 Mongoid.logger.level = Logger::INFO
 
-config = YAML.load_file("config/application.yml")
+Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
 # DELETE /api/v1/commentables/:commentable_type/:commentable_id
 
@@ -71,7 +75,7 @@ end
 post '/api/v1/commentables/:commentable_type/:commentable_id/comment_threads' do |commentable_type, commentable_id|
   commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
   comment_thread = commentable.comment_threads.new(params.slice(*%w[title body course_id]))
-  comment_thread.author = User.find_or_create_by(id: params["user_id"])
+  comment_thread.author = User.find_or_create_by(external_id: params["user_id"])
   comment_thread.save!
   comment_thread.to_hash.to_json
 end
@@ -99,7 +103,7 @@ end
 post '/api/v1/comment_threads/:comment_thread_id/comments' do |comment_thread_id|
   comment_thread = CommentThread.find(comment_thread_id)
   comment = comment_thread.comments.new(params.slice(*%w[body course_id]))
-  comment.author = User.find_or_create_by(id: params["user_id"])
+  comment.author = User.find_or_create_by(external_id: params["user_id"])
   comment.save!
   comment.to_hash.to_json
 end
@@ -137,7 +141,7 @@ end
 post '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find(comment_id)
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
-  sub_comment.author = User.find_or_create_by(id: params["user_id"])
+  sub_comment.author = User.find_or_create_by(external_id: params["user_id"])
   sub_comment.save!
   sub_comment.to_hash.to_json
 end
@@ -156,7 +160,7 @@ end
 
 put '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
   comment = Comment.find(comment_id)
-  user = User.find_or_create_by(id: user_id)
+  user = User.find_or_create_by(external_id: user_id)
   user.vote(comment, params["value"].intern)
   Comment.find(comment_id).to_hash.to_json
 end
@@ -166,7 +170,7 @@ end
 
 delete '/api/v1/votes/comments/:comment_id/users/:user_id' do |comment_id, user_id|
   comment = Comment.find(comment_id)
-  user = User.find_or_create_by(id: user_id)
+  user = User.find_or_create_by(external_id: user_id)
   user.unvote(comment)
   Comment.find(comment_id).to_hash.to_json
 end
@@ -176,7 +180,7 @@ end
 
 put '/api/v1/votes/comment_threads/:comment_thread_id/users/:user_id' do |comment_thread_id, user_id|
   comment_thread = CommentThread.find(comment_thread_id)
-  user = User.find_or_create_by(id: user_id)
+  user = User.find_or_create_by(external_id: user_id)
   user.vote(comment_thread, params["value"].intern)
   CommentThread.find(comment_thread_id).to_hash.to_json
 end
@@ -186,7 +190,7 @@ end
 
 delete '/api/v1/votes/comment_threads/:comment_thread_id/users/:user_id' do |comment_thread_id, user_id|
   comment_thread = CommentThread.find(comment_thread_id)
-  user = User.find_or_create_by(id: user_id)
+  user = User.find_or_create_by(external_id: user_id)
   user.unvote(comment_thread)
   CommentThread.find(comment_thread_id).to_hash.to_json
 end
@@ -195,16 +199,17 @@ end
 # get all subscribed feeds for the user
 
 get '/api/v1/users/:user_id/feeds' do |user_id|
-  user = User.find_or_create_by(id: user_id)
-  user.feeds.map(&:to_hash).to_json
+  user = User.find_or_create_by(external_id: user_id)
+  puts user.inspect
+  user.subscribed_feeds.map(&:to_hash).to_json
 end
 
 # POST /api/v1/users/:user_id/follow
 # follow user
 
 post '/api/v1/users/:user_id/follow' do |user_id|
-  user = User.find_or_create_by(id: user_id)
-  followed_user = User.find_or_create_by(id: params[:user_id])
+  user = User.find_or_create_by(external_id: user_id)
+  followed_user = User.find_or_create_by(external_id: params[:user_id])
   user.follow(followed_user)
   user.to_hash.to_json
 end
@@ -213,8 +218,8 @@ end
 # unfollow user
 
 post '/api/v1/users/:user_id/unfollow' do |user_id|
-  user = User.find_or_create_by(id: user_id)
-  followed_user = User.find_or_create_by(id: params[:user_id])
+  user = User.find_or_create_by(external_id: user_id)
+  followed_user = User.find_or_create_by(external_id: params[:user_id])
   user.unfollow(followed_user)
   user.to_hash.to_json
 end
@@ -223,7 +228,7 @@ end
 # watch a commentable
 
 post '/api/v1/users/:user_id/watch/commentable' do |user_id|
-  user = User.find_or_create_by(id: user_id)
+  user = User.find_or_create_by(external_id: user_id)
   commentable = Commentable.find_or_create_by(commentable_type: params[:commentable_type],
                                               commentable_id: parasm[:commentable_id])
   user.watch_commentable(commentable)
@@ -234,7 +239,7 @@ end
 # unwatch a commentable
 
 post '/api/v1/users/:user_id/unwatch/commentable' do |user_id|
-  user = User.find_or_create_by(id: user_id)
+  user = User.find_or_create_by(external_id: user_id)
   commentable = Commentable.find_or_create_by(commentable_type: params[:commentable_type],
                                               commentable_id: parasm[:commentable_id])
   user.unwatch_commentable(commentable)
@@ -245,7 +250,7 @@ end
 # watch a comment thread
 
 post '/api/v1/users/:user_id/watch/comment_thread' do |user_id|
-  user = User.find_or_create_by(id: user_id)
+  user = User.find_or_create_by(external_id: user_id)
   comment_thread = CommentThread.find(params[:comment_thread_id])
   user.watch_comment_thread(comment_thread)
   user.to_hash.to_json
@@ -255,7 +260,7 @@ end
 # unwatch a comment thread
 
 post '/api/v1/users/:user_id/unwatch/comment_thread' do |user_id|
-  user = User.find_or_create_by(id: user_id)
+  user = User.find_or_create_by(external_id: user_id)
   comment_thread = CommentThread.find(params[:comment_thread_id])
   user.unwatch_comment_thread(comment_thread)
   user.to_hash.to_json

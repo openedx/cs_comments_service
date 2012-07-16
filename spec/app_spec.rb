@@ -18,7 +18,7 @@ def init_without_feeds
   commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
   commentable.save!
 
-  user = User.create!(id: "1")
+  user = User.create!(external_id: "1")
 
   comment_thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
   comment_thread.author = user
@@ -58,7 +58,7 @@ def init_without_feeds
   comment1.author = user
   comment1.save!
 
-  users = (2..10).map{|id| User.find_or_create_by(id: id.to_s)}
+  users = (2..10).map{|id| User.find_or_create_by(external_id: id.to_s)}
 
   Comment.all.each do |c|
     user.vote(c, :up) # make the first user always vote up for convenience
@@ -69,6 +69,7 @@ def init_without_feeds
     user.vote(c, :up) # make the first user always vote up for convenience
     users.each {|user| user.vote(c, [:up, :down].sample)}
   end
+
 end
 
 def init_with_feeds
@@ -77,11 +78,12 @@ def init_with_feeds
   Commentable.delete_all
   User.delete_all
   Feed.delete_all
-  
-  user1 = User.create!(id: "1")
-  user2 = User.create!(id: "2")
+
+  user1 = User.create!(external_id: "1")
+  user2 = User.create!(external_id: "2")
 
   user1.followers << user2
+  user1.save!
 
   commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
   commentable.watchers << [user1, user2]
@@ -89,26 +91,34 @@ def init_with_feeds
 
   comment_thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
   comment_thread.author = user1
-  comment_thread.watchers << user1
+  comment_thread.watchers << user2
   comment_thread.save!
 
   comment = comment_thread.comments.new(body: "this problem is so easy", course_id: "1")
-  comment.author = user1
+  comment.author = user2
   comment.save!
   comment1 = comment.children.new(body: "not for me!", course_id: "1")
   comment1.author = user1
   comment1.save!
   comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
-  comment2.author = user1
+  comment2.author = user2
   comment2.save!
 
   comment_thread = commentable.comment_threads.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
-  comment_thread.author = user
+  comment_thread.author = user1
   comment_thread.save!
+
+  user1.save!
+  user2.save!
+
+  pp Feed.all.to_a
+  puts User.first.inspect
+  puts User.first.subscribed_feeds.inspect
 
 end
 
 describe "app" do
+=begin
   describe "commentables" do
     before(:each) { init_without_feeds }
     describe "DELETE /api/v1/commentables/:commentable_type/:commentable_id" do
@@ -156,7 +166,6 @@ describe "app" do
       end
     end
   end
-
   describe "comment threads" do
     before(:each) { init_without_feeds }
     describe "GET /api/v1/comment_threads/:comment_thread_id" do
@@ -331,12 +340,31 @@ describe "app" do
       end
     end
   end
+=end
   describe "feeds" do
-    #before(:each) { init_with_feeds }
+    before(:each) { init_with_feeds }
     describe "GET /api/v1/users/:user_id/feeds" do
       it "get all subscribed feeds for the user" do
+        user = User.where(external_id: "1").first
+        get "/api/v1/users/#{user.external_id}/feeds"
+        last_response.should be_ok
+        feeds = parse last_response.body
+        pp feeds
+        so_easy = Comment.all.select{|c| c.body == "this problem is so easy"}.first
+        not_for_me_neither = Comment.all.select{|c| c.body == "not for me neither!"}.first
+        feed_so_easy = feeds.select{|f| f["feed_type"] == "post_reply" and f["info"]["comment_id"] == so_easy.id.to_s}.first
+        feed_so_easy.should_not be_nil
+        feed_not_for_me_neither = feeds.select{|f| f["feed_type"] == "post_reply" and f["info"]["comment_id"] == not_for_me_neither.id.to_s}.first
+        feed_not_for_me_neither.should_not be_nil
+        feeds.each do |feed|
+          if feed["feed_type"] == "post_reply"
+            feed["info"]["comment_body"] = Comment.find(feed["info"]["comment_id"]).body
+          end
+        end
+        pp feeds
       end
     end
+=begin
     describe "POST /api/v1/users/:user_id/follow" do
       it "follow user" do
 
@@ -367,5 +395,6 @@ describe "app" do
 
       end
     end
+=end
   end
 end

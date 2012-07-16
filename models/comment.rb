@@ -10,17 +10,17 @@ class Comment
   field :course_id, type: String
   field :endorsed, type: Boolean, default: false
 
-  belongs_to :author, class_name: "User", index: true, autosave: true
-  belongs_to :comment_thread, index: true, autosave: true
+  belongs_to :author, class_name: "User", index: true
+  belongs_to :comment_thread, index: true
 
   attr_accessible :body, :course_id, :endorsed
 
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
-  #validates_presence_of :author # allow anonymity?
+  validates_presence_of :author if not CommentService.config["allow_anonymity"]
 
   before_destroy :delete_descendants # TODO async
-  after_create :generate_feeds
+  after_create :handle_after_create
   
   def self.hash_tree(nodes)
     nodes.map{|node, sub_nodes| node.to_hash.merge("children" => hash_tree(sub_nodes).compact)}
@@ -52,21 +52,36 @@ class Comment
     end
   end
 
+private
   def generate_feeds
-    feed = Feed.new(
-      feed_type: "post_reply",
-      info: {
-        comment_thread_id: get_comment_thread.id,
-        comment_thread_title: get_comment_thread.title,
-        comment_id: id,
-      },
-    )
-    feed.actor = author
-    feed.target = self
-    feed.subscribers << (get_comment_thread.watchers + author.followers).uniq_by(&:id).delete(author) # doesn't send notification to author
-    feed.save!
+    if get_comment_thread.watchers or (author.followers if author)
+      feed = Feed.new(
+        feed_type: "post_reply",
+        info: {
+          comment_thread_id: get_comment_thread.id,
+          comment_thread_title: get_comment_thread.title,
+          comment_id: id,
+        },
+      )
+      feed.actor = author
+      feed.target = self
+      feed.subscribers << (get_comment_thread.watchers + author.followers).uniq_by(&:id)
+      feed.subscribers.delete(author) if not CommentService.config["send_notifications_to_author"]
+      feed.save!
+    end
   end
 
-  handle_asynchronously :generate_feeds
+  def auto_watch_comment_thread
+    if CommentService.config["auto_watch_comment_threads"] and author
+      author.watch_comment_thread(get_comment_thread)
+    end
+  end
+
+  def handle_after_create
+    generate_feeds
+    #auto_watch_comment_thread
+  end
+
+  #handle_asynchronously :handle_after_create
 
 end

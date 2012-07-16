@@ -5,8 +5,8 @@ class Feed
   field :feed_type, type: String
   field :info, type: Hash
 
-  belongs_to :actor, class_name: "User", inverse_of: :activities, index: true, autosave: true
-  belongs_to :target, inverse_of: :activities, polymorphic: true, autosave: true
+  belongs_to :actor, class_name: "User", inverse_of: :activities, index: true
+  belongs_to :target, inverse_of: :activities, polymorphic: true
 
   attr_accessible :feed_type, :info
 
