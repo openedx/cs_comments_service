@@ -2,7 +2,7 @@ class User
   include Mongoid::Document
   include Mongo::Voter
 
-  field :external_id, type: String
+  identity type: String
   
   has_many :comments
   has_many :comment_threads, inverse_of: :author
@@ -11,15 +11,8 @@ class User
   has_and_belongs_to_many :followers, class_name: "User", inverse_of: :followings
   has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers
 
-  attr_accessible :external_id
-
-  validates_uniqueness_of :external_id
-  validates_presence_of :external_id
-
-  index :external_id, unique: true
-
   def to_hash(params={})
-    as_document.slice(*%w[_id external_id])
+    as_document.slice(*%w[_id])
   end
 
   def follow(user)

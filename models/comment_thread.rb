@@ -25,7 +25,7 @@ class CommentThread
   
   def to_hash(params={})
     doc = as_document.slice(*%w[title body course_id _id]).
-                      merge("user_id" => author.external_id).
+                      merge("user_id" => author.id).
                       merge("votes" => votes.slice(*%w[count up_count down_count point]))
     if params[:recursive]
       doc = doc.merge("children" => comments.map{|c| c.to_hash(recursive: true)})

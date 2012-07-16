@@ -47,7 +47,7 @@ class Comment
       self.class.hash_tree(subtree(sort: sort_by_parent_and_time)).first
     else
       as_document.slice(*%w[body course_id endorsed _id]).
-                  merge("user_id" => author.external_id).
+                  merge("user_id" => author.id).
                   merge("votes" => votes.slice(*%w[count up_count down_count point]))
     end
   end

@@ -26,7 +26,7 @@ namespace :test do
       
       commentable = Commentable.create!(commentable_type: "questions", commentable_id: "1")
 
-      user = User.create!(external_id: "1")
+      user = User.create!(id: "1")
 
       comment_thread = commentable.comment_threads.create!(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
       comment_thread.author = user
@@ -78,7 +78,7 @@ namespace :db do
 
     level_limit = YAML.load_file("config/application.yml")["level_limit"]
 
-    user = User.create!(external_id: "1")
+    user = User.create!(id: "1")
 
     def generate_comments(commentable_type, commentable_id, level_limit, user)
       commentable = Commentable.create!(commentable_type: commentable_type, commentable_id: commentable_id)
@@ -115,7 +115,7 @@ namespace :db do
     puts "voting"
     users = []
     (1..10).each do |id|
-      users << User.find_or_create_by(external_id: id.to_s)
+      users << User.find_or_create_by(id: id.to_s)
     end
 
     CommentThread.all.each do |c|
