@@ -54,7 +54,7 @@ class Comment
 
 private
   def generate_notifications
-    if get_comment_thread.watchers or (author.followers if author)
+    if get_comment_thread.subscribers or (author.followers if author)
       notification = Notification.new(
         notification_type: "post_reply",
         info: {
@@ -65,21 +65,21 @@ private
       )
       notification.actor = author
       notification.target = self
-      notification.receivers << (get_comment_thread.watchers + author.followers).uniq_by(&:id)
+      notification.receivers << (get_comment_thread.subscribers + author.followers).uniq_by(&:id)
       notification.receivers.delete(author) if not CommentService.config["send_notifications_to_author"]
       notification.save!
     end
   end
 
-  def auto_watch_comment_thread
-    if CommentService.config["auto_watch_comment_threads"] and author
-      author.watch_comment_thread(get_comment_thread)
+  def auto_subscribe_comment_thread
+    if CommentService.config["auto_subscribe_comment_threads"] and author
+      author.subscribe_comment_thread(get_comment_thread)
     end
   end
 
   def handle_after_create
     generate_notifications
-    auto_watch_comment_thread
+    auto_subscribe_comment_thread
   end
 
   handle_asynchronously :handle_after_create

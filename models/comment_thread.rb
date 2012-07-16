@@ -12,7 +12,7 @@ class CommentThread
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
   belongs_to :commentable, index: true, autosave: true
   has_many :comments, dependent: :destroy, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
-  has_and_belongs_to_many :watchers, class_name: "User", inverse_of: :watched_comment_threads, autosave: true
+  has_and_belongs_to_many :subscribers, class_name: "User", inverse_of: :subscribed_comment_threads, autosave: true
 
   attr_accessible :title, :body, :course_id
 
@@ -35,7 +35,7 @@ class CommentThread
 
 private
   def generate_notifications
-    if watchers or (author.followers if author)
+    if subscribers or (author.followers if author)
       notification = Notification.new(
         notification_type: "post_topic",
         info: {
@@ -47,21 +47,21 @@ private
       )
       notification.actor = author
       notification.target = self
-      notification.receivers << (commentable.watchers + (author.followers if author).to_a).uniq_by(&:id)
+      notification.receivers << (commentable.subscribers + (author.followers if author).to_a).uniq_by(&:id)
       notification.receivers.delete(author) if not CommentService.config["send_notifications_to_author"] and author
       notification.save!
     end
   end
 
-  def auto_watch_comment_thread
-    if CommentService.config["auto_watch_comment_threads"] and author
-      author.watch_comment_thread(self)
+  def auto_subscribe_comment_thread
+    if CommentService.config["auto_subscribe_comment_threads"] and author
+      author.subscribe_comment_thread(self)
     end
   end
 
   def handle_after_create
     generate_notifications
-    auto_watch_comment_thread
+    auto_subscribe_comment_thread
   end
 
   handle_asynchronously :handle_after_create

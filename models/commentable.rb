@@ -5,7 +5,7 @@ class Commentable
   field :commentable_id, type: String
 
   has_many :comment_threads, dependent: :destroy
-  has_and_belongs_to_many :watchers, class_name: "User", inverse_of: :watched_commentables, autosave: true
+  has_and_belongs_to_many :subscribers, class_name: "User", inverse_of: :subscribed_commentables, autosave: true
 
   attr_accessible :commentable_type, :commentable_id
 

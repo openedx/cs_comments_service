@@ -119,9 +119,9 @@ post '/api/v1/users/:user_id/subscriptions' do |user_id|
     when "user"
       user.follow(User.find_or_create_by(external_id: params["subscribed_id"]))
     when "thread"
-      user.watch_comment_thread(CommentThread.find(params["subscribed_id"]))
+      user.subscribe_comment_thread(CommentThread.find(params["subscribed_id"]))
     else
-      user.watch_commentable(Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"]))
+      user.subscribe_commentable(Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"]))
   end
   user.reload.to_hash.to_json
 end
@@ -132,9 +132,9 @@ delete '/api/v1/users/:user_id/subscriptions' do |user_id|
     when "user"
       user.unfollow(User.find_or_create_by(external_id: params["subscribed_id"]))
     when "thread"
-      user.unwatch_comment_thread(CommentThread.find(params["subscribed_id"]))
+      user.unsubscribe_comment_thread(CommentThread.find(params["subscribed_id"]))
     else
-      user.unwatch_commentable(Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"]))
+      user.unsubscribe_commentable(Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"]))
   end
   user.reload.to_hash.to_json
 end

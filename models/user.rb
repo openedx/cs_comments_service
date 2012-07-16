@@ -9,7 +9,7 @@ class User
   has_many :activities, class_name: "Notification", inverse_of: :actor
   has_and_belongs_to_many :notifications, inverse_of: :receivers
   has_and_belongs_to_many :followers, class_name: "User", inverse_of: :followings, autosave: true
-  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers#, autosave: true
+  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers
 
   validates_presence_of :external_id
   validates_uniqueness_of :external_id
@@ -28,30 +28,28 @@ class User
     followings.delete(user)
   end
 
-  def self.watching(class_plural_sym)
+  def self.subscribing(class_plural_sym)
     class_plural = class_plural_sym.to_s
     class_single = class_plural.singularize
     class_name = class_single.camelize
-    watched_symbol = "watched_#{class_plural}".intern
+    subscribed_symbol = "subscribed_#{class_plural}".intern
 
-    has_and_belongs_to_many watched_symbol, class_name: class_name, inverse_of: :watchers#, autosave: true
+    has_and_belongs_to_many subscribed_symbol, class_name: class_name, inverse_of: :subscribers
 
     self.class_eval <<-END
-      def watch_#{class_single}(watching_object)
-        if not watched_#{class_plural}.include? watching_object
-          watched_#{class_plural} << watching_object
-          #save!
+      def subscribe_#{class_single}(subscribing_object)
+        if not subscribed_#{class_plural}.include? subscribing_object
+          subscribed_#{class_plural} << subscribing_object
         end
       end
 
-      def unwatch_#{class_single}(watching_object)
-        watched_#{class_plural}.delete(watching_object)
-        #save!
+      def unsubscribe_#{class_single}(subscribing_object)
+        subscribed_#{class_plural}.delete(subscribing_object)
       end
     END
   end
 
-  watching :comment_threads
-  watching :commentables
+  subscribing :comment_threads
+  subscribing :commentables
 
 end

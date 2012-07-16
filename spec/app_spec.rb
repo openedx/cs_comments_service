@@ -85,12 +85,12 @@ def init_with_subscriptions
   user2.followings << user1
 
   commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
-  commentable.watchers << [user1, user2]
+  commentable.subscribers << [user1, user2]
   commentable.save!
 
   thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
   thread.author = user1
-  thread.watchers << user2
+  thread.subscribers << user2
   thread.save!
 
   comment = thread.comments.new(body: "this problem is so easy", course_id: "1")
@@ -375,15 +375,15 @@ describe "app" do
         user3 = User.find_or_create_by(external_id: "3")
         post "/api/v1/users/#{user3.external_id}/subscriptions", subscribed_type: "questions", subscribed_id: "1"
         last_response.should be_ok
-        Commentable.first.watchers.length.should == 3
-        Commentable.first.watchers.should include user3
+        Commentable.first.subscribers.length.should == 3
+        Commentable.first.subscribers.should include user3
       end
       it "unsubscribe a commentable" do
         user2 = User.find_or_create_by(external_id: "2")
         delete "/api/v1/users/#{user2.external_id}/subscriptions", subscribed_type: "questions", subscribed_id: "1"
         last_response.should be_ok
-        Commentable.first.watchers.length.should == 1
-        Commentable.first.watchers.should_not include user2
+        Commentable.first.subscribers.length.should == 1
+        Commentable.first.subscribers.should_not include user2
       end
       it "subscribe a comment thread" do
         user1 = User.find_or_create_by(external_id: "1")
@@ -391,8 +391,8 @@ describe "app" do
         post "/api/v1/users/#{user1.external_id}/subscriptions", subscribed_type: "thread", subscribed_id: thread.id
         last_response.should be_ok
         thread = CommentThread.where(body: "it is unsolvable").first
-        thread.watchers.length.should == 2
-        thread.watchers.should include user1
+        thread.subscribers.length.should == 2
+        thread.subscribers.should include user1
       end
       it "unsubscribe a comment thread" do
         user2 = User.find_or_create_by(external_id: "2")
@@ -400,7 +400,7 @@ describe "app" do
         delete "/api/v1/users/#{user2.external_id}/subscriptions", subscribed_type: "thread", subscribed_id: thread.id
         last_response.should be_ok
         thread = CommentThread.where(body: "it is unsolvable").first
-        thread.watchers.length.should == 0
+        thread.subscribers.length.should == 0
       end
     end
   end
