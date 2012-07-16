@@ -10,6 +10,8 @@ set :run, false
 set :raise_errors, true
 set :logging, false
 
+Delayed::Worker.delay_jobs = false
+
 def app
   Sinatra::Application
 end

@@ -4,11 +4,7 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
-require './models/comment.rb'
-require './models/comment_thread.rb'
-require './models/user.rb'
-require './models/commentable.rb'
-require './models/feed.rb'
+Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
 desc "Load the environment"
 task :environment do

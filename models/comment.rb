@@ -13,7 +13,7 @@ class Comment
   belongs_to :author, class_name: "User", index: true
   belongs_to :comment_thread, index: true
 
-  attr_accessible :body, :course_id
+  attr_accessible :body, :course_id, :endorsed
 
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
@@ -26,8 +26,12 @@ class Comment
     nodes.map{|node, sub_nodes| node.to_hash.merge("children" => hash_tree(sub_nodes).compact)}
   end
 
-  def comment_thread
-    comment_thread || root.comment_thread
+  def get_comment_thread
+    if comment_thread
+      comment_thread
+    else
+      root.comment_thread
+    end
   end
 
   def to_hash(params={})
@@ -52,14 +56,14 @@ class Comment
     feed = Feed.new(
       feed_type: "post_reply",
       info: {
-        comment_thread_id: comment_thread.id,
-        comment_thread_title: comment_thread.title,
+        comment_thread_id: get_comment_thread.id,
+        comment_thread_title: get_comment_thread.title,
         comment_id: id,
       },
     )
     feed.actor = author
     feed.target = self
-    feed.subscribers << comment_thread.watchers
+    feed.subscribers << get_comment_thread.watchers
     feed.subscribers << author.followers
     feed.save!
   end

@@ -37,10 +37,10 @@ class CommentThread
     feed = Feed.new(
       feed_type: "post_topic",
       info: {
-        commentable_id: commentable.id,
-        commentable_type: commentable.type,
-        comment_thread_id: comment_thread.id,
-        comment_thread_title: comment_thread.title,
+        commentable_id: commentable.commentable_id,
+        commentable_type: commentable.commentable_type,
+        comment_thread_id: id,
+        comment_thread_title: title,
       },
     )
     feed.actor = author

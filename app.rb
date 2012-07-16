@@ -4,11 +4,7 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
-require './models/comment'
-require './models/comment_thread'
-require './models/commentable'
-require './models/user'
-require './models/feed'
+Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
@@ -55,7 +51,7 @@ config = YAML.load_file("config/application.yml")
 # delete the commentable object and all of its associated comment threads and comments
 
 delete '/api/v1/commentables/:commentable_type/:commentable_id' do |commentable_type, commentable_id|
-  commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
+  commentable = Commentable.find_or_initialize_by(commentable_type: commentable_type, commentable_id: commentable_id)
   commentable.destroy
   commentable.to_hash.to_json
 end
@@ -94,7 +90,8 @@ end
 
 put '/api/v1/comment_threads/:comment_thread_id' do |comment_thread_id|
   comment_thread = CommentThread.find(comment_thread_id)
-  comment_thread.update!(params.slice(*%w[title body endorsed])).to_hash.to_json
+  comment_thread.update_attributes!(params.slice(*%w[title body]))
+  comment_thread.to_hash.to_json
 end
 
 # POST /api/v1/comment_threads/:comment_thread_id/comments
@@ -130,7 +127,8 @@ end
 
 put '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find(comment_id)
-  comment.update!(params.slice(*%w[body endorsed])).to_hash.to_json
+  comment.update_attributes!(params.slice(*%w[body endorsed]))
+  comment.to_hash.to_json
 end
 
 # POST /api/v1/comments/:comment_id
@@ -138,7 +136,7 @@ end
 
 post '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find(comment_id)
-  sub_comment = comment.children.new(params.slice(*%w[body]))
+  sub_comment = comment.children.new(params.slice(*%w[body course_id]))
   sub_comment.author = User.find_or_create_by(external_id: params["user_id"])
   sub_comment.save!
   sub_comment.to_hash.to_json
