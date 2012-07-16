@@ -41,8 +41,8 @@ private
         info: {
           commentable_id: commentable.commentable_id,
           commentable_type: commentable.commentable_type,
-          comment_thread_id: id,
-          comment_thread_title: title,
+          thread_id: id,
+          thread_title: title,
         },
       )
       feed.actor = author

@@ -58,8 +58,8 @@ private
       feed = Feed.new(
         feed_type: "post_reply",
         info: {
-          comment_thread_id: get_comment_thread.id,
-          comment_thread_title: get_comment_thread.title,
+          thread_id: get_comment_thread.id,
+          thread_title: get_comment_thread.title,
           comment_id: id,
         },
       )
