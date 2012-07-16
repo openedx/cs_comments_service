@@ -5,13 +5,15 @@ class Feed
   field :feed_type, type: String
   field :info, type: Hash
 
-  belongs_to :actor, class_name: "User", inverse_of: :activities, index: true
-  belongs_to :target, inverse_of: :activities, polymorphic: true
+  belongs_to :actor, class_name: "User", inverse_of: :activities, index: true, autosave: true
+  belongs_to :target, inverse_of: :activities, polymorphic: true, autosave: true
 
   attr_accessible :feed_type, :info
 
   validates_presence_of :feed_type
-  validates_presence_of :actor
+  if not CommentService.config["allow_anonymity"]
+    validates_presence_of :actor
+  end
   validates_presence_of :target
 
   has_and_belongs_to_many :subscribers, class_name: "User", inverse_of: :subscribed_feeds, autosave: true

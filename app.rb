@@ -75,7 +75,7 @@ end
 post '/api/v1/commentables/:commentable_type/:commentable_id/comment_threads' do |commentable_type, commentable_id|
   commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
   comment_thread = commentable.comment_threads.new(params.slice(*%w[title body course_id]))
-  comment_thread.author = User.find_or_create_by(external_id: params["user_id"])
+  comment_thread.author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
   comment_thread.save!
   comment_thread.to_hash.to_json
 end
@@ -103,7 +103,7 @@ end
 post '/api/v1/comment_threads/:comment_thread_id/comments' do |comment_thread_id|
   comment_thread = CommentThread.find(comment_thread_id)
   comment = comment_thread.comments.new(params.slice(*%w[body course_id]))
-  comment.author = User.find_or_create_by(external_id: params["user_id"])
+  comment.author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
   comment.save!
   comment.to_hash.to_json
 end
@@ -200,7 +200,6 @@ end
 
 get '/api/v1/users/:user_id/feeds' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  puts user.inspect
   user.subscribed_feeds.map(&:to_hash).to_json
 end
 

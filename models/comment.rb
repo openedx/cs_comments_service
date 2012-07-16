@@ -79,9 +79,9 @@ private
 
   def handle_after_create
     generate_feeds
-    #auto_watch_comment_thread
+    auto_watch_comment_thread
   end
 
-  #handle_asynchronously :handle_after_create
+  handle_asynchronously :handle_after_create
 
 end

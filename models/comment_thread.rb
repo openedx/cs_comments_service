@@ -9,10 +9,10 @@ class CommentThread
   field :body, type: String
   field :course_id, type: String, index: true
 
-  belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
-  belongs_to :commentable, index: true#, autosave: true
-  has_many :comments, dependent: :destroy # Use destroy to envoke callback on the top-level comments TODO async
-  has_and_belongs_to_many :watchers, class_name: "User", inverse_of: :watched_comment_threads#, autosave: true
+  belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
+  belongs_to :commentable, index: true, autosave: true
+  has_many :comments, dependent: :destroy, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
+  has_and_belongs_to_many :watchers, class_name: "User", inverse_of: :watched_comment_threads, autosave: true
 
   attr_accessible :title, :body, :course_id
 
@@ -48,7 +48,7 @@ private
       feed.actor = author
       feed.target = self
       feed.subscribers << (commentable.watchers + (author.followers if author).to_a).uniq_by(&:id)
-      feed.subscribers.delete(author) if not CommentService.config["send_notifications_to_author"]
+      feed.subscribers.delete(author) if not CommentService.config["send_notifications_to_author"] and author
       feed.save!
     end
   end
@@ -64,5 +64,5 @@ private
     auto_watch_comment_thread
   end
 
-  #handle_asynchronously :handle_after_create
+  handle_asynchronously :handle_after_create
 end

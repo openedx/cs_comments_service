@@ -111,14 +111,9 @@ def init_with_feeds
   user1.save!
   user2.save!
 
-  pp Feed.all.to_a
-  puts User.first.inspect
-  puts User.first.subscribed_feeds.inspect
-
 end
 
 describe "app" do
-=begin
   describe "commentables" do
     before(:each) { init_without_feeds }
     describe "DELETE /api/v1/commentables/:commentable_type/:commentable_id" do
@@ -159,7 +154,7 @@ describe "app" do
     end
     describe "POST /api/v1/commentables/:commentable_type/:commentable_id/comment_threads" do
       it "create a new comment thread for the commentable object" do
-        post '/api/v1/commentables/questions/1/comment_threads', title: "Interesting question", body: "cool", course_id: "1"
+        post '/api/v1/commentables/questions/1/comment_threads', title: "Interesting question", body: "cool", course_id: "1", user_id: "1"
         last_response.should be_ok
         CommentThread.count.should == 3
         CommentThread.where(title: "Interesting question").first.should_not be_nil
@@ -340,16 +335,14 @@ describe "app" do
       end
     end
   end
-=end
   describe "feeds" do
     before(:each) { init_with_feeds }
     describe "GET /api/v1/users/:user_id/feeds" do
       it "get all subscribed feeds for the user" do
-        user = User.where(external_id: "1").first
+        user = User.find("1")
         get "/api/v1/users/#{user.external_id}/feeds"
         last_response.should be_ok
         feeds = parse last_response.body
-        pp feeds
         so_easy = Comment.all.select{|c| c.body == "this problem is so easy"}.first
         not_for_me_neither = Comment.all.select{|c| c.body == "not for me neither!"}.first
         feed_so_easy = feeds.select{|f| f["feed_type"] == "post_reply" and f["info"]["comment_id"] == so_easy.id.to_s}.first
@@ -361,10 +354,8 @@ describe "app" do
             feed["info"]["comment_body"] = Comment.find(feed["info"]["comment_id"]).body
           end
         end
-        pp feeds
       end
     end
-=begin
     describe "POST /api/v1/users/:user_id/follow" do
       it "follow user" do
 
@@ -395,6 +386,5 @@ describe "app" do
 
       end
     end
-=end
   end
 end

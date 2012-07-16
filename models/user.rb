@@ -2,14 +2,14 @@ class User
   include Mongoid::Document
   include Mongo::Voter
 
-  field :external_id, type: String, index: true
+  key :external_id, type: String, index: true
   
   has_many :comments
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Feed", inverse_of: :actor
-  has_and_belongs_to_many :subscribed_feeds, class_name: "Feed", inverse_of: :subscribers, autosave: true
+  has_and_belongs_to_many :subscribed_feeds, class_name: "Feed", inverse_of: :subscribers
   has_and_belongs_to_many :followers, class_name: "User", inverse_of: :followings
-  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers
+  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers, autosave: true
 
   validates_presence_of :external_id
   validates_uniqueness_of :external_id
@@ -34,19 +34,19 @@ class User
     class_name = class_single.camelize
     watched_symbol = "watched_#{class_plural}".intern
 
-    has_and_belongs_to_many watched_symbol, class_name: class_name, inverse_of: :watchers, autosave: true
+    has_and_belongs_to_many watched_symbol, class_name: class_name, inverse_of: :watchers#, autosave: true
 
     self.class_eval <<-END
       def watch_#{class_single}(watching_object)
         if not watched_#{class_plural}.include? watching_object
           watched_#{class_plural} << watching_object
-          save!
+          #save!
         end
       end
 
       def unwatch_#{class_single}(watching_object)
         watched_#{class_plural}.delete(watching_object)
-        save!
+        #save!
       end
     END
   end
