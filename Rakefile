@@ -28,6 +28,7 @@ namespace :test do
       Commentable.delete_all
       User.delete_all
       Notification.delete_all
+      Subscription.delete_all
       
       commentable = Commentable.create!(commentable_type: "questions", commentable_id: "1")
 
@@ -68,6 +69,7 @@ namespace :db do
     User.create_indexes
     Commentable.create_indexes
     Notification.create_indexes
+    Subscription.create_indexes
     Delayed::Backend::Mongoid::Job.create_indexes
     puts "finished"
   end
@@ -78,6 +80,8 @@ namespace :db do
     Comment.delete_all
     CommentThread.delete_all
     User.delete_all
+    Notification.delete_all
+    Subscription.delete_all
 
     beginning_time = Time.now
 
@@ -86,7 +90,7 @@ namespace :db do
     users = (1..10).map {|id| User.find_or_create_by(external_id: id.to_s)}
 
     10.times do
-      users.sample.follow(users.sample)
+      users.sample.subscribe(users.sample)
     end
     
     def generate_comments(commentable_type, commentable_id, level_limit, users)

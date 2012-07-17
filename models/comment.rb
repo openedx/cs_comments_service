@@ -73,7 +73,7 @@ private
 
   def auto_subscribe_comment_thread
     if CommentService.config["auto_subscribe_comment_threads"] and author
-      author.subscribe_comment_thread(get_comment_thread)
+      author.subscribe(get_comment_thread)
     end
   end
 

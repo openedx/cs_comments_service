@@ -8,8 +8,6 @@ class User
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
   has_and_belongs_to_many :notifications, inverse_of: :receivers
-  has_and_belongs_to_many :followers, class_name: "User", inverse_of: :followings, autosave: true
-  has_and_belongs_to_many :followings, class_name: "User", inverse_of: :followers
 
   validates_presence_of :external_id
   validates_uniqueness_of :external_id
@@ -18,38 +16,26 @@ class User
     as_document.slice(*%w[_id external_id])
   end
 
-  def follow(user)
-    if id != user.id and not followings.include? user
-      followings << user
-    end
+  def subscriptions
+    Subscription.where(subscriber_id: self.id)
   end
 
-  def unfollow(user)
-    followings.delete(user)
+  def follower_subscriptions
+    Subscription.where(source_id: self.id, source_type: self.class)
   end
 
-  def self.subscribing(class_plural_sym)
-    class_plural = class_plural_sym.to_s
-    class_single = class_plural.singularize
-    class_name = class_single.camelize
-    subscribed_symbol = "subscribed_#{class_plural}".intern
-
-    has_and_belongs_to_many subscribed_symbol, class_name: class_name, inverse_of: :subscribers
-
-    self.class_eval <<-END
-      def subscribe_#{class_single}(subscribing_object)
-        if not subscribed_#{class_plural}.include? subscribing_object
-          subscribed_#{class_plural} << subscribing_object
-        end
-      end
-
-      def unsubscribe_#{class_single}(subscribing_object)
-        subscribed_#{class_plural}.delete(subscribing_object)
-      end
-    END
+  def followers
+    follower_subscriptions.map{|s| User.find(s.subscriber_id)}
   end
 
-  subscribing :comment_threads
-  subscribing :commentables
+  def subscribe(source)
+    Subscription.find_or_create_by(subscriber_id: self._id.to_s, source_id: source._id.to_s, source_type: source.class.to_s)
+  end
+
+  def unsubscribe(source)
+    subscription = Subscription.where(subscriber_id: self._id.to_s, source_id: source._id.to_s, source_type: source.class.to_s).first
+    subscription.destroy
+    subscription
+  end
 
 end

@@ -14,6 +14,7 @@ def init_without_subscriptions
   Commentable.delete_all
   User.delete_all
   Notification.delete_all
+  Subscription.delete_all
   
   commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
   commentable.save!
@@ -78,19 +79,21 @@ def init_with_subscriptions
   Commentable.delete_all
   User.delete_all
   Notification.delete_all
+  Subscription.delete_all
 
   user1 = User.create!(external_id: "1")
   user2 = User.create!(external_id: "2")
 
-  user2.followings << user1
+  user2.subscribe(user1)
 
   commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
-  commentable.subscribers << [user1, user2]
+  user1.subscribe(commentable)
+  user2.subscribe(commentable)
   commentable.save!
 
   thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
   thread.author = user1
-  thread.subscribers << user2
+  user2.subscribe(thread)
   thread.save!
 
   comment = thread.comments.new(body: "this problem is so easy", course_id: "1")

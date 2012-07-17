@@ -115,28 +115,28 @@ end
 
 post '/api/v1/users/:user_id/subscriptions' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  case params["subscribed_type"]
+  source = case params["subscribed_type"]
     when "user"
-      user.follow(User.find_or_create_by(external_id: params["subscribed_id"]))
+      User.find_or_create_by(external_id: params["subscribed_id"])
     when "thread"
-      user.subscribe_comment_thread(CommentThread.find(params["subscribed_id"]))
+      CommentThread.find(params["subscribed_id"])
     else
-      user.subscribe_commentable(Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"]))
+      Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"])
   end
-  user.reload.to_hash.to_json
+  user.subscribe(source).to_hash.to_json
 end
 
 delete '/api/v1/users/:user_id/subscriptions' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  case params["subscribed_type"]
+  source = case params["subscribed_type"]
     when "user"
-      user.unfollow(User.find_or_create_by(external_id: params["subscribed_id"]))
+      User.find_or_create_by(external_id: params["subscribed_id"])
     when "thread"
-      user.unsubscribe_comment_thread(CommentThread.find(params["subscribed_id"]))
+      CommentThread.find(params["subscribed_id"])
     else
-      user.unsubscribe_commentable(Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"]))
+      Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"])
   end
-  user.reload.to_hash.to_json
+  user.unsubscribe(source).to_hash.to_json
 end
 
 if env.to_s == "development"
@@ -146,6 +146,7 @@ if env.to_s == "development"
     Commentable.delete_all
     User.delete_all
     Notification.delete_all
+    Subscription.delete_all
     {}.to_json
   end
 end
