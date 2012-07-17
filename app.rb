@@ -115,26 +115,26 @@ end
 
 post '/api/v1/users/:user_id/subscriptions' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  source = case params["subscribed_type"]
+  source = case params["source_type"]
     when "user"
-      User.find_or_create_by(external_id: params["subscribed_id"])
+      User.find_or_create_by(external_id: params["source_id"])
     when "thread"
-      CommentThread.find(params["subscribed_id"])
+      CommentThread.find(params["source_id"])
     else
-      Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"])
+      Commentable.find_or_create_by(commentable_type: params["source_type"], commentable_id: params["source_id"])
   end
   user.subscribe(source).to_hash.to_json
 end
 
 delete '/api/v1/users/:user_id/subscriptions' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
-  source = case params["subscribed_type"]
+  source = case params["source_type"]
     when "user"
-      User.find_or_create_by(external_id: params["subscribed_id"])
+      User.find_or_create_by(external_id: params["source_id"])
     when "thread"
-      CommentThread.find(params["subscribed_id"])
+      CommentThread.find(params["source_id"])
     else
-      Commentable.find_or_create_by(commentable_type: params["subscribed_type"], commentable_id: params["subscribed_id"])
+      Commentable.find_or_create_by(commentable_type: params["source_type"], commentable_id: params["source_id"])
   end
   user.unsubscribe(source).to_hash.to_json
 end
