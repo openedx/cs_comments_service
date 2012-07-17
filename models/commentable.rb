@@ -20,7 +20,7 @@ class Commentable
   end
 
   def subscribers
-    subscriptions.map{|s| User.find(s.subscriber_id)}
+    subscriptions.map(&:subscriber)
   end
 
   def to_hash(params={})

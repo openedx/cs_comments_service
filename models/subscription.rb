@@ -2,9 +2,8 @@ class Subscription
   include Mongoid::Document
   include Mongoid::Timestamps
   
-  field :subscriber_id, type: String
-  field :source_id, type: String
-  field :source_type, type: String
+  belongs_to :subscriber, class_name: "User", autosave: true
+  belongs_to :source, polymorphic: true, autosave: true
 
   index [[:subscriber_id, Mongo::ASCENDING], [:source_id, Mongo::ASCENDING], [:source_type, Mongo::ASCENDING]]
   index [[:source_id, Mongo::ASCENDING], [:source_type, Mongo::ASCENDING]]

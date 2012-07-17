@@ -25,7 +25,7 @@ class User
   end
 
   def followers
-    follower_subscriptions.map{|s| User.find(s.subscriber_id)}
+    follower_subscriptions.map(&:subscriber)
   end
 
   def subscribe(source)
