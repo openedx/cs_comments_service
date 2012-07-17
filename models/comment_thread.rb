@@ -12,8 +12,6 @@ class CommentThread
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
   belongs_to :commentable, index: true, autosave: true
   has_many :comments, dependent: :destroy, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
-  #has_many :subscriptions, as: :source
-  #has_and_belongs_to_many :subscribers, class_name: "User", inverse_of: :subscribed_comment_threads, autosave: true
 
   attr_accessible :title, :body, :course_id
 
