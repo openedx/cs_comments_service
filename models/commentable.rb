@@ -15,10 +15,6 @@ class Commentable
 
   index [[:commentable_type, Mongo::ASCENDING], [:commentable_id, Mongo::ASCENDING]]
 
-  def subscriptions
-    Subscription.where(source_id: self.id, source_type: self.class)
-  end
-
   def subscribers
     subscriptions.map(&:subscriber)
   end

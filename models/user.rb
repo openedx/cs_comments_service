@@ -7,6 +7,8 @@ class User
   has_many :comments
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
+  has_many :subscriptions_as_source, class_name: "Subscription", as: :source
+  has_many :subscriptions_as_subscriber, class_name: "Subscription", inverse_of: :subscriber
   has_and_belongs_to_many :notifications, inverse_of: :receivers
 
   validates_presence_of :external_id
@@ -16,16 +18,8 @@ class User
     as_document.slice(*%w[_id external_id])
   end
 
-  def subscriptions
-    Subscription.where(subscriber_id: self.id)
-  end
-
-  def follower_subscriptions
-    Subscription.where(source_id: self.id, source_type: self.class)
-  end
-
   def followers
-    follower_subscriptions.map(&:subscriber)
+    subscriptions_as_source.map(&:subscriber)
   end
 
   def subscribe(source)
