@@ -90,22 +90,22 @@ end
 
 put '/api/v1/comments/:comment_id/votes' do |comment_id|
   comment = Comment.find(comment_id)
-  handle_vote_for comment
+  vote_for comment
 end
 
 delete '/api/v1/comments/:comment_id/votes' do |comment_id|
   comment = Comment.find(comment_id)
-  handle_unvote_for comment
+  delete_vote_for comment
 end
 
 put '/api/v1/threads/:thread_id/votes' do |thread_id|
   thread = CommentThread.find(thread_id)
-  handle_vote_for thread
+  vote_for thread
 end
 
 delete '/api/v1/threads/:thread_id/votes' do |thread_id|
   thread = CommentThread.find(thread_id)
-  handle_unvote_for thread
+  delete_vote_for thread
 end
 
 get '/api/v1/users/:user_id/notifications' do |user_id|
@@ -150,13 +150,13 @@ if env.to_s == "development"
   end
 end
 
-def handle_vote_for(obj)
+def vote_for(obj)
   user = User.find_or_create_by(external_id: params["user_id"])
   user.vote(obj, params["value"].to_sym)
   obj.reload.to_hash.to_json
 end
 
-def handle_unvote_for(obj)
+def delete_vote_for(obj)
   user = User.find_or_create_by(external_id: params["user_id"])
   user.unvote(obj)
   obj.reload.to_hash.to_json
