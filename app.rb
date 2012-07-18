@@ -103,7 +103,7 @@ end
 
 delete '/api/v1/threads/:thread_id/votes' do |thread_id|
   thread = CommentThread.find(thread_id)
-  delete_vote_for thread
+  undo_vote_for thread
 end
 
 get '/api/v1/users/:user_id/notifications' do |user_id|
@@ -155,7 +155,7 @@ def vote_for(obj)
   obj.reload.to_hash.to_json
 end
 
-def delete_vote_for(obj)
+def undo_vote_for(obj)
   user = User.find_or_create_by(external_id: params["user_id"])
   user.unvote(obj)
   obj.reload.to_hash.to_json
