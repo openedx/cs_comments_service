@@ -1,5 +1,6 @@
-class CommentThread
-  include Mongoid::Document
+require_relative 'content'
+
+class CommentThread < Content
   include Mongo::Voteable
   include Mongoid::Timestamps
 
