@@ -25,16 +25,13 @@ namespace :test do
     50.times do
       Comment.delete_all
       CommentThread.delete_all
-      Commentable.delete_all
       User.delete_all
       Notification.delete_all
       Subscription.delete_all
       
-      commentable = Commentable.create!(commentable_type: "questions", commentable_id: "1")
-
       user = User.create!(external_id: "1")
 
-      comment_thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
+      comment_thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: "question_1")
       comment_thread.author = user
       comment_thread.save!
 
@@ -67,16 +64,22 @@ namespace :db do
     Comment.create_indexes
     CommentThread.create_indexes
     User.create_indexes
-    Commentable.create_indexes
     Notification.create_indexes
     Subscription.create_indexes
     Delayed::Backend::Mongoid::Job.create_indexes
     puts "finished"
   end
 
+  task :clean => :environment do
+    Comment.delete_all
+    CommentThread.delete_all
+    User.delete_all
+    Notification.delete_all
+    Subscription.delete_all
+  end
+
   task :seed => :environment do
 
-    Commentable.delete_all
     Comment.delete_all
     CommentThread.delete_all
     User.delete_all
@@ -93,13 +96,9 @@ namespace :db do
       users.sample.subscribe(users.sample)
     end
     
-    def generate_comments(commentable_type, commentable_id, level_limit, users)
-      commentable = Commentable.create!(commentable_type: commentable_type, commentable_id: commentable_id)
+    def generate_comments(commentable_id, level_limit, users)
       5.times do
-        comment_thread = commentable.comment_threads.new(
-                          commentable_type: commentable_type, commentable_id: commentable_id,
-                          body: "This is a post", title: "Post No.#{rand(10)}",
-                          course_id: "1")
+        comment_thread = CommentThread.new(commentable_id: commentable_id, body: "This is a post", title: "Post No.#{rand(10)}", course_id: "1")
         comment_thread.author = users.sample
         comment_thread.save!
         3.times do
@@ -115,15 +114,15 @@ namespace :db do
           sub_comment.endorsed = [true, false].sample
           sub_comment.save!
         end
-        puts "Generating a comment thread for #{commentable_type} No.#{commentable_id}"
+        puts "Generating a comment thread for #{commentable_id}"
       end
     end
 
-    generate_comments("questions" , 1, level_limit, users)
-    generate_comments("questions" , 2, level_limit, users)
-    generate_comments("courses"   , 1, level_limit, users)
-    generate_comments("lectures"  , 1, level_limit, users)
-    generate_comments("lectures"  , 2, level_limit, users)
+    generate_comments("question_1", level_limit, users)
+    generate_comments("question_2", level_limit, users)
+    generate_comments("course_1", level_limit, users)
+    generate_comments("lecture_1", level_limit, users)
+    generate_comments("lecture_2", level_limit, users)
 
     puts "voting"
     users = []
