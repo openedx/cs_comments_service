@@ -1,5 +1,7 @@
 source :rubygems
 
+gem 'pry'
+
 gem 'bundler'
 
 gem 'rake'
@@ -26,7 +28,6 @@ gem 'mongoid-tree', :git => 'git@github.com:dementrock/mongoid-tree.git', :branc
 gem 'voteable_mongo', :git => 'git@github.com:dementrock/voteable_mongo.git'
 
 group :test do
-  gem 'pry'
   gem 'rspec'
   gem 'rack-test', :require => "rack/test"
 end

@@ -58,6 +58,10 @@ namespace :test do
   end
 end
 
+task :console => :environment do
+  binding.pry
+end
+
 namespace :db do
   task :init => :environment do
     puts "creating indexes..."
@@ -95,21 +99,39 @@ namespace :db do
     10.times do
       users.sample.subscribe(users.sample)
     end
+
+    THREAD_SEEDS = [
+      {title: "This is really interesting", body: "best I've ever seen!"},
+      {title: "We can probably make this better", body: "Let's do it"},
+      {title: "I don't know where to start", body: "Can anyone help me?"},
+      {title: "I'm here!", body: "Haha I'm the first one who discovered this"},
+      {title: "I need five threads but I don't know where to put here", body: "So I'll just leave it this way"},
+    ]
+
+    COMMENT_BODY_SEEDS = [
+      "dude I don't know what you're talking about",
+      "hi I'm Jack",
+      "hi just sent you a message",
+      "let's discuss this further",
+      "can't agree more",
+      "haha",
+      "lol",
+    ]
     
     def generate_comments(commentable_id, level_limit, users)
-      5.times do
-        comment_thread = CommentThread.new(commentable_id: commentable_id, body: "This is a post", title: "Post No.#{rand(10)}", course_id: "1")
+      THREAD_SEEDS.each do |thread_seed|
+        comment_thread = CommentThread.new(commentable_id: commentable_id, body: thread_seed[:body], title: thread_seed[:title], course_id: "1")
         comment_thread.author = users.sample
         comment_thread.save!
         3.times do
-          comment = comment_thread.comments.new(body: "top comment", course_id: "1")
+          comment = comment_thread.comments.new(body: COMMENT_BODY_SEEDS.sample, course_id: "1")
           comment.author = users.sample
           comment.endorsed = [true, false].sample
           comment.save!
         end
         10.times do
           comment = Comment.where(comment_thread_id: comment_thread.id).reject{|c| c.depth >= level_limit}.sample
-          sub_comment = comment.children.new(body: "comment body", course_id: "1")
+          sub_comment = comment.children.new(body: COMMENT_BODY_SEEDS.sample, course_id: "1")
           sub_comment.author = users.sample
           sub_comment.endorsed = [true, false].sample
           sub_comment.save!
@@ -121,8 +143,10 @@ namespace :db do
     generate_comments("question_1", level_limit, users)
     generate_comments("question_2", level_limit, users)
     generate_comments("course_1", level_limit, users)
-    generate_comments("lecture_1", level_limit, users)
-    generate_comments("lecture_2", level_limit, users)
+    generate_comments("video_1", level_limit, users)
+    generate_comments("video_2", level_limit, users)
+    generate_comments("lab_1", level_limit, users)
+    generate_comments("lab_2", level_limit, users)
 
     puts "voting"
     users = []
