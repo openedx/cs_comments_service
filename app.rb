@@ -29,7 +29,7 @@ get '/api/v1/:commentable_id/threads' do |commentable_id|
 end
 
 post '/api/v1/:commentable_id/threads' do |commentable_id|
-  commentable = Commentable.find(commentable_id)#_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
+  commentable = Commentable.find(commentable_id)
   thread = commentable.comment_threads.new(params.slice(*%w[title body course_id]))
   thread.author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
   thread.save!
@@ -119,7 +119,7 @@ post '/api/v1/users/:user_id/subscriptions' do |user_id|
     when "thread"
       CommentThread.find(params["source_id"])
     when "other"
-      Commentable.find(params["source_id"])#find_or_create_by(commentable_type: params["source_type"], commentable_id: params["source_id"])
+      Commentable.find(params["source_id"])
   end
   user.subscribe(source).to_hash.to_json
 end
@@ -131,8 +131,8 @@ delete '/api/v1/users/:user_id/subscriptions' do |user_id|
       User.find_or_create_by(external_id: params["source_id"])
     when "thread"
       CommentThread.find(params["source_id"])
-    else
-      Commentable.find(params["source_id"])#find_or_create_by(commentable_type: params["source_type"], commentable_id: params["source_id"])
+    when "other"
+      Commentable.find(params["source_id"])
   end
   user.unsubscribe(source).to_hash.to_json
 end
