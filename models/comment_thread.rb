@@ -37,7 +37,7 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-    doc = as_document.slice(*%w[title body course_id _id]).
+    doc = as_document.slice(*%w[title body course_id _id updated_at]).
                       merge("user_id" => (author.id if author)).
                       merge("votes" => votes.slice(*%w[count up_count down_count point]))
     if params[:recursive]
