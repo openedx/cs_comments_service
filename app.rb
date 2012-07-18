@@ -29,8 +29,7 @@ get '/api/v1/:commentable_id/threads' do |commentable_id|
 end
 
 post '/api/v1/:commentable_id/threads' do |commentable_id|
-  commentable = Commentable.find(commentable_id)
-  thread = commentable.comment_threads.new(params.slice(*%w[title body course_id]))
+  thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
   thread.author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
   thread.save!
   thread.to_hash.to_json
@@ -93,7 +92,7 @@ end
 
 delete '/api/v1/comments/:comment_id/votes' do |comment_id|
   comment = Comment.find(comment_id)
-  delete_vote_for comment
+  undo_vote_for comment
 end
 
 put '/api/v1/threads/:thread_id/votes' do |thread_id|
@@ -141,7 +140,6 @@ if env.to_s == "development"
   get '/api/v1/clean' do
     Comment.delete_all
     CommentThread.delete_all
-    Commentable.delete_all
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
