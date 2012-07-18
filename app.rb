@@ -19,19 +19,17 @@ Mongoid.logger.level = Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
-delete '/api/v1/:commentable_type/:commentable_id/threads' do |commentable_type, commentable_id|
-  commentable = Commentable.find_or_initialize_by(commentable_type: commentable_type, commentable_id: commentable_id)
-  commentable.destroy
-  commentable.to_hash.to_json
+delete '/api/v1/:commentable_id/threads' do |commentable_id|
+  Commentable.find(commentable_id).comment_threads.destroy_all
+  {}.to_json
 end
 
-get '/api/v1/:commentable_type/:commentable_id/threads' do |commentable_type, commentable_id|
-  commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
-  commentable.comment_threads.map{|t| t.to_hash(recursive: params["recursive"])}.to_json
+get '/api/v1/:commentable_id/threads' do |commentable_id|
+  Commentable.find(commentable_id).comment_threads.map{|t| t.to_hash(recursive: params["recursive"])}.to_json
 end
 
-post '/api/v1/:commentable_type/:commentable_id/threads' do |commentable_type, commentable_id|
-  commentable = Commentable.find_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
+post '/api/v1/:commentable_id/threads' do |commentable_id|
+  commentable = Commentable.find(commentable_id)#_or_create_by(commentable_type: commentable_type, commentable_id: commentable_id)
   thread = commentable.comment_threads.new(params.slice(*%w[title body course_id]))
   thread.author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
   thread.save!
@@ -120,8 +118,8 @@ post '/api/v1/users/:user_id/subscriptions' do |user_id|
       User.find_or_create_by(external_id: params["source_id"])
     when "thread"
       CommentThread.find(params["source_id"])
-    else
-      Commentable.find_or_create_by(commentable_type: params["source_type"], commentable_id: params["source_id"])
+    when "other"
+      Commentable.find(params["source_id"])#find_or_create_by(commentable_type: params["source_type"], commentable_id: params["source_id"])
   end
   user.subscribe(source).to_hash.to_json
 end
@@ -134,7 +132,7 @@ delete '/api/v1/users/:user_id/subscriptions' do |user_id|
     when "thread"
       CommentThread.find(params["source_id"])
     else
-      Commentable.find_or_create_by(commentable_type: params["source_type"], commentable_id: params["source_id"])
+      Commentable.find(params["source_id"])#find_or_create_by(commentable_type: params["source_type"], commentable_id: params["source_id"])
   end
   user.unsubscribe(source).to_hash.to_json
 end

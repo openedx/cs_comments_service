@@ -7,12 +7,18 @@ class User
   has_many :comments
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
-  has_many :subscriptions_as_source, class_name: "Subscription", as: :source
-  has_many :subscriptions_as_subscriber, class_name: "Subscription", inverse_of: :subscriber
   has_and_belongs_to_many :notifications, inverse_of: :receivers
 
   validates_presence_of :external_id
   validates_uniqueness_of :external_id
+
+  def subscriptions_as_source
+    Subscription.where(source_id: id.to_s, source_type: self.class.to_s)
+  end
+
+  def subscriptions_as_subscriber
+    Subscription.where(subscriber_id: id.to_s)
+  end
 
   def to_hash(params={})
     as_document.slice(*%w[_id external_id])

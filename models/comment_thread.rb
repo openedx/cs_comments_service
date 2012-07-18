@@ -9,13 +9,12 @@ class CommentThread < Content
   field :title, type: String
   field :body, type: String
   field :course_id, type: String, index: true
+  field :commentable_id, type: String, index: true
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
-  belongs_to :commentable, index: true, autosave: true
   has_many :comments, dependent: :destroy, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
-  has_many :subscriptions, as: :source
 
-  attr_accessible :title, :body, :course_id
+  attr_accessible :title, :body, :course_id, :commentable_id
 
   validates_presence_of :title
   validates_presence_of :body
@@ -23,6 +22,14 @@ class CommentThread < Content
   validates_presence_of :author if not CommentService.config["allow_anonymity"]
 
   after_create :handle_after_create
+
+  def commentable
+    Commentable.find(commentable_id)
+  end
+
+  def subscriptions
+    Subscription.where(source_id: id.to_s, source_type: self.class.to_s)
+  end
 
   def subscribers
     subscriptions.map(&:subscriber)
@@ -44,8 +51,8 @@ private
       notification = Notification.new(
         notification_type: "post_topic",
         info: {
-          commentable_id: commentable.commentable_id,
-          commentable_type: commentable.commentable_type,
+          commentable_id: commentable_id,
+          #commentable_type: commentable.commentable_type,
           thread_id: id,
           thread_title: title,
         },

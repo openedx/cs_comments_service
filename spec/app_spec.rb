@@ -11,17 +11,15 @@ end
 def init_without_subscriptions
   Comment.delete_all
   CommentThread.delete_all
-  Commentable.delete_all
   User.delete_all
   Notification.delete_all
   Subscription.delete_all
   
-  commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
-  commentable.save!
+  commentable = Commentable.new("question_1")
 
   user = User.create!(external_id: "1")
 
-  thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
+  thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: commentable.id)
   thread.author = user
   thread.save!
 
@@ -42,7 +40,7 @@ def init_without_subscriptions
   comment1.author = user
   comment1.save!
 
-  thread = commentable.comment_threads.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
+  thread = CommentThread.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2", commentable_id: commentable.id)
   thread.author = user
   thread.save!
 
@@ -76,7 +74,6 @@ end
 def init_with_subscriptions
   Comment.delete_all
   CommentThread.delete_all
-  Commentable.delete_all
   User.delete_all
   Notification.delete_all
   Subscription.delete_all
@@ -86,14 +83,11 @@ def init_with_subscriptions
 
   user2.subscribe(user1)
 
-  commentable = Commentable.new(commentable_type: "questions", commentable_id: "1")
+  commentable = Commentable.new("question_1")
   user1.subscribe(commentable)
   user2.subscribe(commentable)
-  commentable.save!
 
-  commentable = commentable.reload 
-
-  thread = commentable.comment_threads.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1")
+  thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: commentable.id)
   thread.author = user1
   user2.subscribe(thread)
   thread.save!
@@ -110,7 +104,7 @@ def init_with_subscriptions
   comment2.author = user2
   comment2.save!
 
-  thread = commentable.comment_threads.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2")
+  thread = CommentThread.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2", commentable_id: commentable.id)
   thread.author = user2
   thread.save!
 end
@@ -118,16 +112,16 @@ end
 describe "app" do
   describe "commentables" do
     before(:each) { init_without_subscriptions }
-    describe "DELETE /api/v1/:commentable_type/:commentable_id/threads" do
-      it "delete the commentable object and all of its associated comment threads and comments" do
-        delete '/api/v1/questions/1/threads'
+    describe "DELETE /api/v1/:commentable_id/threads" do
+      it "delete all associated threads and comments of a commentable" do
+        delete '/api/v1/question_1/threads'
         last_response.should be_ok
-        Commentable.count.should == 0
+        Commentable.find("question_1").comment_threads.count.should == 0
       end
     end
-    describe "GET /api/v1/:commentable_type/:commentable_id/threads" do
+    describe "GET /api/v1/:commentable_id/threads" do
       it "get all comment threads associated with a commentable object" do
-        get "/api/v1/questions/1/threads"
+        get "/api/v1/question_1/threads"
         last_response.should be_ok
         threads = Yajl::Parser.parse last_response.body
         threads.length.should == 2
@@ -135,7 +129,7 @@ describe "app" do
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
       end
       it "get all comment threads and comments associated with a commentable object" do
-        get "/api/v1/questions/1/threads", recursive: true
+        get "/api/v1/question_1/threads", recursive: true
         last_response.should be_ok
         threads = Yajl::Parser.parse last_response.body
         threads.length.should == 2
@@ -154,9 +148,9 @@ describe "app" do
         not_for_me["children"].first["body"].should == "not for me neither!"
       end
     end
-    describe "POST /api/v1/:commentable_type/:commentable_id/threads" do
+    describe "POST /api/v1/:commentable_id/threads" do
       it "create a new comment thread for the commentable object" do
-        post '/api/v1/questions/1/threads', title: "Interesting question", body: "cool", course_id: "1", user_id: "1"
+        post '/api/v1/question_1/threads', title: "Interesting question", body: "cool", course_id: "1", user_id: "1"
         last_response.should be_ok
         CommentThread.count.should == 3
         CommentThread.where(title: "Interesting question").first.should_not be_nil
@@ -380,17 +374,17 @@ describe "app" do
       end
       it "subscribe a commentable" do
         user3 = User.find_or_create_by(external_id: "3")
-        post "/api/v1/users/#{user3.external_id}/subscriptions", source_type: "questions", source_id: "1"
+        post "/api/v1/users/#{user3.external_id}/subscriptions", source_type: "other", source_id: "question_1"
         last_response.should be_ok
-        Commentable.first.subscribers.length.should == 3
-        Commentable.first.subscribers.should include user3
+        Commentable.find("question_1").subscribers.length.should == 3
+        Commentable.find("question_1").subscribers.should include user3
       end
       it "unsubscribe a commentable" do
         user2 = User.find_or_create_by(external_id: "2")
-        delete "/api/v1/users/#{user2.external_id}/subscriptions", source_type: "questions", source_id: "1"
+        delete "/api/v1/users/#{user2.external_id}/subscriptions", source_type: "other", source_id: "question_1"
         last_response.should be_ok
-        Commentable.first.subscribers.length.should == 1
-        Commentable.first.subscribers.should_not include user2
+        Commentable.find("question_1").subscribers.length.should == 1
+        Commentable.find("question_1").subscribers.should_not include user2
       end
       it "subscribe a comment thread" do
         user1 = User.find_or_create_by(external_id: "1")
