@@ -19,6 +19,7 @@ class CommentThread < Content
   validates_presence_of :title
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
+  validates_presence_of :commentable_id
   validates_presence_of :author if not CommentService.config["allow_anonymity"]
 
   after_create :handle_after_create
