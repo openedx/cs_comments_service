@@ -9,7 +9,7 @@ class Subscription
   index [[:subscriber_id, Mongo::ASCENDING], [:source_id, Mongo::ASCENDING], [:source_type, Mongo::ASCENDING]]
 
   def to_hash
-    as_document
+    as_document.slice(*%w[subscriber_id source_id source_type])
   end
 
   def subscriber

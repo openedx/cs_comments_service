@@ -199,9 +199,9 @@ describe "app" do
       it "create a comment to the comment thread" do
         thread = CommentThread.first.to_hash(recursive: true)
         user = User.first
-        post "/api/v1/threads/#{thread["_id"]}/comments", body: "new comment", course_id: "1", user_id: User.first.id
+        post "/api/v1/threads/#{thread["id"]}/comments", body: "new comment", course_id: "1", user_id: User.first.id
         last_response.should be_ok
-        changed_thread = CommentThread.find(thread["_id"]).to_hash(recursive: true)
+        changed_thread = CommentThread.find(thread["id"]).to_hash(recursive: true)
         changed_thread["children"].length.should == thread["children"].length + 1
         comment = changed_thread["children"].select{|c| c["body"] == "new comment"}.first
         comment.should_not be_nil
@@ -211,7 +211,7 @@ describe "app" do
     describe "DELETE /api/v1/threads/:thread_id" do
       it "delete the comment thread and its comments" do
         thread = CommentThread.first.to_hash
-        delete "/api/v1/threads/#{thread['_id']}"
+        delete "/api/v1/threads/#{thread['id']}"
         last_response.should be_ok
         CommentThread.where(title: thread["title"]).first.should be_nil
       end
@@ -228,7 +228,7 @@ describe "app" do
         retrieved = parse last_response.body
         retrieved["body"].should == comment.body
         retrieved["endorsed"].should == comment.endorsed
-        retrieved["_id"].should == comment.id.to_s
+        retrieved["id"].should == comment.id.to_s
         retrieved["children"].should be_nil
         retrieved["votes"]["point"].should == comment.votes_point
       end
@@ -239,7 +239,7 @@ describe "app" do
         retrieved = parse last_response.body
         retrieved["body"].should == comment.body
         retrieved["endorsed"].should == comment.endorsed
-        retrieved["_id"].should == comment.id.to_s
+        retrieved["id"].should == comment.id.to_s
         retrieved["votes"]["point"].should == comment.votes_point
         retrieved["children"].length.should == comment.children.length
         retrieved["children"].select{|c| c["body"] == comment.children.first.body}.first.should_not be_nil
@@ -259,9 +259,9 @@ describe "app" do
       it "create a sub comment to the comment" do
         comment = Comment.first.to_hash(recursive: true)
         user = User.first
-        post "/api/v1/comments/#{comment["_id"]}", body: "new comment", course_id: "1", user_id: User.first.id
+        post "/api/v1/comments/#{comment["id"]}", body: "new comment", course_id: "1", user_id: User.first.id
         last_response.should be_ok
-        changed_comment = Comment.find(comment["_id"]).to_hash(recursive: true)
+        changed_comment = Comment.find(comment["id"]).to_hash(recursive: true)
         changed_comment["children"].length.should == comment["children"].length + 1
         subcomment = changed_comment["children"].select{|c| c["body"] == "new comment"}.first
         subcomment.should_not be_nil

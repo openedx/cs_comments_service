@@ -17,6 +17,6 @@ class Notification
   has_and_belongs_to_many :receivers, class_name: "User", inverse_of: :notifications, autosave: true
 
   def to_hash(params={})
-    as_document.slice(*%w[_id notification_type info actor target])
+    as_document.slice(*%w[notification_type info actor target]).merge("id" => _id)
   end
 end
