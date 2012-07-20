@@ -5,3 +5,7 @@ development:
 test:
   host: localhost
   database: cs_comments_service_test
+
+defaults: &defaults
+  use_utc: false
+  use_activesupport_time_zone: true
