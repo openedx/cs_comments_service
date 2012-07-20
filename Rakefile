@@ -143,6 +143,7 @@ namespace :db do
     generate_comments("question_1", level_limit, users)
     generate_comments("question_2", level_limit, users)
     generate_comments("course_1", level_limit, users)
+    generate_comments("lecture_1", level_limit, users)
     generate_comments("video_1", level_limit, users)
     generate_comments("video_2", level_limit, users)
     generate_comments("lab_1", level_limit, users)
