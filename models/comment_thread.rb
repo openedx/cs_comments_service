@@ -11,6 +11,16 @@ class CommentThread < Content
   field :course_id, type: String, index: true
   field :commentable_id, type: String, index: true
 
+  include Sunspot::Mongoid
+  searchable do
+    text :title, boost: 5.0, stored: true, more_like_this: true
+    text :body, stored: true, more_like_this: true
+
+    string :course_id
+    string :commentable_id
+    string :author_id
+  end
+
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
   has_many :comments, dependent: :destroy, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
 
@@ -45,6 +55,15 @@ class CommentThread < Content
       doc = doc.merge("children" => comments.map{|c| c.to_hash(recursive: true)})
     end
     doc
+  end
+
+  def self.search_text(text, commentable_id=nil)
+    self.solr_search do
+      fulltext(text)
+      if commentable_id
+        with(:commentable_id, commentable_id)
+      end
+    end
   end
 
 private

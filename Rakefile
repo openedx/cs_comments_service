@@ -16,7 +16,9 @@ task :environment do
   end
 
   CommentService.config = YAML.load_file("config/application.yml")
-  Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
+
+  Dir[File.join(File.dirname(__FILE__),'models', '**', '*.rb')].each {|file| require file}
+
 end
 
 namespace :test do
@@ -105,7 +107,7 @@ namespace :db do
       {title: "We can probably make this better", body: "Let's do it"},
       {title: "I don't know where to start", body: "Can anyone help me?"},
       {title: "I'm here!", body: "Haha I'm the first one who discovered this"},
-      {title: "I need five threads but I don't know where to put here", body: "So I'll just leave it this way"},
+      {title: "I need five threads but I don't know what to put here", body: "So I'll just leave it this way"},
     ]
 
     COMMENT_BODY_SEEDS = [
@@ -175,4 +177,42 @@ namespace :db do
     puts "Time elapsed #{(end_time - beginning_time)*1000} milliseconds"
 
   end
+end
+
+# copied from https://github.com/sunspot/sunspot/blob/master/sunspot_solr/lib/sunspot/solr/tasks.rb
+namespace :sunspot do
+  namespace :solr do
+    desc 'Start the Solr instance'
+    task :start => :environment do
+      case RUBY_PLATFORM
+      when /w(in)?32$/, /java$/
+        abort("This command is not supported on #{RUBY_PLATFORM}. " +
+              "Use rake sunspot:solr:run to run Solr in the foreground.")
+      end
+
+      Sunspot::Solr::Server.new.start
+
+      puts "Successfully started Solr ..."
+    end
+
+    desc 'Run the Solr instance in the foreground'
+    task :run => :environment do
+      Sunspot::Solr::Server.new.run
+    end
+
+    desc 'Stop the Solr instance'
+    task :stop => :environment do
+      case RUBY_PLATFORM
+      when /w(in)?32$/, /java$/
+        abort("This command is not supported on #{RUBY_PLATFORM}. " +
+              "Use rake sunspot:solr:run to run Solr in the foreground.")
+      end
+
+      Sunspot::Solr::Server.new.stop
+
+      puts "Successfully stopped Solr ..."
+    end
+
+  end
+
 end

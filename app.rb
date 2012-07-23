@@ -18,6 +18,7 @@ Mongoid.load!("config/mongoid.yml")
 Mongoid.logger.level = Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
+Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 
 delete '/api/v1/:commentable_id/threads' do |commentable_id|
   Commentable.find(commentable_id).comment_threads.destroy_all
@@ -134,6 +135,24 @@ delete '/api/v1/users/:user_id/subscriptions' do |user_id|
       Commentable.find(params["source_id"])
   end
   user.unsubscribe(source).to_hash.to_json
+end
+
+# GET /api/v1/search
+# params:
+#   text: text to search for
+#   commentable_id: search within a commentable
+#   
+get '/api/v1/search' do 
+  if params["text"]
+    CommentThread.solr_search do
+      fulltext(params["text"])
+      if params["commentable_id"]
+        with(:commentable_id, params["commentable_id"])
+      end
+    end.results.map(&:to_hash).to_json
+  else
+    {}.to_json
+  end
 end
 
 if env.to_s == "development"

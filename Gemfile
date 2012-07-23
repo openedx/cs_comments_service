@@ -1,6 +1,8 @@
 source :rubygems
 
 gem 'pry'
+gem 'pry-nav'
+gem 'debugger'
 
 gem 'bundler'
 
@@ -26,6 +28,11 @@ gem 'delayed_job_mongoid'
 
 gem 'mongoid-tree', :git => 'git@github.com:dementrock/mongoid-tree.git', :branch => "mongoid-2.0"
 gem 'voteable_mongo', :git => 'git@github.com:dementrock/voteable_mongo.git'
+
+gem 'sunspot'
+gem 'sunspot_solr'
+gem 'sunspot_mongoid'
+
 
 group :test do
   gem 'rspec'
