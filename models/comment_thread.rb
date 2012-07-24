@@ -32,7 +32,7 @@ class CommentThread < Content
   validates_presence_of :commentable_id
   validates_presence_of :author if not CommentService.config["allow_anonymity"]
 
-  after_create :handle_after_create
+  after_create :generate_notifications
 
   def commentable
     Commentable.find(commentable_id)
@@ -86,16 +86,5 @@ private
     end
   end
 
-  def auto_subscribe_comment_thread
-    if CommentService.config["auto_subscribe_comment_threads"] and author
-      author.subscribe(self)
-    end
-  end
-
-  def handle_after_create
-    generate_notifications
-    auto_subscribe_comment_thread
-  end
-
-  handle_asynchronously :handle_after_create
+  handle_asynchronously :generate_notifications
 end

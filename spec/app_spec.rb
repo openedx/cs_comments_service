@@ -22,6 +22,7 @@ def init_without_subscriptions
   thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: commentable.id)
   thread.author = user
   thread.save!
+  user.subscribe(thread)
 
   comment = thread.comments.new(body: "this problem is so easy", course_id: "1")
   comment.author = user
@@ -43,6 +44,7 @@ def init_without_subscriptions
   thread = CommentThread.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2", commentable_id: commentable.id)
   thread.author = user
   thread.save!
+  user.subscribe(thread)
 
   comment = thread.comments.new(body: "how do you know?", course_id: "1")
   comment.author = user
@@ -89,6 +91,7 @@ def init_with_subscriptions
 
   thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: commentable.id)
   thread.author = user1
+  user1.subscribe(thread)
   user2.subscribe(thread)
   thread.save!
 
@@ -106,6 +109,7 @@ def init_with_subscriptions
 
   thread = CommentThread.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2", commentable_id: commentable.id)
   thread.author = user2
+  user2.subscribe(thread)
   thread.save!
 end
 

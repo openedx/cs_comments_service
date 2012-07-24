@@ -31,8 +31,12 @@ end
 
 post '/api/v1/:commentable_id/threads' do |commentable_id|
   thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
-  thread.author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
+  author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
+  thread.author = author
   thread.save!
+  if params["auto_subscribe"]
+    author.subscribe(thread)
+  end
   thread.to_hash.to_json
 end
 
@@ -50,8 +54,12 @@ end
 post '/api/v1/threads/:thread_id/comments' do |thread_id|
   thread = CommentThread.find(thread_id)
   comment = thread.comments.new(params.slice(*%w[body course_id]))
-  comment.author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
+  author = User.find_or_create_by(external_id: params["user_id"]) if params["user_id"]
+  comment.author = author
   comment.save!
+  if params["auto_subscribe"]
+    author.subscribe(thread)
+  end
   comment.to_hash.to_json
 end
 

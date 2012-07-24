@@ -1,4 +1,3 @@
 level_limit: 3
 send_notifications_to_author: false
-auto_subscribe_comment_threads: true
 allow_anonymity: false

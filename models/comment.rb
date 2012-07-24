@@ -21,7 +21,7 @@ class Comment < Content
   validates_presence_of :author if not CommentService.config["allow_anonymity"]
 
   before_destroy :delete_descendants # TODO async
-  after_create :handle_after_create
+  after_create :generate_notifications
   
   def self.hash_tree(nodes)
     nodes.map{|node, sub_nodes| node.to_hash.merge("children" => hash_tree(sub_nodes).compact)}
@@ -73,17 +73,6 @@ private
     end
   end
 
-  def auto_subscribe_comment_thread
-    if CommentService.config["auto_subscribe_comment_threads"] and author
-      author.subscribe(get_comment_thread)
-    end
-  end
-
-  def handle_after_create
-    generate_notifications
-    auto_subscribe_comment_thread
-  end
-
-  handle_asynchronously :handle_after_create
+  handle_asynchronously :generate_notifications
 
 end
