@@ -20,8 +20,37 @@ class User
     Subscription.where(subscriber_id: id.to_s)
   end
 
+  def subscribed_thread_ids
+    subscriptions_as_subscriber.where(source_type: "CommentThread").map(&:source_id)
+  end
+
+  def subscribed_commentable_ids
+    subscriptions_as_subscriber.where(source_type: "Commentable").map(&:source_id)
+  end
+
+  def subscribed_user_ids
+    subscriptions_as_subscriber.where(source_type: "User").map(&:source_id)
+  end
+
   def to_hash(params={})
-    as_document.slice(*%w[_id external_id])
+    hash = as_document.slice(*%w[_id external_id])
+    if params[:complete]
+      hash = hash.merge("subscribed_thread_ids" => subscribed_thread_ids,
+                        "subscribed_commentable_ids" => subscribed_commentable_ids,
+                        "subscribed_user_ids" => subscribed_user_ids,
+                        "follower_ids" => subscriptions_as_source.map(&:subscriber_id),
+                        "upvoted_ids" => upvoted_ids,
+                        "downvoted_ids" => downvoted_ids)
+    end
+    hash
+  end
+
+  def upvoted_ids
+    Comment.up_voted_by(self).map(&:id) + CommentThread.up_voted_by(self).map(&:id)
+  end
+
+  def downvoted_ids
+    Comment.down_voted_by(self).map(&:id) + CommentThread.down_voted_by(self).map(&:id)
   end
 
   def followers
@@ -29,7 +58,11 @@ class User
   end
 
   def subscribe(source)
-    Subscription.find_or_create_by(subscriber_id: self._id.to_s, source_id: source._id.to_s, source_type: source.class.to_s)
+    if source._id == self._id and source.class == self.class
+      nil
+    else
+      Subscription.find_or_create_by(subscriber_id: self._id.to_s, source_id: source._id.to_s, source_type: source.class.to_s)
+    end
   end
 
   def unsubscribe(source)
