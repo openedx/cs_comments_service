@@ -29,9 +29,11 @@ def init_without_subscriptions
   comment.save!
   comment1 = comment.children.new(body: "not for me!", course_id: "1")
   comment1.author = user
+  comment1.comment_thread = thread
   comment1.save!
   comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
   comment2.author = user
+  comment2.comment_thread = thread
   comment2.save!
 
   comment = thread.comments.new(body: "see the textbook on page 69. it's quite similar", course_id: "1")
@@ -39,6 +41,7 @@ def init_without_subscriptions
   comment.save!
   comment1 = comment.children.new(body: "thank you!", course_id: "1")
   comment1.author = user
+  comment1.comment_thread = thread
   comment1.save!
 
   thread = CommentThread.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2", commentable_id: commentable.id)
@@ -51,12 +54,14 @@ def init_without_subscriptions
   comment.save!
   comment1 = comment.children.new(body: "because blablabla", course_id: "1")
   comment1.author = user
+  comment1.comment_thread = thread
   comment1.save!
   comment = thread.comments.new(body: "no wonder I can't solve it", course_id: "1")
   comment.author = user
   comment.save!
   comment1 = comment.children.new(body: "+1", course_id: "1")
   comment1.author = user
+  comment1.comment_thread = thread
   comment1.save!
 
   users = (2..10).map{|id| User.find_or_create_by(external_id: id.to_s)}
@@ -102,9 +107,11 @@ def init_with_subscriptions
   comment.save!
   comment1 = comment.children.new(body: "not for me!", course_id: "1")
   comment1.author = user1
+  comment1.comment_thread = thread
   comment1.save!
   comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
   comment2.author = user2
+  comment2.comment_thread = thread
   comment2.save!
 
   thread = CommentThread.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2", commentable_id: commentable.id)
@@ -185,8 +192,8 @@ describe "app" do
         thread.course_id.should == response_thread["course_id"]
         thread.votes_point.should == response_thread["votes"]["point"]
         response_thread["children"].should_not be_nil
-        response_thread["children"].length.should == thread.comments.length
-        response_thread["children"].index{|c| c["body"] == thread.comments.first.body}.should_not be_nil
+        response_thread["children"].length.should == thread.root_comments.length
+        response_thread["children"].index{|c| c["body"] == thread.root_comments.first.body}.should_not be_nil
       end
     end
     describe "PUT /api/v1/threads/:thread_id" do

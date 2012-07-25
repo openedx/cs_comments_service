@@ -42,15 +42,17 @@ namespace :test do
       comment.save!
       comment1 = comment.children.new(body: "not for me!", course_id: "1")
       comment1.author = user
+      comment1.comment_thread = comment_thread
       comment1.save!
       comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
       comment2.author = user
+      comment2.comment_thread = comment_thread
       comment2.save!
 
-      children = comment_thread.comments.first.to_hash(recursive: true)["children"]
+      children = comment_thread.root_comments.first.to_hash(recursive: true)["children"]
       if children.length == 2
         pp comment_thread.to_hash(recursive: true)
-        pp comment_thread.comments.first.descendants_and_self.to_a
+        pp comment_thread.root_comments.first.descendants_and_self.to_a
         puts "error!"
         break
       end
@@ -121,6 +123,7 @@ namespace :db do
         comment = comment_thread.comments.new(body: comment_body_seeds.sample, course_id: "1")
         comment.author = users.sample
         comment.endorsed = [true, false].sample
+        comment.comment_thread = comment_thread
         comment.save!
         comments << comment
       end
@@ -129,6 +132,7 @@ namespace :db do
         sub_comment = comment.children.new(body: comment_body_seeds.sample, course_id: "1")
         sub_comment.author = users.sample
         sub_comment.endorsed = [true, false].sample
+        sub_comment.comment_thread = comment_thread
         sub_comment.save!
         comments << sub_comment
       end

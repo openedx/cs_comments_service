@@ -84,6 +84,7 @@ post '/api/v1/comments/:comment_id' do |comment_id|
   comment = Comment.find(comment_id)
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
   sub_comment.author = User.find_or_create_by(external_id: params["user_id"])
+  sub_comment.comment_thread = comment.comment_thread
   sub_comment.save!
   sub_comment.to_hash.to_json
 end

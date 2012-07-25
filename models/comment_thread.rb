@@ -34,6 +34,10 @@ class CommentThread < Content
 
   after_create :generate_notifications
 
+  def root_comments
+    Comment.roots.where(comment_thread_id: self.id)
+  end
+
   def commentable
     Commentable.find(commentable_id)
   end
@@ -52,7 +56,7 @@ class CommentThread < Content
                       merge("user_id" => (author.id if author)).
                       merge("votes" => votes.slice(*%w[count up_count down_count point]))
     if params[:recursive]
-      doc = doc.merge("children" => comments.map{|c| c.to_hash(recursive: true)})
+      doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
     end
     doc
   end

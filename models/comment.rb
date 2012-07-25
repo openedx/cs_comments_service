@@ -19,20 +19,13 @@ class Comment < Content
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
   validates_presence_of :author if not CommentService.config["allow_anonymity"]
+  validates_presence_of :comment_thread
 
   before_destroy :delete_descendants # TODO async
   after_create :generate_notifications
   
   def self.hash_tree(nodes)
     nodes.map{|node, sub_nodes| node.to_hash.merge("children" => hash_tree(sub_nodes).compact)}
-  end
-
-  def get_comment_thread
-    if comment_thread
-      comment_thread
-    else
-      root.comment_thread
-    end
   end
 
   def to_hash(params={})
@@ -50,24 +43,25 @@ class Comment < Content
       as_document.slice(*%w[body course_id endorsed created_at updated_at]).
                   merge("id" => _id).
                   merge("user_id" => author.id).
+                  merge("thread_id" => comment_thread.id).
                   merge("votes" => votes.slice(*%w[count up_count down_count point]))
     end
   end
 
 private
   def generate_notifications
-    if get_comment_thread.subscribers or (author.followers if author)
+    if comment_thread.subscribers or (author.followers if author)
       notification = Notification.new(
         notification_type: "post_reply",
         info: {
-          thread_id: get_comment_thread.id,
-          thread_title: get_comment_thread.title,
+          thread_id: comment_thread.id,
+          thread_title: comment_thread.title,
           comment_id: id,
         },
       )
       notification.actor = author
       notification.target = self
-      notification.receivers << (get_comment_thread.subscribers + author.followers).uniq_by(&:id)
+      notification.receivers << (comment_thread.subscribers + author.followers).uniq_by(&:id)
       notification.receivers.delete(author) if not CommentService.config["send_notifications_to_author"]
       notification.save!
     end
