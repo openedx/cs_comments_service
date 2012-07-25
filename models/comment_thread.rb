@@ -30,7 +30,6 @@ class CommentThread < Content
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
   validates_presence_of :commentable_id
-  validates_presence_of :author if not CommentService.config["allow_anonymity"]
 
   after_create :generate_notifications
 
@@ -85,7 +84,7 @@ private
       notification.actor = author
       notification.target = self
       notification.receivers << (commentable.subscribers + author.followers).uniq_by(&:id)
-      notification.receivers.delete(author) if not CommentService.config["send_notifications_to_author"] and author
+      notification.receivers.delete(author)
       notification.save!
     end
   end

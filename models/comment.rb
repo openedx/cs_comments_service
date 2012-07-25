@@ -18,7 +18,6 @@ class Comment < Content
 
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
-  validates_presence_of :author if not CommentService.config["allow_anonymity"]
   validates_presence_of :comment_thread
 
   before_destroy :delete_descendants # TODO async
@@ -63,7 +62,7 @@ private
       notification.actor = author
       notification.target = self
       notification.receivers << (comment_thread.subscribers + author.followers).uniq_by(&:id)
-      notification.receivers.delete(author) if not CommentService.config["send_notifications_to_author"]
+      notification.receivers.delete(author)
       notification.save!
     end
   end
