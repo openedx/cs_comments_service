@@ -115,6 +115,11 @@ delete '/api/v1/threads/:thread_id/votes' do |thread_id|
   undo_vote_for thread
 end
 
+get '/api/v1/users/:user_id' do |user_id|
+  user = User.find_or_create_by(external_id: user_id)
+  user.to_hash(complete: params["complete"]).to_json
+end
+
 get '/api/v1/users/:user_id/notifications' do |user_id|
   user = User.find_or_create_by(external_id: user_id)
   user.notifications.map(&:to_hash).to_json

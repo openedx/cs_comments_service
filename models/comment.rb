@@ -30,7 +30,7 @@ class Comment < Content
 
   def to_hash(params={})
     sort_by_parent_and_time = Proc.new do |x, y|
-      arr_cmp = x.parent_ids <=> y.parent_ids
+      arr_cmp = x.parent_ids.map(&:to_s) <=> y.parent_ids.map(&:to_s)
       if arr_cmp != 0
         arr_cmp
       else
@@ -57,6 +57,7 @@ private
           thread_id: comment_thread.id,
           thread_title: comment_thread.title,
           comment_id: id,
+          commentable_id: comment_thread.commentable_id,
         },
       )
       notification.actor = author

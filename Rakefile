@@ -174,16 +174,15 @@ namespace :db do
 
     users = (1..10).map {|id| User.find_or_create_by(external_id: id.to_s)}
 
+    3.times do
+      users.first.subscribe(users.sample)
+    end
+
     10.times do
       users.sample.subscribe(users.sample)
     end
         
-    generate_comments_for("question_1")
-    generate_comments_for("question_2")
-    generate_comments_for("course_1")
-    generate_comments_for("lecture_1")
     generate_comments_for("video_1")
-    generate_comments_for("video_2")
     generate_comments_for("lab_1")
     generate_comments_for("lab_2")
 
@@ -231,6 +230,32 @@ namespace :sunspot do
       puts "Successfully stopped Solr ..."
     end
 
+    desc 'Restart the Solr instance'
+    task :restart => :environment do
+      case RUBY_PLATFORM
+      when /w(in)?32$/, /java$/
+        abort("This command is not supported on #{RUBY_PLATFORM}. " +
+              "Use rake sunspot:solr:run to run Solr in the foreground.")
+      end
+
+      Sunspot::Solr::Server.new.stop
+      Sunspot::Solr::Server.new.start
+
+      puts "Successfully restarted Solr ..."
+    end
+
   end
 
+end
+
+namespace :jobs do
+  desc "Clear the delayed_job queue."
+  task :clear => :environment do
+    Delayed::Job.delete_all
+  end
+
+  desc "Start a delayed_job worker."
+  task :work => :environment do
+    Delayed::Worker.new(:min_priority => ENV['MIN_PRIORITY'], :max_priority => ENV['MAX_PRIORITY'], :queues => (ENV['QUEUES'] || ENV['QUEUE'] || '').split(','), :quiet => false).start
+  end
 end
