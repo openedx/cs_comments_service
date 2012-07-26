@@ -83,8 +83,12 @@ private
       )
       notification.actor = author
       notification.target = self
-      notification.receivers << (commentable.subscribers + author.followers).uniq_by(&:id)
-      notification.receivers.delete(author)
+      receivers = commentable.subscribers
+      if author
+        receivers = (receivers + author.followers).uniq_by(&:id)
+      end
+      receivers.delete(author)
+      notification.receivers << receivers
       notification.save!
     end
   end

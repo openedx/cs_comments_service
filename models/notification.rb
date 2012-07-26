@@ -11,7 +11,6 @@ class Notification
   attr_accessible :notification_type, :info
 
   validates_presence_of :notification_type
-  validates_presence_of :actor if not CommentService.config["allow_anonymity"]
   validates_presence_of :target
 
   has_and_belongs_to_many :receivers, class_name: "User", inverse_of: :notifications, autosave: true

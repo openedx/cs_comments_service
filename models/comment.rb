@@ -41,7 +41,7 @@ class Comment < Content
     else
       as_document.slice(*%w[body course_id endorsed created_at updated_at]).
                   merge("id" => _id).
-                  merge("user_id" => author.id).
+                  merge("user_id" => (author.id if author)).
                   merge("thread_id" => comment_thread.id).
                   merge("votes" => votes.slice(*%w[count up_count down_count point]))
     end
@@ -61,8 +61,12 @@ private
       )
       notification.actor = author
       notification.target = self
-      notification.receivers << (comment_thread.subscribers + author.followers).uniq_by(&:id)
-      notification.receivers.delete(author)
+      receivers = comment_thread.subscribers
+      if author
+        receivers = (receivers + author.followers).uniq_by(&:id)
+      end
+      receivers.delete(author)
+      notification.receivers << receivers
       notification.save!
     end
   end

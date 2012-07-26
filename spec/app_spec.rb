@@ -129,12 +129,16 @@ describe "app" do
         last_response.should be_ok
         Commentable.find("question_1").comment_threads.count.should == 0
       end
+      it "handle normally when commentable does not exist" do
+        delete '/api/v1/does_not_exist/threads'
+        last_response.should be_ok
+      end
     end
     describe "GET /api/v1/:commentable_id/threads" do
       it "get all comment threads associated with a commentable object" do
         get "/api/v1/question_1/threads"
         last_response.should be_ok
-        threads = Yajl::Parser.parse last_response.body
+        threads = parse last_response.body
         threads.length.should == 2
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
@@ -142,7 +146,7 @@ describe "app" do
       it "get all comment threads and comments associated with a commentable object" do
         get "/api/v1/question_1/threads", recursive: true
         last_response.should be_ok
-        threads = Yajl::Parser.parse last_response.body
+        threads = parse last_response.body
         threads.length.should == 2
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
@@ -158,6 +162,12 @@ describe "app" do
         not_for_me["children"].length.should == 1
         not_for_me["children"].first["body"].should == "not for me neither!"
       end
+      it "returns an empty array when the commentable object does not exist (no threads)" do
+        get "/api/v1/does_not_exist/threads"
+        last_response.should be_ok
+        threads = parse last_response.body
+        threads.length.should == 0
+      end
     end
     describe "POST /api/v1/:commentable_id/threads" do
       it "create a new comment thread for the commentable object" do
@@ -166,8 +176,21 @@ describe "app" do
         CommentThread.count.should == 3
         CommentThread.where(title: "Interesting question").first.should_not be_nil
       end
+      it "allows anonymous thread" do
+        post '/api/v1/question_1/threads', title: "Interesting question", body: "cool", course_id: "1"
+        last_response.should be_ok
+        CommentThread.count.should == 3
+        CommentThread.where(title: "Interesting question").first.should_not be_nil
+      end
+      it "create a new comment thread for a new commentable object" do
+        post '/api/v1/does_not_exist/threads', title: "Interesting question", body: "cool", course_id: "1", user_id: "1"
+        last_response.should be_ok
+        Commentable.find("does_not_exist").comment_threads.length.should == 1
+        Commentable.find("does_not_exist").comment_threads.first.body.should == "cool"
+      end
     end
   end
+
   describe "comment threads" do
     before(:each) { init_without_subscriptions }
     describe "GET /api/v1/threads/:thread_id" do
@@ -195,6 +218,10 @@ describe "app" do
         response_thread["children"].length.should == thread.root_comments.length
         response_thread["children"].index{|c| c["body"] == thread.root_comments.first.body}.should_not be_nil
       end
+      it "returns error message when the thread does not exist" do
+        get "/api/v1/threads/does_not_exist"
+        last_response.status.should == 404
+      end
     end
     describe "PUT /api/v1/threads/:thread_id" do
       it "update information of comment thread" do
@@ -204,6 +231,10 @@ describe "app" do
         changed_thread = CommentThread.find(thread.id)
         changed_thread.body.should == "new body"
         changed_thread.title.should == "new title"
+      end
+      it "returns error message when the thread does not exist" do
+        put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
+        last_response.status.should == 404
       end
     end
     describe "POST /api/v1/threads/:thread_id/comments" do
@@ -217,6 +248,19 @@ describe "app" do
         comment = changed_thread["children"].select{|c| c["body"] == "new comment"}.first
         comment.should_not be_nil
         comment["user_id"].should == user.id
+      end
+      it "allows anonymous comment" do
+        thread = CommentThread.first.to_hash(recursive: true)
+        post "/api/v1/threads/#{thread["id"]}/comments", body: "new comment", course_id: "1", user_id: nil
+        last_response.should be_ok
+        changed_thread = CommentThread.find(thread["id"]).to_hash(recursive: true)
+        changed_thread["children"].length.should == thread["children"].length + 1
+        comment = changed_thread["children"].select{|c| c["body"] == "new comment"}.first
+        comment.should_not be_nil
+      end
+      it "returns error message when the thread does not exist" do
+        post "/api/v1/threads/does_not_exist/comments", body: "new comment", course_id: "1", user_id: User.first.id
+        last_response.status.should == 404
       end
     end
     describe "DELETE /api/v1/threads/:thread_id" do
