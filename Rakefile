@@ -7,8 +7,8 @@ Bundler.require
 
 desc "Load the environment"
 task :environment do
-  env = ENV["SINATRA_ENV"] || "development"
-  Sinatra::Base.environment = env
+  environment = ENV["SINATRA_ENV"] || "development"
+  Sinatra::Base.environment = environment
   Mongoid.load!("config/mongoid.yml")
   Mongoid.logger.level = Logger::INFO
   module CommentService

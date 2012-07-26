@@ -6,7 +6,8 @@ Bundler.require
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
-env = env_arg || ENV["SINATRA_ENV"] || "development"
+environment = env_arg || ENV["SINATRA_ENV"] || "development"
+RACK_ENV = environment
 
 module CommentService
   class << self; attr_accessor :config; end
@@ -19,47 +20,6 @@ Mongoid.logger.level = Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
-
-
-helpers do
-  def commentable
-    @commentable ||= Commentable.find(params[:commentable_id])
-  end
-
-  def user # TODO handle 404 if integrated user service
-    @user ||= (User.find_or_create_by(external_id: params[:user_id]) if params[:user_id])
-  end
-
-  def thread
-    @thread ||= CommentThread.find(params[:thread_id])
-  end
-
-  def comment
-    @comment ||= Comment.find(params[:comment_id])
-  end
-
-  def source
-    @source ||= case params["source_type"]
-      when "user"
-        User.find_or_create_by(external_id: params["source_id"])
-      when "thread"
-        CommentThread.find(params["source_id"])
-      when "other"
-        Commentable.find(params["source_id"])
-    end
-  end
-
-  def vote_for(obj)
-    user.vote(obj, params["value"].to_sym)
-    obj.reload.to_hash.to_json
-  end
-
-  def undo_vote_for(obj)
-    user.unvote(obj)
-    obj.reload.to_hash.to_json
-  end
-
-end
 
 delete '/api/v1/:commentable_id/threads' do |commentable_id|
   commentable.comment_threads.destroy_all
@@ -176,7 +136,7 @@ get '/api/v1/search' do
   end
 end
 
-if env.to_s == "development"
+if environment.to_s == "development"
   get '/api/v1/clean' do
     Comment.delete_all
     CommentThread.delete_all
@@ -188,5 +148,9 @@ if env.to_s == "development"
 end
 
 error BSON::InvalidObjectId do
-  error 404
+  error 400, "requested object not found"
+end
+
+error ValueError do
+  error 400, env['sinatra.error'].message
 end

@@ -218,9 +218,9 @@ describe "app" do
         response_thread["children"].length.should == thread.root_comments.length
         response_thread["children"].index{|c| c["body"] == thread.root_comments.first.body}.should_not be_nil
       end
-      it "returns error message when the thread does not exist" do
+      it "returns 400 when the thread does not exist" do
         get "/api/v1/threads/does_not_exist"
-        last_response.status.should == 404
+        last_response.status.should == 400
       end
     end
     describe "PUT /api/v1/threads/:thread_id" do
@@ -232,9 +232,9 @@ describe "app" do
         changed_thread.body.should == "new body"
         changed_thread.title.should == "new title"
       end
-      it "returns error message when the thread does not exist" do
+      it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
-        last_response.status.should == 404
+        last_response.status.should == 400
       end
     end
     describe "POST /api/v1/threads/:thread_id/comments" do
@@ -258,9 +258,9 @@ describe "app" do
         comment = changed_thread["children"].select{|c| c["body"] == "new comment"}.first
         comment.should_not be_nil
       end
-      it "returns error message when the thread does not exist" do
+      it "returns 400 when the thread does not exist" do
         post "/api/v1/threads/does_not_exist/comments", body: "new comment", course_id: "1", user_id: User.first.id
-        last_response.status.should == 404
+        last_response.status.should == 400
       end
     end
     describe "DELETE /api/v1/threads/:thread_id" do
@@ -269,6 +269,10 @@ describe "app" do
         delete "/api/v1/threads/#{thread['id']}"
         last_response.should be_ok
         CommentThread.where(title: thread["title"]).first.should be_nil
+      end
+      it "returns 400 when the thread does not exist" do
+        delete "/api/v1/threads/does_not_exist"
+        last_response.status.should == 400
       end
     end
   end
@@ -299,6 +303,10 @@ describe "app" do
         retrieved["children"].length.should == comment.children.length
         retrieved["children"].select{|c| c["body"] == comment.children.first.body}.first.should_not be_nil
       end
+      it "returns 400 when the comment does not exist" do
+        get "/api/v1/comments/does_not_exist"
+        last_response.status.should == 400
+      end
     end
     describe "PUT /api/v1/comments/:comment_id" do
       it "update information of the comment" do
@@ -308,6 +316,10 @@ describe "app" do
         new_comment = Comment.find(comment.id)
         new_comment.body.should == "new body"
         new_comment.endorsed.should == true
+      end
+      it "returns 400 when the comment does not exist" do
+        put "/api/v1/comments/does_not_exist", body: "new body", endorsed: true
+        last_response.status.should == 400
       end
     end
     describe "POST /api/v1/comments/:comment_id" do
@@ -322,6 +334,10 @@ describe "app" do
         subcomment.should_not be_nil
         subcomment["user_id"].should == user.id
       end
+      it "returns 400 when the comment does not exist" do
+        post "/api/v1/comments/does_not_exist", body: "new comment", course_id: "1", user_id: User.first.id
+        last_response.status.should == 400
+      end
     end
     describe "DELETE /api/v1/comments/:comment_id" do
       it "delete the comment and its sub comments" do
@@ -331,6 +347,10 @@ describe "app" do
         delete "/api/v1/comments/#{comment.id}"
         Comment.count.should == prev_count - cnt_comments
         Comment.all.select{|c| c.id == comment.id}.first.should be_nil
+      end
+      it "returns 400 when the comment does not exist" do
+        delete "/api/v1/comments/does_not_exist"
+        last_response.status.should == 400
       end
     end
   end
@@ -347,6 +367,20 @@ describe "app" do
         comment.up_votes_count.should == prev_up_votes - 1
         comment.down_votes_count.should == prev_down_votes + 1
       end
+      it "returns 400 when the comment does not exist" do
+        put "/api/v1/comments/does_not_exist/votes", user_id: User.first.id, value: "down"
+        last_response.status.should == 400
+      end
+      it "returns 400 when user_id is not provided" do
+        put "/api/v1/comments/#{Comment.first.id}/votes", value: "down"
+        last_response.status.should == 400
+      end
+      it "returns 400 when value is not provided or invalid" do
+        put "/api/v1/comments/#{Comment.first.id}/votes", user_id: User.first.id
+        last_response.status.should == 400
+        put "/api/v1/comments/#{Comment.first.id}/votes", user_id: User.first.id, value: "superdown"
+        last_response.status.should == 400
+      end
     end
     describe "DELETE /api/v1/comments/:comment_id/votes" do
       it "unvote on the comment" do
@@ -358,6 +392,14 @@ describe "app" do
         comment = Comment.find(comment.id)
         comment.up_votes_count.should == prev_up_votes - 1
         comment.down_votes_count.should == prev_down_votes
+      end
+      it "returns 400 when the comment does not exist" do
+        delete "/api/v1/comments/does_not_exist/votes", user_id: User.first.id
+        last_response.status.should == 400
+      end
+      it "returns 400 when user_id is not provided" do
+        delete "/api/v1/comments/#{Comment.first.id}/votes"
+        last_response.status.should == 400
       end
     end
     describe "PUT /api/v1/threads/:thread_id/votes" do
