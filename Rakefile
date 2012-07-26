@@ -246,6 +246,10 @@ namespace :sunspot do
 
   end
 
+  task :commit => :environment do
+    Sunspot.commit
+  end
+
 end
 
 namespace :jobs do
