@@ -3,6 +3,7 @@ require_relative 'content'
 class CommentThread < Content
   include Mongo::Voteable
   include Mongoid::Timestamps
+  include Mongoid::Taggable
 
   voteable self, :up => +1, :down => -1
 
