@@ -32,6 +32,8 @@ class CommentThread < Content
   validates_presence_of :course_id # do we really need this?
   validates_presence_of :commentable_id
 
+  validate :valid_tag_names
+
   after_create :generate_notifications
 
   def root_comments
@@ -91,6 +93,12 @@ private
       receivers.delete(author)
       notification.receivers << receivers
       notification.save!
+    end
+  end
+
+  def valid_tag_names
+    unless tags_array.all? {|tag| tag =~ /^\w+(\s*\w+)*$/}
+      errors.add :tag, "must consist of words, numbers, underscores and spaces only"
     end
   end
 
