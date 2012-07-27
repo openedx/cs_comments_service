@@ -60,6 +60,20 @@ describe "app" do
         thread.up_votes_count.should == prev_up_votes - 1
         thread.down_votes_count.should == prev_down_votes + 1
       end
+      it "returns 400 when the thread does not exist" do
+        put "/api/v1/threads/does_not_exist/votes", user_id: User.first.id, value: "down"
+        last_response.status.should == 400
+      end
+      it "returns 400 when user_id is not provided" do
+        put "/api/v1/threads/#{CommentThread.first.id}/votes", value: "down"
+        last_response.status.should == 400
+      end
+      it "returns 400 when value is not provided or invalid" do
+        put "/api/v1/threads/#{CommentThread.first.id}/votes", user_id: User.first.id
+        last_response.status.should == 400
+        put "/api/v1/threads/#{CommentThread.first.id}/votes", user_id: User.first.id, value: "superdown"
+        last_response.status.should == 400
+      end
     end
     describe "DELETE /api/v1/threads/:thread_id/votes" do
       it "unvote on the thread" do
@@ -71,6 +85,14 @@ describe "app" do
         thread = CommentThread.find(thread.id)
         thread.up_votes_count.should == prev_up_votes - 1
         thread.down_votes_count.should == prev_down_votes
+      end
+      it "returns 400 when the comment does not exist" do
+        delete "/api/v1/threads/does_not_exist/votes", user_id: User.first.id
+        last_response.status.should == 400
+      end
+      it "returns 400 when user_id is not provided" do
+        delete "/api/v1/threads/#{CommentThread.first.id}/votes"
+        last_response.status.should == 400
       end
     end
   end

@@ -151,6 +151,10 @@ error BSON::InvalidObjectId do
   error 400, "requested object not found"
 end
 
+error Mongoid::Errors::DocumentNotFound do
+  error 400, "requested object not found"
+end
+
 error ValueError do
   error 400, env['sinatra.error'].message
 end
