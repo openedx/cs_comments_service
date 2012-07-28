@@ -32,6 +32,7 @@ end
 
 post '/api/v1/:commentable_id/threads' do |commentable_id|
   thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
+  thread.tags = params["tags"] || ""
   thread.author = user
   thread.save!
   if params["auto_subscribe"] and author
@@ -46,6 +47,10 @@ end
 
 put '/api/v1/threads/:thread_id' do |thread_id|
   thread.update_attributes!(params.slice(*%w[title body]))
+  if params["tags"]
+    thread.tags = params["tags"]
+    thread.save!
+  end
   thread.to_hash.to_json
 end
 

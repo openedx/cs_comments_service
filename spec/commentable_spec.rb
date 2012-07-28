@@ -68,6 +68,16 @@ describe "app" do
         Commentable.find("does_not_exist").comment_threads.length.should == 1
         Commentable.find("does_not_exist").comment_threads.first.body.should == "cool"
       end
+      it "create a new comment thread with tag" do
+        post '/api/v1/question_1/threads', title: "Interesting question", body: "cool", course_id: "1", user_id: "1", tags: "a, b, c"
+        last_response.should be_ok
+        CommentThread.count.should == 3
+        thread = CommentThread.where(title: "Interesting question").first
+        thread.tags_array.length.should == 3
+        thread.tags_array.should include "a"
+        thread.tags_array.should include "b"
+        thread.tags_array.should include "c"
+      end
     end
   end
 end

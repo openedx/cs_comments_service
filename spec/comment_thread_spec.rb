@@ -32,6 +32,23 @@ describe "app" do
         get "/api/v1/threads/does_not_exist"
         last_response.status.should == 400
       end
+      it "get information of a single comment thread with its tags" do
+        thread = CommentThread.new
+        thread.title = "new thread"
+        thread.body = "hahaah"
+        thread.course_id = "1"
+        thread.commentable_id = "1"
+        thread.author = User.first
+        thread.tags = "taga, tagb, tagc"
+        thread.save!
+        get "/api/v1/threads/#{thread.id}"
+        last_response.should be_ok
+        response_thread = parse last_response.body
+        response_thread["tags"].length.should == 3
+        response_thread["tags"].should include "taga"
+        response_thread["tags"].should include "tagb"
+        response_thread["tags"].should include "tagc"
+      end
     end
     describe "PUT /api/v1/threads/:thread_id" do
       it "update information of comment thread" do
@@ -45,6 +62,22 @@ describe "app" do
       it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
         last_response.status.should == 400
+      end
+      it "updates tag of comment thread" do
+        thread = CommentThread.first
+        put "/api/v1/threads/#{thread.id}", tags: "haha, hoho, huhu"
+        last_response.should be_ok
+        thread.reload
+        thread.tags_array.length.should == 3
+        thread.tags_array.should include "haha"
+        thread.tags_array.should include "hoho"
+        thread.tags_array.should include "huhu"
+        put "/api/v1/threads/#{thread.id}", tags: "aha, oho"
+        last_response.should be_ok
+        thread.reload
+        thread.tags_array.length.should == 2
+        thread.tags_array.should include "aha"
+        thread.tags_array.should include "oho"
       end
     end
     describe "POST /api/v1/threads/:thread_id/comments" do

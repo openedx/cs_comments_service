@@ -20,6 +20,9 @@ class CommentThread < Content
     string :course_id
     string :commentable_id
     string :author_id
+    string :tags, multiple: true do
+
+    end
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
@@ -53,10 +56,12 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-    doc = as_document.slice(*%w[title body course_id created_at updated_at]).
-                      merge("id" => _id).
-                      merge("user_id" => (author.id if author)).
-                      merge("votes" => votes.slice(*%w[count up_count down_count point]))
+    doc = as_document.slice(*%w[title body course_id created_at updated_at])
+                      .merge("id" => _id)
+                      .merge("user_id" => (author.id if author))
+                      .merge("votes" => votes.slice(*%w[count up_count down_count point]))
+                      .merge("tags" => tags_array)
+
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
     end
