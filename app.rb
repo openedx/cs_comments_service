@@ -41,6 +41,10 @@ post '/api/v1/:commentable_id/threads' do |commentable_id|
   thread.to_hash.to_json
 end
 
+get '/api/v1/threads/tags' do
+  CommentThread.tags.to_json
+end
+
 get '/api/v1/threads/:thread_id' do |thread_id|
   thread.to_hash(recursive: params["recursive"]).to_json
 end

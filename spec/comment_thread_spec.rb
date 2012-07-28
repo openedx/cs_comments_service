@@ -119,4 +119,18 @@ describe "app" do
       end
     end
   end
+  describe "GET /api/v1/threads/tags" do
+    it "get all tags used in threads" do
+      thread1 = CommentThread.all.to_a.first
+      thread2 = CommentThread.all.to_a.last
+      thread1.tags = "a, b, c"
+      thread1.save
+      thread2.tags = "d, e, f"
+      thread2.save
+      get "/api/v1/threads/tags"
+      last_response.should be_ok
+      tags = parse last_response.body
+      tags.length.should == 6
+    end
+  end
 end
