@@ -39,11 +39,11 @@ class Comment < Content
     if params[:recursive]
       self.class.hash_tree(subtree(sort: sort_by_parent_and_time)).first
     else
-      as_document.slice(*%w[body course_id endorsed created_at updated_at]).
-                  merge("id" => _id).
-                  merge("user_id" => (author.id if author)).
-                  merge("thread_id" => comment_thread.id).
-                  merge("votes" => votes.slice(*%w[count up_count down_count point]))
+      as_document.slice(*%w[body course_id endorsed created_at updated_at])
+                  .merge("id" => _id)
+                  .merge("user_id" => (author.id if author))
+                  .merge("thread_id" => comment_thread.id)
+                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
     end
   end
 
