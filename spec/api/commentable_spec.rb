@@ -92,14 +92,11 @@ describe "app" do
         thread.tags_array.should include "c"
       end
       it "accepts [a-z 0-9 + # - .]words, numbers, dashes, spaces but no underscores in tags" do
-        post '/api/v1/question_1/threads', default_params.merge(tags: "artificial-intelligence, machine-learning, 7-is-a-lucky-number, interesting problem")
+        post '/api/v1/question_1/threads', default_params.merge(tags: "artificial-intelligence, machine-learning, 7-is-a-lucky-number, interesting problem, interesting problems in c++")
         last_response.should be_ok
         CommentThread.count.should == 3
         thread = CommentThread.where(title: "Interesting question").first
-        thread.tags_array.length.should == 3
-        thread.tags_array.should include "a"
-        thread.tags_array.should include "b"
-        thread.tags_array.should include "c"
+        thread.tags_array.length.should == 5
       end
     end
   end
