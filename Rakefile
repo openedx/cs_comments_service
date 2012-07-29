@@ -107,6 +107,15 @@ namespace :db do
       "lol",
     ]
 
+    tag_seeds = [
+      "artificial-intelligence",
+      "random rant",
+      "c++",
+      "c#",
+      "java-sucks",
+      "2012",
+    ]
+
     users = User.all.to_a
 
     puts "Generating threads and comments for #{commentable_id}..."
@@ -117,6 +126,7 @@ namespace :db do
     thread_seeds.each do |thread_seed|
       comment_thread = CommentThread.new(commentable_id: commentable_id, body: thread_seed[:body], title: thread_seed[:title], course_id: "1")
       comment_thread.author = users.sample
+      comment_thread.tags = tag_seeds.sort_by{rand}[0..2].join(",")
       comment_thread.save!
       threads << comment_thread
       3.times do
