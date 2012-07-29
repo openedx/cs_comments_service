@@ -45,6 +45,8 @@ get '/api/v1/threads/tags' do
   CommentThread.tags.to_json
 end
 
+
+
 get '/api/v1/threads/:thread_id' do |thread_id|
   thread.to_hash(recursive: params["recursive"]).to_json
 end
@@ -143,6 +145,10 @@ get '/api/v1/search' do
   else
     {}.to_json
   end
+end
+
+post '/api/v1/search/tags' do
+  CommentThread.tagged_with_all(params["tags"]).map(&:to_hash).to_json
 end
 
 if environment.to_s == "development"
