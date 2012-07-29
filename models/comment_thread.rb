@@ -21,7 +21,7 @@ class CommentThread < Content
     string :commentable_id
     string :author_id
     string :tags, multiple: true do
-
+      tags_array
     end
   end
 
