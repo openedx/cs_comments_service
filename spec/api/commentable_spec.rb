@@ -50,26 +50,49 @@ describe "app" do
       end
     end
     describe "POST /api/v1/:commentable_id/threads" do
+      default_params = {title: "Interesting question", body: "cool", course_id: "1", user_id: "1"}
       it "create a new comment thread for the commentable object" do
-        post '/api/v1/question_1/threads', title: "Interesting question", body: "cool", course_id: "1", user_id: "1"
+        post '/api/v1/question_1/threads', default_params
         last_response.should be_ok
         CommentThread.count.should == 3
         CommentThread.where(title: "Interesting question").first.should_not be_nil
       end
       it "allows anonymous thread" do
-        post '/api/v1/question_1/threads', title: "Interesting question", body: "cool", course_id: "1"
+        params = default_params.dup
+        params.delete(:user_id)
+        post '/api/v1/question_1/threads', params
         last_response.should be_ok
         CommentThread.count.should == 3
         CommentThread.where(title: "Interesting question").first.should_not be_nil
       end
       it "create a new comment thread for a new commentable object" do
-        post '/api/v1/does_not_exist/threads', title: "Interesting question", body: "cool", course_id: "1", user_id: "1"
+        post '/api/v1/does_not_exist/threads', default_params
         last_response.should be_ok
         Commentable.find("does_not_exist").comment_threads.length.should == 1
         Commentable.find("does_not_exist").comment_threads.first.body.should == "cool"
       end
       it "create a new comment thread with tag" do
-        post '/api/v1/question_1/threads', title: "Interesting question", body: "cool", course_id: "1", user_id: "1", tags: "a, b, c"
+        post '/api/v1/question_1/threads', default_params.merge(tags: "a, b, c")
+        last_response.should be_ok
+        CommentThread.count.should == 3
+        thread = CommentThread.where(title: "Interesting question").first
+        thread.tags_array.length.should == 3
+        thread.tags_array.should include "a"
+        thread.tags_array.should include "b"
+        thread.tags_array.should include "c"
+      end
+      it "strip spaces in tags" do
+        post '/api/v1/question_1/threads', default_params.merge(tags: " a, b ,c ")
+        last_response.should be_ok
+        CommentThread.count.should == 3
+        thread = CommentThread.where(title: "Interesting question").first
+        thread.tags_array.length.should == 3
+        thread.tags_array.should include "a"
+        thread.tags_array.should include "b"
+        thread.tags_array.should include "c"
+      end
+      it "accepts [a-z 0-9 + # - .]words, numbers, dashes, spaces but no underscores in tags" do
+        post '/api/v1/question_1/threads', default_params.merge(tags: "artificial-intelligence, machine-learning, 7-is-a-lucky-number, interesting problem")
         last_response.should be_ok
         CommentThread.count.should == 3
         thread = CommentThread.where(title: "Interesting question").first

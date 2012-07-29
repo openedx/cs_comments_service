@@ -35,7 +35,8 @@ class CommentThread < Content
   validates_presence_of :course_id # do we really need this?
   validates_presence_of :commentable_id
 
-  validate :valid_tag_names
+  validate :tag_names_valid
+  validate :tag_names_unique
 
   after_create :generate_notifications
 
@@ -77,6 +78,10 @@ class CommentThread < Content
     end
   end
 
+  def self.tag_name_valid?(tag)
+    !!(tag =~ RE_TAG)
+  end
+
 private
   def generate_notifications
     if subscribers or (author.followers if author)
@@ -101,9 +106,24 @@ private
     end
   end
 
-  def valid_tag_names
-    unless tags_array.all? {|tag| tag =~ /^\w+(\s*\w+)*$/}
-      errors.add :tag, "must consist of words, numbers, underscores and spaces only"
+  RE_HEADCHAR = /[a-z0-9]/
+  RE_ENDONLYCHAR = /\+/
+  RE_ENDCHAR = /[a-z0-9\#]/
+  RE_CHAR = /[a-z0-9\-\#\.]/
+  RE_WORD = /#{RE_HEADCHAR}(((#{RE_CHAR})*(#{RE_ENDCHAR})+)?(#{RE_ENDONLYCHAR})*)?/
+  RE_TAG = /^#{RE_WORD}( #{RE_WORD})*$/
+
+  
+
+  def tag_names_valid
+    unless tags_array.all? {|tag| self.class.tag_name_valid? tag}
+      errors.add :tag, "can consist of words, numbers, dashes and spaces only and cannot start with dash"
+    end
+  end
+
+  def tag_names_unique
+    unless tags_array.uniq.size == tags_array.size
+      errors.add :tags, "must be unique"
     end
   end
 
