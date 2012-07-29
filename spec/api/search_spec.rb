@@ -3,7 +3,7 @@ require 'spec_helper'
 describe "app" do
   describe "search" do
     before(:each) { init_without_subscriptions }
-    describe "GET /api/v1/search/tags" do
+    describe "GET /api/v1/search/threads/tags" do
       it "returns all threads tagged with all tags" do
         require 'uri'
         thread1 = CommentThread.all.to_a.first
@@ -18,33 +18,33 @@ describe "app" do
         thread2.tags = [ai, ml, random2].join ","
         thread2.save
 
-        post "/api/v1/search/tags", tags: [ai, ml]
+        post "/api/v1/search/threads/tags", tags: [ai, ml]
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 2
         threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
         threads.select{|t| t["id"] == thread2.id.to_s}.first.should_not be_nil
 
-        post "/api/v1/search/tags", tags: [ai]
+        post "/api/v1/search/threads/tags", tags: [ai]
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 2
         threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
         threads.select{|t| t["id"] == thread2.id.to_s}.first.should_not be_nil
 
-        post "/api/v1/search/tags", tags: [ai, random1]
+        post "/api/v1/search/threads/tags", tags: [ai, random1]
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 1
         threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
 
-        post "/api/v1/search/tags", tags: [random1]
+        post "/api/v1/search/threads/tags", tags: [random1]
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 1
         threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
 
-        post "/api/v1/search/tags", tags: [random1, random2]
+        post "/api/v1/search/threads/tags", tags: [random1, random2]
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 0

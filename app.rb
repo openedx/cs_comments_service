@@ -129,12 +129,7 @@ delete '/api/v1/users/:user_id/subscriptions' do |user_id|
   user.unsubscribe(source).to_hash.to_json
 end
 
-# GET /api/v1/search
-# params:
-#   text: text to search for
-#   commentable_id: search within a commentable
-#   
-get '/api/v1/search' do 
+get '/api/v1/search/threads' do 
   if params["text"]
     CommentThread.solr_search do
       fulltext(params["text"])
@@ -147,7 +142,7 @@ get '/api/v1/search' do
   end
 end
 
-post '/api/v1/search/tags' do
+post '/api/v1/search/threads/tags' do
   CommentThread.tagged_with_all(params["tags"]).map(&:to_hash).to_json
 end
 
