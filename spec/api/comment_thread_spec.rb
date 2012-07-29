@@ -133,4 +133,31 @@ describe "app" do
       tags.length.should == 6
     end
   end
+  describe "GET /api/v1/threads/tags/autocomplete" do
+    def create_comment_thread(tags)
+      c = CommentThread.new(title: "Interesting question", body: "cool")
+      c.course_id = "1"
+      c.author = User.first
+      c.tags = tags
+      c.commentable_id = "1"
+      c.save!
+      c
+    end
+    it "returns autocomplete results" do
+      CommentThread.delete_all
+      create_comment_thread "c++, clojure, common-lisp, c#, c, coffeescript"
+      create_comment_thread "c++, clojure, common-lisp, c#, c"
+      create_comment_thread "c++, clojure, common-lisp, c#"
+      create_comment_thread "c++, clojure, common-lisp"
+      create_comment_thread "c++, clojure"
+      create_comment_thread "c++"
+      get "/api/v1/threads/tags/autocomplete", value: "c"
+      last_response.should be_ok
+      results = parse last_response.body
+      results.length.should == 5
+      %w[c++ clojure common-lisp c# c].each_with_index do |tag, index|
+        results[index].should == tag
+      end
+    end
+  end
 end

@@ -3,9 +3,8 @@ require 'spec_helper'
 describe "app" do
   describe "search" do
     before(:each) { init_without_subscriptions }
-    describe "GET /api/v1/search/threads/tags" do
+    describe "GET /api/v1/search/threads" do
       it "returns all threads tagged with all tags" do
-        require 'uri'
         thread1 = CommentThread.all.to_a.first
         thread2 = CommentThread.all.to_a.last
         ai = "artificial intelligence"
@@ -18,33 +17,35 @@ describe "app" do
         thread2.tags = [ai, ml, random2].join ","
         thread2.save
 
-        post "/api/v1/search/threads/tags", tags: [ai, ml]
+        Sunspot.commit
+
+        get "/api/v1/search/threads", tags: [ai, ml].join(",")
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 2
         threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
         threads.select{|t| t["id"] == thread2.id.to_s}.first.should_not be_nil
 
-        post "/api/v1/search/threads/tags", tags: [ai]
+        get "/api/v1/search/threads", tags: [ai].join(",")
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 2
         threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
         threads.select{|t| t["id"] == thread2.id.to_s}.first.should_not be_nil
 
-        post "/api/v1/search/threads/tags", tags: [ai, random1]
+        get "/api/v1/search/threads", tags: [ai, random1].join(",")
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 1
         threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
 
-        post "/api/v1/search/threads/tags", tags: [random1]
+        get "/api/v1/search/threads", tags: [random1].join(",")
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 1
         threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
 
-        post "/api/v1/search/threads/tags", tags: [random1, random2]
+        get "/api/v1/search/threads", tags: [random1, random2].join(",")
         last_response.should be_ok
         threads = parse last_response.body
         threads.length.should == 0

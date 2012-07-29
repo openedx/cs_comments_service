@@ -21,6 +21,17 @@ Mongoid.logger.level = Logger::INFO
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 
+get '/api/v1/search/threads' do 
+  results = CommentThread.solr_search do
+    fulltext(params["text"]) if params["text"]
+    with(:commentable_id, params["commentable_id"]) if params["commentable_id"]
+    with(:tags).all_of(params["tags"].split /,/) if params["tags"]
+  end.results
+  puts params["tags"].split /,/
+  puts results
+  results.map(&:to_hash).to_json
+end
+
 delete '/api/v1/:commentable_id/threads' do |commentable_id|
   commentable.comment_threads.destroy_all
   {}.to_json
@@ -45,7 +56,9 @@ get '/api/v1/threads/tags' do
   CommentThread.tags.to_json
 end
 
-
+get '/api/v1/threads/tags/autocomplete' do
+  CommentThread.tags_autocomplete(params["value"], max: 5, sort_by_count: true).map(&:first).to_json
+end
 
 get '/api/v1/threads/:thread_id' do |thread_id|
   thread.to_hash(recursive: params["recursive"]).to_json
@@ -127,23 +140,6 @@ end
 
 delete '/api/v1/users/:user_id/subscriptions' do |user_id|
   user.unsubscribe(source).to_hash.to_json
-end
-
-get '/api/v1/search/threads' do 
-  if params["text"]
-    CommentThread.solr_search do
-      fulltext(params["text"])
-      if params["commentable_id"]
-        with(:commentable_id, params["commentable_id"])
-      end
-    end.results.map(&:to_hash).to_json
-  else
-    {}.to_json
-  end
-end
-
-post '/api/v1/search/threads/tags' do
-  CommentThread.tagged_with_all(params["tags"]).map(&:to_hash).to_json
 end
 
 if environment.to_s == "development"
