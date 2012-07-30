@@ -18,16 +18,15 @@ CommentService.config = YAML.load_file("config/application.yml")
 Mongoid.load!("config/mongoid.yml")
 Mongoid.logger.level = Logger::INFO
 
-Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
+Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
 get '/api/v1/search/threads' do 
-  results = CommentThread.solr_search do
+  CommentThread.solr_search do
     fulltext(params["text"]) if params["text"]
     with(:commentable_id, params["commentable_id"]) if params["commentable_id"]
     with(:tags).all_of(params["tags"].split /,/) if params["tags"]
-  end.results
-  results.map(&:to_hash).to_json
+  end.results.map(&:to_hash).to_json
 end
 
 delete '/api/v1/:commentable_id/threads' do |commentable_id|
@@ -45,9 +44,9 @@ post '/api/v1/:commentable_id/threads' do |commentable_id|
   thread.author = user
   thread.save
   if thread.errors.any?
-    error 400, thread.errors.messages.to_json
+    error 400, thread.errors.full_messages.to_json
   else
-    author.subscribe(thread) if params["auto_subscribe"] and author
+    user.subscribe(thread) if params["auto_subscribe"] and user
     thread.to_hash.to_json
   end
 end
@@ -61,7 +60,7 @@ get '/api/v1/threads/tags/autocomplete' do
 end
 
 get '/api/v1/threads/:thread_id' do |thread_id|
-  thread.to_hash(recursive: params["recursive"]).to_json
+  CommentThread.find(thread_id).to_hash(recursive: params["recursive"]).to_json
 end
 
 put '/api/v1/threads/:thread_id' do |thread_id|
@@ -71,7 +70,7 @@ put '/api/v1/threads/:thread_id' do |thread_id|
     thread.save
   end
   if thread.errors.any?
-    error 400, thread.errors.messages.to_json
+    error 400, thread.errors.full_messages.to_json
   else
     thread.to_hash.to_json
   end
@@ -82,9 +81,9 @@ post '/api/v1/threads/:thread_id/comments' do |thread_id|
   comment.author = user 
   comment.save
   if comment.errors.any?
-    error 400, comment.errors.messages.to_json
+    error 400, comment.errors.full_messages.to_json
   else
-    author.subscribe(thread) if params["auto_subscribe"] and author
+    user.subscribe(thread) if params["auto_subscribe"] and user
     comment.to_hash.to_json
   end
 end
@@ -101,7 +100,7 @@ end
 put '/api/v1/comments/:comment_id' do |comment_id|
   comment.update_attributes(params.slice(*%w[body endorsed]))
   if comment.errors.any?
-    error 400, comment.errors.messages.to_json
+    error 400, comment.errors.full_messages.to_json
   else
     comment.to_hash.to_json
   end
@@ -113,7 +112,7 @@ post '/api/v1/comments/:comment_id' do |comment_id|
   sub_comment.comment_thread = comment.comment_thread
   sub_comment.save
   if sub_comment.errors.any?
-    error 400, sub_comment.errors.messages.to_json
+    error 400, sub_comment.errors.full_messages.to_json
   else
     sub_comment.to_hash.to_json
   end
@@ -168,17 +167,13 @@ if environment.to_s == "development"
 end
 
 error BSON::InvalidObjectId do
-  error 400, "requested object not found"
+  error 400, ["requested object not found"].to_json
 end
 
 error Mongoid::Errors::DocumentNotFound do
-  error 400, "requested object not found"
+  error 400, ["requested object not found"].to_json
 end
 
-error ValueError do
-  error 400, env['sinatra.error'].message
-end
-
-error Mongoid::Errors::Validations do
-  error 400, env['sinatra.error'].message
+error ArgumentError do
+  error 400, [env['sinatra.error'].message].to_json
 end
