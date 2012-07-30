@@ -40,6 +40,18 @@ class CommentThread < Content
 
   after_create :generate_notifications
 
+  def self.new_dumb_thread(options={})
+    c = self.new
+    c.title = options[:title] || "title"
+    c.body = options[:body] || "body"
+    c.commentable_id = options[:commentable_id] || "commentable_id"
+    c.course_id = options[:course_id] || "course_id"
+    c.author = options[:author] || User.first
+    c.tags = options[:tags] || "test-tag-1, test-tag-2"
+    c.save!
+    c
+  end
+
   def root_comments
     Comment.roots.where(comment_thread_id: self.id)
   end
