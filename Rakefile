@@ -185,11 +185,14 @@ namespace :db do
     users = (1..10).map {|id| User.find_or_create_by(external_id: id.to_s)}
 
     3.times do
-      users.first.subscribe(users.sample)
+      other_user = users[1..9].sample
+      users.first.subscribe(other_user)
     end
 
     10.times do
-      users.sample.subscribe(users.sample)
+      user = users.sample
+      other_user = users.select{|u| u != user}.sample
+      user.subscribe(other_user)
     end
         
     generate_comments_for("video_1")
