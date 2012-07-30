@@ -13,6 +13,7 @@ describe "app" do
         thread.body.should == response_thread["body"]
         thread.course_id.should == response_thread["course_id"]
         thread.votes_point.should == response_thread["votes"]["point"]
+        thread.commentable_id.should == response_thread["commentable_id"]
         response_thread["children"].should be_nil
       end
       it "get information of a single comment thread with its comments" do

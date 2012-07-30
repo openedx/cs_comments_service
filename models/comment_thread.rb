@@ -69,7 +69,7 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-    doc = as_document.slice(*%w[title body course_id created_at updated_at])
+    doc = as_document.slice(*%w[title body course_id commentable_id created_at updated_at])
                       .merge("id" => _id)
                       .merge("user_id" => (author.id if author))
                       .merge("votes" => votes.slice(*%w[count up_count down_count point]))
