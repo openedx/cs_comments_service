@@ -31,7 +31,10 @@ describe "app" do
       it "returns 400 when the thread does not exist" do
         get "/api/v1/threads/does_not_exist"
         last_response.status.should == 400
+        get "/api/v1/threads/5016a3caec5eb9a12300000b1"
+        last_response.status.should == 400
       end
+      
       it "get information of a single comment thread with its tags" do
         thread = CommentThread.new
         thread.title = "new thread"
