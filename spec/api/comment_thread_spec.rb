@@ -81,10 +81,11 @@ describe "app" do
       end
     end
     describe "POST /api/v1/threads/:thread_id/comments" do
+      default_params = {body: "new comment", course_id: "1", user_id: User.first.id}
       it "create a comment to the comment thread" do
         thread = CommentThread.first.to_hash(recursive: true)
         user = User.first
-        post "/api/v1/threads/#{thread["id"]}/comments", body: "new comment", course_id: "1", user_id: User.first.id
+        post "/api/v1/threads/#{thread["id"]}/comments", default_params
         last_response.should be_ok
         changed_thread = CommentThread.find(thread["id"]).to_hash(recursive: true)
         changed_thread["children"].length.should == thread["children"].length + 1
@@ -94,7 +95,7 @@ describe "app" do
       end
       it "allows anonymous comment" do
         thread = CommentThread.first.to_hash(recursive: true)
-        post "/api/v1/threads/#{thread["id"]}/comments", body: "new comment", course_id: "1", user_id: nil
+        post "/api/v1/threads/#{thread["id"]}/comments", default_params.merge(user_id: nil)
         last_response.should be_ok
         changed_thread = CommentThread.find(thread["id"]).to_hash(recursive: true)
         changed_thread["children"].length.should == thread["children"].length + 1
@@ -102,7 +103,15 @@ describe "app" do
         comment.should_not be_nil
       end
       it "returns 400 when the thread does not exist" do
-        post "/api/v1/threads/does_not_exist/comments", body: "new comment", course_id: "1", user_id: User.first.id
+        post "/api/v1/threads/does_not_exist/comments", default_params
+        last_response.status.should == 400
+      end
+      it "returns error when body or course_id does not exist, or when body is blank" do
+        post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: nil)
+        last_response.status.should == 400
+        post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(course_id: nil)
+        last_response.status.should == 400
+        post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "    \n      \n  ")
         last_response.status.should == 400
       end
     end

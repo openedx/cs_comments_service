@@ -71,6 +71,26 @@ describe "app" do
         Commentable.find("does_not_exist").comment_threads.length.should == 1
         Commentable.find("does_not_exist").comment_threads.first.body.should == "cool"
       end
+      it "returns error when title, body or course id does not exist" do
+        params = default_params.dup
+        params.delete(:title)
+        post '/api/v1/question_1/threads', params
+        last_response.status.should == 400
+        params = default_params.dup
+        params.delete(:body)
+        post '/api/v1/question_1/threads', params
+        last_response.status.should == 400
+        params = default_params.dup
+        params.delete(:course_id)
+        post '/api/v1/question_1/threads', params
+        last_response.status.should == 400
+      end
+      it "returns error when title or body is blank (only consists of spaces and new lines)" do
+        post '/api/v1/question_1/threads', default_params.merge(title: "     ")
+        last_response.status.should == 400
+        post '/api/v1/question_1/threads', default_params.merge(body: "     \n    \n")
+        last_response.status.should == 400
+      end
       it "create a new comment thread with tag" do
         post '/api/v1/question_1/threads', default_params.merge(tags: "a, b, c")
         last_response.should be_ok

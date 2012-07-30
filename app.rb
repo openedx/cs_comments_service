@@ -27,8 +27,6 @@ get '/api/v1/search/threads' do
     with(:commentable_id, params["commentable_id"]) if params["commentable_id"]
     with(:tags).all_of(params["tags"].split /,/) if params["tags"]
   end.results
-  puts params["tags"].split /,/
-  puts results
   results.map(&:to_hash).to_json
 end
 
@@ -45,11 +43,13 @@ post '/api/v1/:commentable_id/threads' do |commentable_id|
   thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
   thread.tags = params["tags"] || ""
   thread.author = user
-  thread.save!
-  if params["auto_subscribe"] and author
-    author.subscribe(thread)
+  thread.save
+  if thread.errors.any?
+    error 400, thread.errors.messages.to_json
+  else
+    author.subscribe(thread) if params["auto_subscribe"] and author
+    thread.to_hash.to_json
   end
-  thread.to_hash.to_json
 end
 
 get '/api/v1/threads/tags' do
@@ -57,7 +57,7 @@ get '/api/v1/threads/tags' do
 end
 
 get '/api/v1/threads/tags/autocomplete' do
-  CommentThread.tags_autocomplete(params["value"], max: 5, sort_by_count: true).map(&:first).to_json
+  CommentThread.tags_autocomplete(params["value"].strip, max: 5, sort_by_count: true).map(&:first).to_json
 end
 
 get '/api/v1/threads/:thread_id' do |thread_id|
@@ -65,22 +65,28 @@ get '/api/v1/threads/:thread_id' do |thread_id|
 end
 
 put '/api/v1/threads/:thread_id' do |thread_id|
-  thread.update_attributes!(params.slice(*%w[title body]))
+  thread.update_attributes(params.slice(*%w[title body]))
   if params["tags"]
     thread.tags = params["tags"]
-    thread.save!
+    thread.save
   end
-  thread.to_hash.to_json
+  if thread.errors.any?
+    error 400, thread.errors.messages.to_json
+  else
+    thread.to_hash.to_json
+  end
 end
 
 post '/api/v1/threads/:thread_id/comments' do |thread_id|
   comment = thread.comments.new(params.slice(*%w[body course_id]))
   comment.author = user 
-  comment.save!
-  if params["auto_subscribe"] and author
-    author.subscribe(thread)
+  comment.save
+  if comment.errors.any?
+    error 400, comment.errors.messages.to_json
+  else
+    author.subscribe(thread) if params["auto_subscribe"] and author
+    comment.to_hash.to_json
   end
-  comment.to_hash.to_json
 end
 
 delete '/api/v1/threads/:thread_id' do |thread_id|
@@ -93,16 +99,24 @@ get '/api/v1/comments/:comment_id' do |comment_id|
 end
 
 put '/api/v1/comments/:comment_id' do |comment_id|
-  comment.update_attributes!(params.slice(*%w[body endorsed]))
-  comment.to_hash.to_json
+  comment.update_attributes(params.slice(*%w[body endorsed]))
+  if comment.errors.any?
+    error 400, comment.errors.messages.to_json
+  else
+    comment.to_hash.to_json
+  end
 end
 
 post '/api/v1/comments/:comment_id' do |comment_id|
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
   sub_comment.author = user
   sub_comment.comment_thread = comment.comment_thread
-  sub_comment.save!
-  sub_comment.to_hash.to_json
+  sub_comment.save
+  if sub_comment.errors.any?
+    error 400, sub_comment.errors.messages.to_json
+  else
+    sub_comment.to_hash.to_json
+  end
 end
 
 delete '/api/v1/comments/:comment_id' do |comment_id|
@@ -162,5 +176,9 @@ error Mongoid::Errors::DocumentNotFound do
 end
 
 error ValueError do
+  error 400, env['sinatra.error'].message
+end
+
+error Mongoid::Errors::Validations do
   error 400, env['sinatra.error'].message
 end

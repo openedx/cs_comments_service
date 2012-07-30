@@ -16,6 +16,10 @@ describe "app" do
         notification_not_for_me_neither = notifications.select{|f| f["notification_type"] == "post_reply" and f["info"]["comment_id"] == not_for_me_neither.id.to_s}.first
         notification_not_for_me_neither.should_not be_nil
       end
+      it "returns empty array if user does not exist" do #TODO may change later if have user service
+        get "/api/v1/users/does_not_exist/notifications"
+        parse(last_response.body).length.should == 0
+      end
       it "get all notifications on the subscribed commentable for the user" do
         user = User.find("1")
         get "/api/v1/users/#{user.external_id}/notifications"
@@ -25,7 +29,13 @@ describe "app" do
         problem_wrong = notifications.select{|f| f["notification_type"] == "post_topic"}.first
         problem_wrong["info"]["thread_title"].should == "This problem is wrong"
       end
-      # TODO spec for followed user
+      it "get all notifications on the followed user for the user" do
+        user = User.find("2")
+        get "/api/v1/users/#{user.external_id}/notifications"
+        last_response.should be_ok
+        notifications = parse last_response.body
+        notifications.select{|f| f["info"]["thread_title"] =~ /what to say/}.first.should_not be_nil
+      end
     end
     describe "POST /api/v1/users/:user_id/subscriptions" do
       it "follow user" do
@@ -36,9 +46,31 @@ describe "app" do
         User.find("2").followers.length.should == 1
         User.find("2").followers.should include user1
       end
+      it "does not follow the same user twice" do
+        user1 = User.find("1")
+        user2 = User.find("2")
+        post "/api/v1/users/#{user1.external_id}/subscriptions", source_type: "user", source_id: user2.external_id
+        post "/api/v1/users/#{user1.external_id}/subscriptions", source_type: "user", source_id: user2.external_id
+        last_response.should be_ok
+        User.find("2").followers.length.should == 1
+      end
+      it "does not follow oneself" do
+        user = User.find_or_create_by(external_id: "3")
+        post "/api/v1/users/#{user.external_id}/subscriptions", source_type: "user", source_id: user.external_id
+        last_response.status.should == 400
+        user.reload.followers.length.should == 0
+      end
       it "unfollow user" do
         user1 = User.find("1")
         user2 = User.find("2")
+        delete "/api/v1/users/#{user2.external_id}/subscriptions", source_type: "user", source_id: user1.external_id
+        last_response.should be_ok
+        User.find("1").followers.length.should == 0
+      end
+      it "respond ok when unfollowing user twice" do
+        user1 = User.find("1")
+        user2 = User.find("2")
+        delete "/api/v1/users/#{user2.external_id}/subscriptions", source_type: "user", source_id: user1.external_id
         delete "/api/v1/users/#{user2.external_id}/subscriptions", source_type: "user", source_id: user1.external_id
         last_response.should be_ok
         User.find("1").followers.length.should == 0

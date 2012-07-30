@@ -59,7 +59,7 @@ class User
 
   def subscribe(source)
     if source._id == self._id and source.class == self.class
-      nil
+      raise ValueError, "Cannot follow oneself"
     else
       Subscription.find_or_create_by(subscriber_id: self._id.to_s, source_id: source._id.to_s, source_type: source.class.to_s)
     end
@@ -67,7 +67,7 @@ class User
 
   def unsubscribe(source)
     subscription = Subscription.where(subscriber_id: self._id.to_s, source_id: source._id.to_s, source_type: source.class.to_s).first
-    subscription.destroy
+    subscription.destroy if subscription
     subscription
   end
 

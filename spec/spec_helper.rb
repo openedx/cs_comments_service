@@ -134,4 +134,8 @@ def init_with_subscriptions
   thread.author = user2
   user2.subscribe(thread)
   thread.save!
+
+  thread = CommentThread.new(title: "I don't know what to say", body: "lol", course_id: "2", commentable_id: "something else")
+  thread.author = user1
+  thread.save!
 end

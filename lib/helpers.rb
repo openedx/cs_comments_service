@@ -17,19 +17,21 @@ helpers do
 
   def source
     @source ||= case params["source_type"]
-      when "user"
-        User.find_or_create_by(external_id: params["source_id"])
-      when "thread"
-        CommentThread.find(params["source_id"])
-      when "other"
-        Commentable.find(params["source_id"])
+    when "user"
+      User.find_or_create_by(external_id: params["source_id"])
+    when "thread"
+      CommentThread.find(params["source_id"])
+    when "other"
+      Commentable.find(params["source_id"])
+    else
+      raise ValueError, "Source type must be 'user', 'thread' or 'other'"
     end
   end
 
   def vote_for(obj)
-    raise ValueError, "must provide user id" unless user
-    raise ValueError, "must provide value" unless params["value"]
-    raise ValueError, "must provide valid value" unless %w[up down].include? params["value"]
+    raise ValueError, "User id is required" unless user
+    raise ValueError, "Value is required" unless params["value"]
+    raise ValueError, "Value is invalid" unless %w[up down].include? params["value"]
     user.vote(obj, params["value"].to_sym)
     obj.reload.to_hash.to_json
   end
