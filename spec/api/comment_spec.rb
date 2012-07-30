@@ -14,6 +14,7 @@ describe "app" do
         retrieved["id"].should == comment.id.to_s
         retrieved["children"].should be_nil
         retrieved["votes"]["point"].should == comment.votes_point
+        retrieved["depth"].should == comment.depth
       end
       it "retrieve information of a single comment with its sub comments" do
         comment = Comment.first
