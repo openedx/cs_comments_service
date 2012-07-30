@@ -1,3 +1,0 @@
-class ValueError < Exception
-
-end

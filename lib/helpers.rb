@@ -24,22 +24,21 @@ helpers do
     when "other"
       Commentable.find(params["source_id"])
     else
-      raise ValueError, "Source type must be 'user', 'thread' or 'other'"
+      raise ArgumentError, "Source type must be 'user', 'thread' or 'other'"
     end
   end
 
   def vote_for(obj)
-    raise ValueError, "User id is required" unless user
-    raise ValueError, "Value is required" unless params["value"]
-    raise ValueError, "Value is invalid" unless %w[up down].include? params["value"]
+    raise ArgumentError, "User id is required" unless user
+    raise ArgumentError, "Value is required" unless params["value"]
+    raise ArgumentError, "Value is invalid" unless %w[up down].include? params["value"]
     user.vote(obj, params["value"].to_sym)
     obj.reload.to_hash.to_json
   end
 
   def undo_vote_for(obj)
-    raise ValueError, "must provide user id" unless user
+    raise ArgumentError, "must provide user id" unless user
     user.unvote(obj)
     obj.reload.to_hash.to_json
   end
-
 end
