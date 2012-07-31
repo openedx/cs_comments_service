@@ -58,12 +58,12 @@ describe "app" do
         CommentThread.where(title: "Interesting question").first.should_not be_nil
       end
       it "allows anonymous thread" do
-        params = default_params.dup
-        params.delete(:user_id)
-        post '/api/v1/question_1/threads', params
+        post '/api/v1/question_1/threads', default_params.merge(anonymous: true)
         last_response.should be_ok
         CommentThread.count.should == 3
-        CommentThread.where(title: "Interesting question").first.should_not be_nil
+        c = CommentThread.where(title: "Interesting question").first
+        c.should_not be_nil
+        c["anonymous"].should be_true
       end
       it "create a new comment thread for a new commentable object" do
         post '/api/v1/does_not_exist/threads', default_params

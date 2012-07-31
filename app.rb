@@ -39,14 +39,14 @@ get '/api/v1/:commentable_id/threads' do |commentable_id|
 end
 
 post '/api/v1/:commentable_id/threads' do |commentable_id|
-  thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
+  thread = CommentThread.new(params.slice(*%w[title body course_id anonymous]).merge(commentable_id: commentable_id))
   thread.tags = params["tags"] || ""
   thread.author = user
   thread.save
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
   else
-    user.subscribe(thread) if params["auto_subscribe"] and user
+    user.subscribe(thread) if params["auto_subscribe"]
     thread.to_hash.to_json
   end
 end
@@ -77,13 +77,13 @@ put '/api/v1/threads/:thread_id' do |thread_id|
 end
 
 post '/api/v1/threads/:thread_id/comments' do |thread_id|
-  comment = thread.comments.new(params.slice(*%w[body course_id]))
+  comment = thread.comments.new(params.slice(*%w[body course_id anonymous]))
   comment.author = user 
   comment.save
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
   else
-    user.subscribe(thread) if params["auto_subscribe"] and user
+    user.subscribe(thread) if params["auto_subscribe"]
     comment.to_hash.to_json
   end
 end

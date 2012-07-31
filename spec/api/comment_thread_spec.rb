@@ -99,12 +99,13 @@ describe "app" do
       end
       it "allows anonymous comment" do
         thread = CommentThread.first.to_hash(recursive: true)
-        post "/api/v1/threads/#{thread["id"]}/comments", default_params.merge(user_id: nil)
+        post "/api/v1/threads/#{thread["id"]}/comments", default_params.merge(anonymous: true)
         last_response.should be_ok
         changed_thread = CommentThread.find(thread["id"]).to_hash(recursive: true)
         changed_thread["children"].length.should == thread["children"].length + 1
         comment = changed_thread["children"].select{|c| c["body"] == "new comment"}.first
         comment.should_not be_nil
+        comment["anonymous"].should be_true
       end
       it "returns 400 when the thread does not exist" do
         post "/api/v1/threads/does_not_exist/comments", default_params

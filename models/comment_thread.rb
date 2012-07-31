@@ -11,6 +11,7 @@ class CommentThread < Content
   field :body, type: String
   field :course_id, type: String, index: true
   field :commentable_id, type: String, index: true
+  field :anonymous, type: Boolean, default: false
 
   include Sunspot::Mongoid
   searchable do
@@ -28,12 +29,13 @@ class CommentThread < Content
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
   has_many :comments, dependent: :destroy, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
 
-  attr_accessible :title, :body, :course_id, :commentable_id
+  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous
 
   validates_presence_of :title
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
   validates_presence_of :commentable_id
+  validates_presence_of :author
 
   validate :tag_names_valid
   validate :tag_names_unique
@@ -69,9 +71,9 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-    doc = as_document.slice(*%w[title body course_id commentable_id created_at updated_at])
+    doc = as_document.slice(*%w[title body course_id anonymous commentable_id created_at updated_at])
                       .merge("id" => _id)
-                      .merge("user_id" => (author.id if author))
+                      .merge("user_id" => author.id)
                       .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                       .merge("tags" => tags_array)
 
@@ -96,7 +98,7 @@ class CommentThread < Content
 
 private
   def generate_notifications
-    if subscribers or (author.followers if author)
+    if subscribers or (author.followers if not anonymous)
       notification = Notification.new(
         notification_type: "post_topic",
         info: {
@@ -106,10 +108,10 @@ private
           thread_title: title,
         },
       )
-      notification.actor = author
+      notification.actor = author if not anonymous
       notification.target = self
       receivers = commentable.subscribers
-      if author
+      if not anonymous
         receivers = (receivers + author.followers).uniq_by(&:id)
       end
       receivers.delete(author)

@@ -10,15 +10,17 @@ class Comment < Content
   field :body, type: String
   field :course_id, type: String
   field :endorsed, type: Boolean, default: false
+  field :anonymous, type: Boolean, default: false
 
   belongs_to :author, class_name: "User", index: true
   belongs_to :comment_thread, index: true
 
-  attr_accessible :body, :course_id, :endorsed
+  attr_accessible :body, :course_id, :endorsed, :anonymous
 
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
   validates_presence_of :comment_thread
+  validates_presence_of :author
 
   before_destroy :delete_descendants # TODO async
   after_create :generate_notifications
@@ -39,9 +41,9 @@ class Comment < Content
     if params[:recursive]
       self.class.hash_tree(subtree(sort: sort_by_parent_and_time)).first
     else
-      as_document.slice(*%w[body course_id endorsed created_at updated_at])
+      as_document.slice(*%w[body course_id endorsed anonymous created_at updated_at])
                   .merge("id" => _id)
-                  .merge("user_id" => (author.id if author))
+                  .merge("user_id" => author.id)
                   .merge("depth" => depth)
                   .merge("thread_id" => comment_thread.id)
                   .merge("votes" => votes.slice(*%w[count up_count down_count point]))
@@ -50,7 +52,7 @@ class Comment < Content
 
 private
   def generate_notifications
-    if comment_thread.subscribers or (author.followers if author)
+    if comment_thread.subscribers or (author.followers if not anonymous)
       notification = Notification.new(
         notification_type: "post_reply",
         info: {
@@ -60,10 +62,10 @@ private
           commentable_id: comment_thread.commentable_id,
         },
       )
-      notification.actor = author
+      notification.actor = author if not anonymous
       notification.target = self
       receivers = comment_thread.subscribers
-      if author
+      if not anonymous
         receivers = (receivers + author.followers).uniq_by(&:id)
       end
       receivers.delete(author)
