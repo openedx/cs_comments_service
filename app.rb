@@ -35,18 +35,19 @@ delete '/api/v1/:commentable_id/threads' do |commentable_id|
 end
 
 get '/api/v1/:commentable_id/threads' do |commentable_id|
-  commentable.comment_threads.map{|t| t.to_hash(recursive: params["recursive"])}.to_json
+  commentable.comment_threads.map{|t| t.to_hash(recursive: value_to_boolean(params["recursive"]))}.to_json
 end
 
 post '/api/v1/:commentable_id/threads' do |commentable_id|
-  thread = CommentThread.new(params.slice(*%w[title body course_id anonymous]).merge(commentable_id: commentable_id))
+  thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
+  thread.anonymous = value_to_boolean(params["anonymous"]) || false
   thread.tags = params["tags"] || ""
   thread.author = user
   thread.save
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
   else
-    user.subscribe(thread) if params["auto_subscribe"]
+    user.subscribe(thread) if value_to_boolean params["auto_subscribe"]
     thread.to_hash.to_json
   end
 end
@@ -60,7 +61,7 @@ get '/api/v1/threads/tags/autocomplete' do
 end
 
 get '/api/v1/threads/:thread_id' do |thread_id|
-  CommentThread.find(thread_id).to_hash(recursive: params["recursive"]).to_json
+  CommentThread.find(thread_id).to_hash(recursive: value_to_boolean(params["recursive"])).to_json
 end
 
 put '/api/v1/threads/:thread_id' do |thread_id|
@@ -77,13 +78,14 @@ put '/api/v1/threads/:thread_id' do |thread_id|
 end
 
 post '/api/v1/threads/:thread_id/comments' do |thread_id|
-  comment = thread.comments.new(params.slice(*%w[body course_id anonymous]))
+  comment = thread.comments.new(params.slice(*%w[body course_id]))
+  comment.anonymous = value_to_boolean(params["anonymous"]) || false
   comment.author = user 
   comment.save
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
   else
-    user.subscribe(thread) if params["auto_subscribe"]
+    user.subscribe(thread) if value_to_boolean params["auto_subscribe"]
     comment.to_hash.to_json
   end
 end
@@ -94,7 +96,7 @@ delete '/api/v1/threads/:thread_id' do |thread_id|
 end
 
 get '/api/v1/comments/:comment_id' do |comment_id|
-  comment.to_hash(recursive: params["recursive"]).to_json
+  comment.to_hash(recursive: value_to_boolean(params["recursive"])).to_json
 end
 
 put '/api/v1/comments/:comment_id' do |comment_id|
@@ -107,13 +109,16 @@ put '/api/v1/comments/:comment_id' do |comment_id|
 end
 
 post '/api/v1/comments/:comment_id' do |comment_id|
+  puts params
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
+  sub_comment.anonymous = value_to_boolean(params["anonymous"]) || false
   sub_comment.author = user
   sub_comment.comment_thread = comment.comment_thread
   sub_comment.save
   if sub_comment.errors.any?
     error 400, sub_comment.errors.full_messages.to_json
   else
+    user.subscribe(comment.comment_thread) if value_to_boolean params["auto_subscribe"]
     sub_comment.to_hash.to_json
   end
 end
@@ -140,7 +145,7 @@ delete '/api/v1/threads/:thread_id/votes' do |thread_id|
 end
 
 get '/api/v1/users/:user_id' do |user_id|
-  user.to_hash(complete: params["complete"]).to_json
+  user.to_hash(complete: value_to_boolean(params["complete"])).to_json
 end
 
 get '/api/v1/users/:user_id/notifications' do |user_id|

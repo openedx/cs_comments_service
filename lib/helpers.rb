@@ -4,7 +4,7 @@ helpers do
   end
 
   def user # TODO handle 404 if integrated user service
-    @user ||= (User.find_or_create_by(external_id: params[:user_id]) if params[:user_id])
+    @user ||= User.find_or_create_by(external_id: params[:user_id])
   end
 
   def thread
@@ -40,5 +40,9 @@ helpers do
     raise ArgumentError, "must provide user id" unless user
     user.unvote(obj)
     obj.reload.to_hash.to_json
+  end
+
+  def value_to_boolean(value)
+    !!(value.to_s =~ /^true$/i)
   end
 end
