@@ -31,7 +31,7 @@ gem 'sunspot'
 gem 'sunspot_solr'
 gem 'sunspot_mongoid', :git => 'git@github.com:dementrock/sunspot_mongoid.git'
 
-gem 'kaminari', :path => '../kaminari', :require => 'kaminari/sinatra'#:git => 'git@github.com:dementrock/kaminari.git'
+gem 'kaminari', :require => 'kaminari/sinatra', :git => 'git@github.com:dementrock/kaminari.git'
 
 
 group :test do
