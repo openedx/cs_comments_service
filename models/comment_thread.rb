@@ -26,8 +26,8 @@ class CommentThread < Content
     end
   end
 
-  belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true, autosave: true
-  has_many :comments, dependent: :destroy, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
+  belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true
+  has_many :comments, dependent: :destroy#, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
 
   attr_accessible :title, :body, :course_id, :commentable_id, :anonymous
 
@@ -35,7 +35,7 @@ class CommentThread < Content
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
   validates_presence_of :commentable_id
-  validates_presence_of :author
+  validates_presence_of :author, autosave: false
 
   validate :tag_names_valid
   validate :tag_names_unique

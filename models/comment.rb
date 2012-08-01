@@ -19,8 +19,8 @@ class Comment < Content
 
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
-  validates_presence_of :comment_thread
-  validates_presence_of :author
+  validates_presence_of :comment_thread, autosave: false
+  validates_presence_of :author, autosave: false
 
   before_destroy :delete_descendants # TODO async
   after_create :generate_notifications
