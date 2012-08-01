@@ -9,8 +9,8 @@ class CommentThread < Content
 
   field :title, type: String
   field :body, type: String
-  field :course_id, type: String, index: true
-  field :commentable_id, type: String, index: true
+  field :course_id, type: String
+  field :commentable_id, type: String
   field :anonymous, type: Boolean, default: false
 
   include Sunspot::Mongoid

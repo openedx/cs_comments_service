@@ -1,10 +1,16 @@
 development:
-  host: localhost
-  database: cs_comments_service_development
+  sessions:
+    default:
+      database: cs_comments_service_development
+      hosts:
+        - localhost:27017
 
 test:
-  host: localhost
-  database: cs_comments_service_test
+  sessions:
+    default:
+      database: cs_comments_service_test
+      hosts:
+        - localhost:27017
 
 defaults: &defaults
   use_utc: false

@@ -109,7 +109,6 @@ put '/api/v1/comments/:comment_id' do |comment_id|
 end
 
 post '/api/v1/comments/:comment_id' do |comment_id|
-  puts params
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
   sub_comment.anonymous = value_to_boolean(params["anonymous"]) || false
   sub_comment.author = user
@@ -171,7 +170,7 @@ if environment.to_s == "development"
   end
 end
 
-error BSON::InvalidObjectId do
+error Moped::Errors::InvalidObjectId do
   error 400, ["requested object not found"].to_json
 end
 

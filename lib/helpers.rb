@@ -4,6 +4,7 @@ helpers do
   end
 
   def user # TODO handle 404 if integrated user service
+    raise ArgumentError, "User id is required" unless @user || params[:user_id]
     @user ||= User.find_or_create_by(external_id: params[:user_id])
   end
 

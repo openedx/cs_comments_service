@@ -2,15 +2,18 @@ class User
   include Mongoid::Document
   include Mongo::Voter
 
-  key :external_id, type: String, index: true
+  field :_id, type: String, default: -> { external_id }
+  field :external_id, type: String
   
-  has_many :comments
+  has_many :comments, inverse_of: :author
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
   has_and_belongs_to_many :notifications, inverse_of: :receivers
 
   validates_presence_of :external_id
   validates_uniqueness_of :external_id
+
+  index external_id: 1
 
   def subscriptions_as_source
     Subscription.where(source_id: id.to_s, source_type: self.class.to_s)
