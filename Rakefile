@@ -86,8 +86,14 @@ namespace :db do
     Subscription.delete_all
   end
 
+  THREADS_PER_COMMENTABLE = 200
+  TOP_COMMENTS_PER_THREAD = 0
+  ADDITIONAL_COMMENTS_PER_THREAD = 0
+
   def generate_comments_for(commentable_id)
     level_limit = YAML.load_file("config/application.yml")["level_limit"]
+
+    
 
     thread_seeds = [
       {title: "This is really interesting", body: "best I've ever seen!"},
@@ -121,47 +127,42 @@ namespace :db do
     puts "Generating threads and comments for #{commentable_id}..."
 
     threads = []
-    comments = []
+    top_comments = []
+    additional_comments = []
 
-    thread_seeds.each do |thread_seed|
+    THREADS_PER_COMMENTABLE.times do
+      thread_seed = thread_seeds.sample
       comment_thread = CommentThread.new(commentable_id: commentable_id, body: thread_seed[:body], title: thread_seed[:title], course_id: "1")
       comment_thread.author = users.sample
       comment_thread.tags = tag_seeds.sort_by{rand}[0..2].join(",")
       comment_thread.save!
       threads << comment_thread
-      3.times do
+      TOP_COMMENTS_PER_THREAD.times do
         comment = comment_thread.comments.new(body: comment_body_seeds.sample, course_id: "1")
         comment.author = users.sample
         comment.endorsed = [true, false].sample
         comment.comment_thread = comment_thread
         comment.save!
-        comments << comment
+        top_comments << comment
       end
-      10.times do
-        comment = Comment.where(comment_thread_id: comment_thread.id).reject{|c| c.depth >= level_limit}.sample
+      ADDITIONAL_COMMENTS_PER_THREAD.times do
+        comment = top_comments.sample
         sub_comment = comment.children.new(body: comment_body_seeds.sample, course_id: "1")
         sub_comment.author = users.sample
         sub_comment.endorsed = [true, false].sample
         sub_comment.comment_thread = comment_thread
         sub_comment.save!
-        comments << sub_comment
+        additional_comments << sub_comment
       end
     end
 
-    puts "voting for these threads & comments.."
-
-    threads.each do |c|
+=begin
+    (threads + top_comments + additional_comments).each do |c|
       users.each do |user|
         user.vote(c, [:up, :down].sample)
       end
     end
-
-    comments.each do |c|
-      users.each do |user|
-        user.vote(c, [:up, :down].sample)
-      end
-    end
-
+=end
     puts "finished"
   end
 
@@ -183,7 +184,7 @@ namespace :db do
     beginning_time = Time.now
 
     users = (1..10).map {|id| User.find_or_create_by(external_id: id.to_s)}
-
+=begin
     3.times do
       other_user = users[1..9].sample
       users.first.subscribe(other_user)
@@ -194,7 +195,7 @@ namespace :db do
       other_user = users.select{|u| u != user}.sample
       user.subscribe(other_user)
     end
-        
+=end        
     generate_comments_for("video_1")
     generate_comments_for("lab_1")
     generate_comments_for("lab_2")
