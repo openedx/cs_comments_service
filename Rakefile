@@ -86,9 +86,9 @@ namespace :db do
     Subscription.delete_all
   end
 
-  THREADS_PER_COMMENTABLE = 200
-  TOP_COMMENTS_PER_THREAD = 0
-  ADDITIONAL_COMMENTS_PER_THREAD = 0
+  THREADS_PER_COMMENTABLE = 50
+  TOP_COMMENTS_PER_THREAD = 3
+  ADDITIONAL_COMMENTS_PER_THREAD = 10
 
   def generate_comments_for(commentable_id)
     level_limit = YAML.load_file("config/application.yml")["level_limit"]
@@ -156,13 +156,13 @@ namespace :db do
       end
     end
 
-=begin
+    puts "voting"
+
     (threads + top_comments + additional_comments).each do |c|
       users.each do |user|
         user.vote(c, [:up, :down].sample)
       end
     end
-=end
     puts "finished"
   end
 

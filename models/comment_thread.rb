@@ -7,6 +7,7 @@ class CommentThread < Content
 
   voteable self, :up => +1, :down => -1
 
+  field :comment_count, type: Integer, default: 0
   field :title, type: String
   field :body, type: String
   field :course_id, type: String
@@ -18,6 +19,10 @@ class CommentThread < Content
     text :title, boost: 5.0, stored: true, more_like_this: true
     text :body, stored: true, more_like_this: true
 
+    integer :comment_count
+    integer :votes_point do
+      votes_point
+    end
     string :course_id
     string :commentable_id
     string :author_id

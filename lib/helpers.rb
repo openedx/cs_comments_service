@@ -46,4 +46,5 @@ helpers do
   def value_to_boolean(value)
     !!(value.to_s =~ /^true$/i)
   end
+
 end

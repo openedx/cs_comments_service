@@ -4,6 +4,7 @@ class Comment < Content
   include Mongoid::Tree
   include Mongo::Voteable
   include Mongoid::Timestamps
+  include Mongoid::MagicCounterCache
   
   voteable self, :up => +1, :down => -1
 
@@ -21,6 +22,8 @@ class Comment < Content
   validates_presence_of :course_id # do we really need this?
   validates_presence_of :comment_thread, autosave: false
   validates_presence_of :author, autosave: false
+
+  counter_cache :comment_thread
 
   before_destroy :delete_descendants # TODO async
   after_create :generate_notifications
