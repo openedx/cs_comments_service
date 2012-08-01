@@ -25,6 +25,7 @@ get '/api/v1/search/threads' do
   CommentThread.solr_search do
     fulltext(params["text"]) if params["text"]
     with(:commentable_id, params["commentable_id"]) if params["commentable_id"]
+    with(:course_id, params["course_id"]) if params["course_id"]
     with(:tags).all_of(params["tags"].split /,/) if params["tags"]
   end.results.map(&:to_hash).to_json
 end
@@ -35,7 +36,17 @@ delete '/api/v1/:commentable_id/threads' do |commentable_id|
 end
 
 get '/api/v1/:commentable_id/threads' do |commentable_id|
-  commentable.comment_threads.map{|t| t.to_hash(recursive: value_to_boolean(params["recursive"]))}.to_json
+  page = (params["page"] || 1).to_i
+  per_page = (params["per_page"] || 20).to_i
+  comment_threads = commentable.comment_threads
+  num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
+  page = [num_pages, [1, page].max].min
+  {
+    collection: comment_threads.page(page).per(per_page).map{|t| t.to_hash(recursive: value_to_boolean(params["recursive"]))},
+    num_pages: num_pages,
+    per_page: per_page,
+    page: page,
+  }.to_json
 end
 
 post '/api/v1/:commentable_id/threads' do |commentable_id|

@@ -18,7 +18,8 @@ describe "app" do
       it "get all comment threads associated with a commentable object" do
         get "/api/v1/question_1/threads"
         last_response.should be_ok
-        threads = parse last_response.body
+        response = parse last_response.body
+        threads = response['collection']
         threads.length.should == 2
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
@@ -26,7 +27,8 @@ describe "app" do
       it "get all comment threads and comments associated with a commentable object" do
         get "/api/v1/question_1/threads", recursive: true
         last_response.should be_ok
-        threads = parse last_response.body
+        response = parse last_response.body
+        threads = response['collection']
         threads.length.should == 2
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
@@ -45,7 +47,8 @@ describe "app" do
       it "returns an empty array when the commentable object does not exist (no threads)" do
         get "/api/v1/does_not_exist/threads"
         last_response.should be_ok
-        threads = parse last_response.body
+        response = parse last_response.body
+        threads = response['collection']
         threads.length.should == 0
       end
     end
