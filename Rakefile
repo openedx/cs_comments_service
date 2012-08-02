@@ -90,6 +90,8 @@ namespace :db do
   TOP_COMMENTS_PER_THREAD = 3
   ADDITIONAL_COMMENTS_PER_THREAD = 10
 
+  COURSE_ID = "MITx/6.002x/2012_Fall"
+
   def generate_comments_for(commentable_id)
     level_limit = YAML.load_file("config/application.yml")["level_limit"]
 
@@ -135,6 +137,7 @@ namespace :db do
       comment_thread = CommentThread.new(commentable_id: commentable_id, body: thread_seed[:body], title: thread_seed[:title], course_id: "1")
       comment_thread.author = users.sample
       comment_thread.tags = tag_seeds.sort_by{rand}[0..2].join(",")
+      comment_thread.course_id = COURSE_ID
       comment_thread.save!
       threads << comment_thread
       TOP_COMMENTS_PER_THREAD.times do
@@ -142,6 +145,7 @@ namespace :db do
         comment.author = users.sample
         comment.endorsed = [true, false].sample
         comment.comment_thread = comment_thread
+        comment.course_id = COURSE_ID
         comment.save!
         top_comments << comment
       end
@@ -151,6 +155,7 @@ namespace :db do
         sub_comment.author = users.sample
         sub_comment.endorsed = [true, false].sample
         sub_comment.comment_thread = comment_thread
+        sub_comment.course_id = COURSE_ID
         sub_comment.save!
         additional_comments << sub_comment
       end
