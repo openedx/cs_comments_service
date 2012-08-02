@@ -95,24 +95,6 @@ namespace :db do
   def generate_comments_for(commentable_id)
     level_limit = YAML.load_file("config/application.yml")["level_limit"]
 
-    thread_seeds = [
-      {title: "This is really interesting", body: "best I've ever seen!"},
-      {title: "We can probably make this better", body: "Let's do it"},
-      {title: "I don't know where to start", body: "Can anyone help me?"},
-      {title: "I'm here!", body: "Haha I'm the first one who discovered this"},
-      {title: "I need five threads but I don't know what to put here", body: "So I'll just leave it this way"},
-    ]
-
-    comment_body_seeds = [
-      "dude I don't know what you're talking about",
-      "hi I'm Jack",
-      "hi just sent you a message",
-      "let's discuss this further",
-      "can't agree more",
-      "haha",
-      "lol",
-    ]
-
     tag_seeds = [
       "artificial-intelligence",
       "random rant",
@@ -131,18 +113,16 @@ namespace :db do
     additional_comments = []
 
     THREADS_PER_COMMENTABLE.times do
-      thread_seed = thread_seeds.sample
-
       inner_top_comments = []
 
-      comment_thread = CommentThread.new(commentable_id: commentable_id, body: thread_seed[:body], title: thread_seed[:title])
+      comment_thread = CommentThread.new(commentable_id: commentable_id, body: Faker::Lorem.paragraphs.join("\n\n"), title: Faker::Lorem.sentence(6))
       comment_thread.author = users.sample
       comment_thread.tags = tag_seeds.sort_by{rand}[0..2].join(",")
       comment_thread.course_id = COURSE_ID
       comment_thread.save!
       threads << comment_thread
       TOP_COMMENTS_PER_THREAD.times do
-        comment = comment_thread.comments.new(body: comment_body_seeds.sample)
+        comment = comment_thread.comments.new(body: Faker::Lorem.paragraph(2))
         comment.author = users.sample
         comment.endorsed = [true, false].sample
         comment.comment_thread = comment_thread
@@ -153,7 +133,7 @@ namespace :db do
       end
       ADDITIONAL_COMMENTS_PER_THREAD.times do
         comment = inner_top_comments.sample
-        sub_comment = comment.children.new(body: comment_body_seeds.sample)
+        sub_comment = comment.children.new(body: Faker::Lorem.paragraph(2))
         sub_comment.author = users.sample
         sub_comment.endorsed = [true, false].sample
         sub_comment.comment_thread = comment_thread
@@ -206,6 +186,11 @@ namespace :db do
     generate_comments_for("video_1")
     generate_comments_for("lab_1")
     generate_comments_for("lab_2")
+
+    puts "reindexing solr..."
+
+    CommentThread.remove_all_from_index!
+    Sunspot.index!(CommentThread.all.to_a)
 
     end_time = Time.now
 

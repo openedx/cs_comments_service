@@ -34,6 +34,8 @@ gem 'sunspot_mongoid', :git => 'git@github.com:dementrock/sunspot_mongoid.git'
 
 gem 'kaminari', :require => 'kaminari/sinatra', :git => 'git@github.com:dementrock/kaminari.git'
 
+gem 'faker'
+
 
 group :test do
   gem 'rspec'
