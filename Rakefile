@@ -86,16 +86,14 @@ namespace :db do
     Subscription.delete_all
   end
 
-  THREADS_PER_COMMENTABLE = 50
+  THREADS_PER_COMMENTABLE = 15
   TOP_COMMENTS_PER_THREAD = 3
-  ADDITIONAL_COMMENTS_PER_THREAD = 10
+  ADDITIONAL_COMMENTS_PER_THREAD = 5
 
   COURSE_ID = "MITx/6.002x/2012_Fall"
 
   def generate_comments_for(commentable_id)
     level_limit = YAML.load_file("config/application.yml")["level_limit"]
-
-    
 
     thread_seeds = [
       {title: "This is really interesting", body: "best I've ever seen!"},
@@ -134,24 +132,28 @@ namespace :db do
 
     THREADS_PER_COMMENTABLE.times do
       thread_seed = thread_seeds.sample
-      comment_thread = CommentThread.new(commentable_id: commentable_id, body: thread_seed[:body], title: thread_seed[:title], course_id: "1")
+
+      inner_top_comments = []
+
+      comment_thread = CommentThread.new(commentable_id: commentable_id, body: thread_seed[:body], title: thread_seed[:title])
       comment_thread.author = users.sample
       comment_thread.tags = tag_seeds.sort_by{rand}[0..2].join(",")
       comment_thread.course_id = COURSE_ID
       comment_thread.save!
       threads << comment_thread
       TOP_COMMENTS_PER_THREAD.times do
-        comment = comment_thread.comments.new(body: comment_body_seeds.sample, course_id: "1")
+        comment = comment_thread.comments.new(body: comment_body_seeds.sample)
         comment.author = users.sample
         comment.endorsed = [true, false].sample
         comment.comment_thread = comment_thread
         comment.course_id = COURSE_ID
         comment.save!
         top_comments << comment
+        inner_top_comments << comment
       end
       ADDITIONAL_COMMENTS_PER_THREAD.times do
-        comment = top_comments.sample
-        sub_comment = comment.children.new(body: comment_body_seeds.sample, course_id: "1")
+        comment = inner_top_comments.sample
+        sub_comment = comment.children.new(body: comment_body_seeds.sample)
         sub_comment.author = users.sample
         sub_comment.endorsed = [true, false].sample
         sub_comment.comment_thread = comment_thread
@@ -188,7 +190,7 @@ namespace :db do
 
     beginning_time = Time.now
 
-    users = (1..10).map {|id| User.find_or_create_by(external_id: id.to_s)}
+    users = (1..5).map {|id| User.find_or_create_by(external_id: id.to_s)}
 =begin
     3.times do
       other_user = users[1..9].sample
