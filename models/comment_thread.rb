@@ -19,6 +19,8 @@ class CommentThread < Content
     text :title, boost: 5.0, stored: true, more_like_this: true
     text :body, stored: true, more_like_this: true
 
+    time :created_at
+    time :updated_at
     integer :comment_count
     integer :votes_point do
       votes_point
