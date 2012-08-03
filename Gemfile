@@ -36,6 +36,8 @@ gem 'kaminari', :require => 'kaminari/sinatra', :git => 'git@github.com:dementro
 
 gem 'faker'
 
+gem 'rdiscount'
+gem 'nokogiri'
 
 group :test do
   gem 'rspec'
