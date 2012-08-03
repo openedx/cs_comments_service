@@ -171,7 +171,6 @@ namespace :db do
     beginning_time = Time.now
 
     users = (1..5).map {|id| User.find_or_create_by(external_id: id.to_s)}
-=begin
     3.times do
       other_user = users[1..9].sample
       users.first.subscribe(other_user)
@@ -182,7 +181,6 @@ namespace :db do
       other_user = users.select{|u| u != user}.sample
       user.subscribe(other_user)
     end
-=end        
     generate_comments_for("video_1")
     generate_comments_for("lab_1")
     generate_comments_for("lab_2")
