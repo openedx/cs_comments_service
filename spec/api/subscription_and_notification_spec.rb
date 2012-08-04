@@ -16,9 +16,9 @@ describe "app" do
         notification_not_for_me_neither = notifications.select{|f| f["notification_type"] == "post_reply" and f["info"]["comment_id"] == not_for_me_neither.id.to_s}.first
         notification_not_for_me_neither.should_not be_nil
       end
-      it "returns empty array if user does not exist" do #TODO may change later if have user service
+      it "returns error if user does not exist" do #TODO may change later if have user service
         get "/api/v1/users/does_not_exist/notifications"
-        parse(last_response.body).length.should == 0
+        last_response.status.should == 400
       end
       it "get all notifications on the subscribed commentable for the user" do
         user = User.find("1")
@@ -55,7 +55,7 @@ describe "app" do
         User.find("2").followers.length.should == 1
       end
       it "does not follow oneself" do
-        user = User.find_or_create_by(external_id: "3")
+        user = create_test_user(3)
         post "/api/v1/users/#{user.external_id}/subscriptions", source_type: "user", source_id: user.external_id
         last_response.status.should == 400
         user.reload.followers.length.should == 0
@@ -76,21 +76,21 @@ describe "app" do
         User.find("1").followers.length.should == 0
       end
       it "subscribe a commentable" do
-        user3 = User.find_or_create_by(external_id: "3")
+        user3 = create_test_user(3)
         post "/api/v1/users/#{user3.external_id}/subscriptions", source_type: "other", source_id: "question_1"
         last_response.should be_ok
         Commentable.find("question_1").subscribers.length.should == 3
         Commentable.find("question_1").subscribers.should include user3
       end
       it "unsubscribe a commentable" do
-        user2 = User.find_or_create_by(external_id: "2")
+        user2 = User.find_by(external_id: "2")
         delete "/api/v1/users/#{user2.external_id}/subscriptions", source_type: "other", source_id: "question_1"
         last_response.should be_ok
         Commentable.find("question_1").subscribers.length.should == 1
         Commentable.find("question_1").subscribers.should_not include user2
       end
       it "subscribe a comment thread" do
-        user1 = User.find_or_create_by(external_id: "1")
+        user1 = User.find_by(external_id: "1")
         thread = CommentThread.where(body: "it is unsolvable").first
         post "/api/v1/users/#{user1.external_id}/subscriptions", source_type: "thread", source_id: thread.id
         last_response.should be_ok
@@ -99,7 +99,7 @@ describe "app" do
         thread.subscribers.should include user1
       end
       it "unsubscribe a comment thread" do
-        user2 = User.find_or_create_by(external_id: "2")
+        user2 = User.find_by(external_id: "2")
         thread = CommentThread.where(body: "it is unsolvable").first
         delete "/api/v1/users/#{user2.external_id}/subscriptions", source_type: "thread", source_id: thread.id
         last_response.should be_ok

@@ -24,6 +24,10 @@ def parse(text)
   Yajl::Parser.parse text
 end
 
+def create_test_user(id)
+  User.create!(external_id: id.to_s, username: "user#{id}", email: "user#{id}@test.com")
+end
+
 def init_without_subscriptions
   Comment.delete_all
   CommentThread.delete_all
@@ -33,7 +37,7 @@ def init_without_subscriptions
   
   commentable = Commentable.new("question_1")
 
-  user = User.create!(external_id: "1")
+  user = create_test_user(1)
 
   thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: commentable.id)
   thread.author = user
@@ -80,7 +84,7 @@ def init_without_subscriptions
   comment1.comment_thread = thread
   comment1.save!
 
-  users = (2..10).map{|id| User.find_or_create_by(external_id: id.to_s)}
+  users = (2..10).map{|id| create_test_user(id)}
 
   Comment.all.each do |c|
     user.vote(c, :up) # make the first user always vote up for convenience
@@ -101,8 +105,8 @@ def init_with_subscriptions
   Notification.delete_all
   Subscription.delete_all
 
-  user1 = User.create!(external_id: "1")
-  user2 = User.create!(external_id: "2")
+  user1 = create_test_user(1)
+  user2 = create_test_user(2)
 
   user2.subscribe(user1)
 

@@ -5,7 +5,7 @@ helpers do
 
   def user # TODO handle 404 if integrated user service
     raise ArgumentError, "User id is required" unless @user || params[:user_id]
-    @user ||= User.find_or_create_by(external_id: params[:user_id])
+    @user ||= User.find_by(external_id: params[:user_id])
   end
 
   def thread
@@ -19,7 +19,7 @@ helpers do
   def source
     @source ||= case params["source_type"]
     when "user"
-      User.find_or_create_by(external_id: params["source_id"])
+      User.find_by(external_id: params["source_id"])
     when "thread"
       CommentThread.find(params["source_id"])
     when "other"

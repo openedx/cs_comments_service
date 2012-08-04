@@ -85,7 +85,9 @@ describe "app" do
       end
     end
     describe "POST /api/v1/threads/:thread_id/comments" do
-      default_params = {body: "new comment", course_id: "1", user_id: User.first.id}
+      let :default_params  do
+        {body: "new comment", course_id: "1", user_id: User.first.id}
+      end
       it "create a comment to the comment thread" do
         thread = CommentThread.first.to_hash(recursive: true)
         user = User.first

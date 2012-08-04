@@ -20,6 +20,9 @@ and also the following code
     end
 what is the 'at' symbol doing there? @dementrock
 """
+    User.delete_all
+    User.create!(external_id: "1", username: "tom", email: "tom@test.com")
+    User.create!(external_id: "2", username: "pi314", email: "pi314@test.com")
   end
 
   describe "#get_marked_text(text)" do
@@ -36,10 +39,9 @@ what is the 'at' symbol doing there? @dementrock
   describe "#get_valid_at_position_list(text)" do
     it "returns the list of positions for the valid @ notifications, filtering out the ones in code blocks" do
       list = Content.get_valid_at_position_list(@text)
-      list.should include [0, "tom"]
-      list.should include [1, "pi314"]
-      list.should include [4, "dementrock"]
-      list.length.should == 3
+      list.should include [0, "tom", "1"]
+      list.should include [1, "pi314", "2"]
+      list.length.should == 2
     end
   end
 end

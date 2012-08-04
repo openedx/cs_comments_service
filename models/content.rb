@@ -3,6 +3,8 @@ class Content
   
   AT_NOTIFICATION_REGEX = /(?<=^|\s)(@[A-Za-z0-9_]+)(?!\w)/
   
+
+private
   def self.get_marked_text(text)
     counter = -1
     text.gsub AT_NOTIFICATION_REGEX do
@@ -15,7 +17,11 @@ class Content
     list = []
     text.gsub AT_NOTIFICATION_REGEX do
       parts = $1.rpartition('_')
-      list << [parts.last.to_i, parts.first[1..-1]]
+      username = parts.first[1..-1]
+      user = User.where(username: username).first
+      if user
+        list << [parts.last.to_i, parts.first[1..-1], user.id]
+      end
     end
     list
   end
@@ -27,5 +33,6 @@ class Content
     end
     self.get_at_position_list html.to_s
   end
+
 
 end

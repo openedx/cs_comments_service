@@ -11,6 +11,8 @@ RACK_ENV = environment
 
 module CommentService
   class << self; attr_accessor :config; end
+  API_VERSION = 'v1'
+  API_PREFIX = "/api/#{API_VERSION}"
 end
 
 CommentService.config = YAML.load_file("config/application.yml")
@@ -21,7 +23,9 @@ Mongoid.logger.level = Logger::INFO
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 
-get '/api/v1/search/threads' do 
+api_prefix = CommentService::API_PREFIX
+
+get "#{api_prefix}/search/threads" do 
 
   sort_key_mapper = {
     "date" => :created_at,
@@ -60,12 +64,12 @@ get '/api/v1/search/threads' do
   end
 end
 
-delete '/api/v1/:commentable_id/threads' do |commentable_id|
+delete "#{api_prefix}/:commentable_id/threads" do |commentable_id|
   commentable.comment_threads.destroy_all
   {}.to_json
 end
 
-get '/api/v1/:commentable_id/threads' do |commentable_id|
+get "#{api_prefix}/:commentable_id/threads" do |commentable_id|
 
   sort_key_mapper = {
     "date" => :created_at,
@@ -99,7 +103,7 @@ get '/api/v1/:commentable_id/threads' do |commentable_id|
   end
 end
 
-post '/api/v1/:commentable_id/threads' do |commentable_id|
+post "#{api_prefix}/:commentable_id/threads" do |commentable_id|
   thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
   thread.anonymous = value_to_boolean(params["anonymous"]) || false
   thread.tags = params["tags"] || ""
@@ -113,19 +117,19 @@ post '/api/v1/:commentable_id/threads' do |commentable_id|
   end
 end
 
-get '/api/v1/threads/tags' do
+get "#{api_prefix}/threads/tags" do
   CommentThread.tags.to_json
 end
 
-get '/api/v1/threads/tags/autocomplete' do
+get "#{api_prefix}/threads/tags/autocomplete" do
   CommentThread.tags_autocomplete(params["value"].strip, max: 5, sort_by_count: true).map(&:first).to_json
 end
 
-get '/api/v1/threads/:thread_id' do |thread_id|
+get "#{api_prefix}/threads/:thread_id" do |thread_id|
   CommentThread.find(thread_id).to_hash(recursive: value_to_boolean(params["recursive"])).to_json
 end
 
-put '/api/v1/threads/:thread_id' do |thread_id|
+put "#{api_prefix}/threads/:thread_id" do |thread_id|
   thread.update_attributes(params.slice(*%w[title body]))
   if params["tags"]
     thread.tags = params["tags"]
@@ -138,7 +142,7 @@ put '/api/v1/threads/:thread_id' do |thread_id|
   end
 end
 
-post '/api/v1/threads/:thread_id/comments' do |thread_id|
+post "#{api_prefix}/threads/:thread_id/comments" do |thread_id|
   comment = thread.comments.new(params.slice(*%w[body course_id]))
   comment.anonymous = value_to_boolean(params["anonymous"]) || false
   comment.author = user 
@@ -151,16 +155,16 @@ post '/api/v1/threads/:thread_id/comments' do |thread_id|
   end
 end
 
-delete '/api/v1/threads/:thread_id' do |thread_id|
+delete "#{api_prefix}/threads/:thread_id" do |thread_id|
   thread.destroy
   thread.to_hash.to_json
 end
 
-get '/api/v1/comments/:comment_id' do |comment_id|
+get "#{api_prefix}/comments/:comment_id" do |comment_id|
   comment.to_hash(recursive: value_to_boolean(params["recursive"])).to_json
 end
 
-put '/api/v1/comments/:comment_id' do |comment_id|
+put "#{api_prefix}/comments/:comment_id" do |comment_id|
   comment.update_attributes(params.slice(*%w[body endorsed]))
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
@@ -169,7 +173,7 @@ put '/api/v1/comments/:comment_id' do |comment_id|
   end
 end
 
-post '/api/v1/comments/:comment_id' do |comment_id|
+post "#{api_prefix}/comments/:comment_id" do |comment_id|
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
   sub_comment.anonymous = value_to_boolean(params["anonymous"]) || false
   sub_comment.author = user
@@ -183,28 +187,28 @@ post '/api/v1/comments/:comment_id' do |comment_id|
   end
 end
 
-delete '/api/v1/comments/:comment_id' do |comment_id|
+delete "#{api_prefix}/comments/:comment_id" do |comment_id|
   comment.destroy
   comment.to_hash.to_json
 end
 
-put '/api/v1/comments/:comment_id/votes' do |comment_id|
+put "#{api_prefix}/comments/:comment_id/votes" do |comment_id|
   vote_for comment
 end
 
-delete '/api/v1/comments/:comment_id/votes' do |comment_id|
+delete "#{api_prefix}/comments/:comment_id/votes" do |comment_id|
   undo_vote_for comment
 end
 
-put '/api/v1/threads/:thread_id/votes' do |thread_id|
+put "#{api_prefix}/threads/:thread_id/votes" do |thread_id|
   vote_for thread
 end
 
-delete '/api/v1/threads/:thread_id/votes' do |thread_id|
+delete "#{api_prefix}/threads/:thread_id/votes" do |thread_id|
   undo_vote_for thread
 end
 
-post '/api/v1/users' do
+post "#{api_prefix}/users" do
   user = User.new
   user.external_id = params["id"]
   user.username = params["username"]
@@ -217,12 +221,12 @@ post '/api/v1/users' do
   end
 end
 
-get '/api/v1/users/:user_id' do |user_id|
+get "#{api_prefix}/users/:user_id" do |user_id|
   user.to_hash(complete: value_to_boolean(params["complete"])).to_json
 end
 
-put '/api/v1/users/:user_id' do |user_id|
-  user.update_attributes(params.slice(*%w[username email])
+put "#{api_prefix}/users/:user_id" do |user_id|
+  user.update_attributes(params.slice(*%w[username email]))
   user.save
   if user.errors.any?
     error 400, user.errors.full_messages.to_json
@@ -231,20 +235,20 @@ put '/api/v1/users/:user_id' do |user_id|
   end
 end
 
-get '/api/v1/users/:user_id/notifications' do |user_id|
+get "#{api_prefix}/users/:user_id/notifications" do |user_id|
   user.notifications.map(&:to_hash).to_json
 end
 
-post '/api/v1/users/:user_id/subscriptions' do |user_id|
+post "#{api_prefix}/users/:user_id/subscriptions" do |user_id|
   user.subscribe(source).to_hash.to_json
 end
 
-delete '/api/v1/users/:user_id/subscriptions' do |user_id|
+delete "#{api_prefix}/users/:user_id/subscriptions" do |user_id|
   user.unsubscribe(source).to_hash.to_json
 end
 
 if environment.to_s == "development"
-  get '/api/v1/clean' do
+  get "#{api_prefix}/clean" do
     Comment.delete_all
     CommentThread.delete_all
     User.delete_all

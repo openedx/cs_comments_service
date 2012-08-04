@@ -4,6 +4,8 @@ class User
 
   field :_id, type: String, default: -> { external_id }
   field :external_id, type: String
+  field :username, type: String
+  field :email, type: String
   
   has_many :comments, inverse_of: :author
   has_many :comment_threads, inverse_of: :author
@@ -11,7 +13,11 @@ class User
   has_and_belongs_to_many :notifications, inverse_of: :receivers
 
   validates_presence_of :external_id
+  validates_presence_of :username
+  validates_presence_of :email
   validates_uniqueness_of :external_id
+  validates_uniqueness_of :username
+  validates_uniqueness_of :email
 
   index external_id: 1
 
@@ -36,7 +42,7 @@ class User
   end
 
   def to_hash(params={})
-    hash = as_document.slice(*%w[_id external_id])
+    hash = as_document.slice(*%w[_id username external_id])
     if params[:complete]
       hash = hash.merge("subscribed_thread_ids" => subscribed_thread_ids,
                         "subscribed_commentable_ids" => subscribed_commentable_ids,
