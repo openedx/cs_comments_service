@@ -80,6 +80,7 @@ class CommentThread < Content
     doc = as_document.slice(*%w[title body course_id anonymous commentable_id created_at updated_at at_position_list])
                       .merge("id" => _id)
                       .merge("user_id" => author.id)
+                      .merge("username" => author.username)
                       .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                       .merge("tags" => tags_array)
 

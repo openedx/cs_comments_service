@@ -30,6 +30,7 @@ class AtUserObserver < Mongoid::Observer
           content_id: content.id,
           content_type: content_type,
           thread_title: content_type == :thread ? content.title : content.comment_thread.title,
+          actor_username: (content.author.username if not content.anonymous),
         }
       )
       notification.actor = content.author if not content.anonymous

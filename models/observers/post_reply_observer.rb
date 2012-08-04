@@ -14,6 +14,7 @@ class PostReplyObserver < Mongoid::Observer
           thread_title: comment.comment_thread.title,
           comment_id: comment.id,
           commentable_id: comment.comment_thread.commentable_id,
+          actor_username: (comment.author.username if not comment.anonymous),
         },
       )
       notification.actor = comment.author if not comment.anonymous

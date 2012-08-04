@@ -47,6 +47,7 @@ class Comment < Content
       as_document.slice(*%w[body course_id endorsed anonymous created_at updated_at at_position_list])
                   .merge("id" => _id)
                   .merge("user_id" => author.id)
+                  .merge("username" => author.username)
                   .merge("depth" => depth)
                   .merge("thread_id" => comment_thread.id)
                   .merge("votes" => votes.slice(*%w[count up_count down_count point]))
