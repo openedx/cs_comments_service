@@ -17,8 +17,17 @@ task :environment do
 
   CommentService.config = YAML.load_file("config/application.yml")
 
-  Dir[File.join(File.dirname(__FILE__),'models', '**', '*.rb')].each {|file| require file}
+  Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
+  Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
+  Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
 
+  Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
+  Mongoid.instantiate_observers
+
+end
+
+def create_test_user(id)
+  User.create!(external_id: id, username: "user#{id}", email: "user#{id}@test.com")
 end
 
 namespace :test do
@@ -31,7 +40,7 @@ namespace :test do
       Notification.delete_all
       Subscription.delete_all
       
-      user = User.create!(external_id: "1")
+      user = create_test_user(1)
 
       comment_thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: "question_1")
       comment_thread.author = user
@@ -170,7 +179,7 @@ namespace :db do
 
     beginning_time = Time.now
 
-    users = (1..5).map {|id| User.find_or_create_by(external_id: id.to_s)}
+    users = (1..10).map {|id| create_test_user(id)}
     3.times do
       other_user = users[1..9].sample
       users.first.subscribe(other_user)
