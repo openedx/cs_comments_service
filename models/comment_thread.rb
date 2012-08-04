@@ -105,6 +105,10 @@ class CommentThread < Content
     !!(tag =~ RE_TAG)
   end
 
+  def thread_title
+    title
+  end
+
 private
 
   RE_HEADCHAR = /[a-z0-9]/

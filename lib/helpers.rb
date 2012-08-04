@@ -47,4 +47,20 @@ helpers do
     !!(value.to_s =~ /^true$/i)
   end
 
+  def bool_recursive
+    value_to_boolean params["recursive"]
+  end
+
+  def bool_complete
+    value_to_boolean params["complete"]
+  end
+
+  def bool_auto_subscribe
+    value_to_boolean params["auto_subscribe"]
+  end
+
+  def bool_anonymous
+    value_to_boolean params["anonymous"]
+  end
+
 end

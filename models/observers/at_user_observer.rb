@@ -24,16 +24,18 @@ class AtUserObserver < Mongoid::Observer
     new_user_ids = current_user_ids - prev_user_ids
 
     unless new_user_ids.empty?
+
       notification = Notification.new(
         notification_type: "at_user",
         info: {
           content_id: content.id,
           content_type: content_type,
-          thread_title: content_type == :thread ? content.title : content.comment_thread.title,
-          actor_username: (content.author.username if not content.anonymous),
+          thread_title: content.thread_title,
+          actor_username: content.author_with_anonymity(:username),
+          commentable_id: content.commentable_id,
         }
       )
-      notification.actor = content.author if not content.anonymous
+      notification.actor = content.author_with_anonymity
       notification.target = content
       receivers = new_user_ids.map { |id| User.find(id) }
       receivers.delete(content.author)

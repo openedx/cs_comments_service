@@ -11,18 +11,14 @@ class PostTopicObserver < Mongoid::Observer
         notification_type: "post_topic",
         info: {
           commentable_id: comment_thread.commentable_id,
-          #commentable_type: commentable.commentable_type,
           thread_id: comment_thread.id,
           thread_title: comment_thread.title,
-          actor_username: (comment_thread.author.username if not comment_thread.anonymous),
+          actor_username: comment_thread.author_with_anonymity(:username),
         },
       )
-      notification.actor = comment_thread.author if not comment_thread.anonymous
+      notification.actor = comment_thread.author_with_anonymity
       notification.target = comment_thread
-      receivers = comment_thread.commentable.subscribers
-      if not comment_thread.anonymous
-        receivers = (receivers + comment_thread.author.followers).uniq_by(&:id)
-      end
+      receivers = (comment_thread.commentable.subscribers + comment_thread.author_with_anonymity(:followers, [])).uniq_by(&:id)
       receivers.delete(comment_thread.author)
       notification.receivers << receivers
       notification.save!

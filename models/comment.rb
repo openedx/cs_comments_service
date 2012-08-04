@@ -8,20 +8,20 @@ class Comment < Content
   
   voteable self, :up => +1, :down => -1
 
-  field :body, type: String
   field :course_id, type: String
+  field :body, type: String
   field :endorsed, type: Boolean, default: false
   field :anonymous, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
 
-  belongs_to :author, class_name: "User", index: true
   belongs_to :comment_thread, index: true
+  belongs_to :author, class_name: "User", index: true
 
-  attr_accessible :body, :course_id, :endorsed, :anonymous
+  attr_accessible :body, :course_id, :anonymous, :endorsed
 
-  validates_presence_of :body
-  validates_presence_of :course_id # do we really need this?
   validates_presence_of :comment_thread, autosave: false
+  validates_presence_of :body
+  validates_presence_of :course_id
   validates_presence_of :author, autosave: false
 
   counter_cache :comment_thread
@@ -30,6 +30,18 @@ class Comment < Content
   
   def self.hash_tree(nodes)
     nodes.map{|node, sub_nodes| node.to_hash.merge("children" => hash_tree(sub_nodes).compact)}
+  end
+
+  def thread_title
+    comment_thread.title
+  end
+
+  def commentable
+    comment_thread.commentable
+  end
+
+  def commentable_id
+    comment_thread.commentable_id
   end
 
   def to_hash(params={})

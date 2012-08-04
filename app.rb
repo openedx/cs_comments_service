@@ -61,7 +61,7 @@ get "#{api_prefix}/search/threads" do
     end
     num_pages = [1, (search.total / per_page.to_f).ceil].max
     {
-      collection: search.results.map{|t| t.to_hash(recursive: value_to_boolean(params["recursive"]))},
+      collection: search.results.map{|t| t.to_hash(recursive: bool_recursive)},
       num_pages: num_pages,
       page: page,
     }.to_json
@@ -100,7 +100,7 @@ get "#{api_prefix}/:commentable_id/threads" do |commentable_id|
     page = [num_pages, [1, page].max].min
     paged_comment_threads = comment_threads.page(page).per(per_page)
     {
-      collection: paged_comment_threads.map{|t| t.to_hash(recursive: value_to_boolean(params["recursive"]))},
+      collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive)},
       num_pages: num_pages,
       page: page,
     }.to_json
@@ -109,14 +109,14 @@ end
 
 post "#{api_prefix}/:commentable_id/threads" do |commentable_id|
   thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
-  thread.anonymous = value_to_boolean(params["anonymous"]) || false
+  thread.anonymous = bool_anonymous || false
   thread.tags = params["tags"] || ""
   thread.author = user
   thread.save
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
   else
-    user.subscribe(thread) if value_to_boolean params["auto_subscribe"]
+    user.subscribe(thread) if bool_auto_subscribe
     thread.to_hash.to_json
   end
 end
@@ -130,7 +130,7 @@ get "#{api_prefix}/threads/tags/autocomplete" do
 end
 
 get "#{api_prefix}/threads/:thread_id" do |thread_id|
-  CommentThread.find(thread_id).to_hash(recursive: value_to_boolean(params["recursive"])).to_json
+  CommentThread.find(thread_id).to_hash(recursive: bool_recursive).to_json
 end
 
 put "#{api_prefix}/threads/:thread_id" do |thread_id|
@@ -148,13 +148,13 @@ end
 
 post "#{api_prefix}/threads/:thread_id/comments" do |thread_id|
   comment = thread.comments.new(params.slice(*%w[body course_id]))
-  comment.anonymous = value_to_boolean(params["anonymous"]) || false
+  comment.anonymous = bool_anonymous || false
   comment.author = user 
   comment.save
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
   else
-    user.subscribe(thread) if value_to_boolean params["auto_subscribe"]
+    user.subscribe(thread) if bool_auto_subscribe
     comment.to_hash.to_json
   end
 end
@@ -165,7 +165,7 @@ delete "#{api_prefix}/threads/:thread_id" do |thread_id|
 end
 
 get "#{api_prefix}/comments/:comment_id" do |comment_id|
-  comment.to_hash(recursive: value_to_boolean(params["recursive"])).to_json
+  comment.to_hash(recursive: bool_recursive).to_json
 end
 
 put "#{api_prefix}/comments/:comment_id" do |comment_id|
@@ -179,14 +179,14 @@ end
 
 post "#{api_prefix}/comments/:comment_id" do |comment_id|
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
-  sub_comment.anonymous = value_to_boolean(params["anonymous"]) || false
+  sub_comment.anonymous = bool_anonymous || false
   sub_comment.author = user
   sub_comment.comment_thread = comment.comment_thread
   sub_comment.save
   if sub_comment.errors.any?
     error 400, sub_comment.errors.full_messages.to_json
   else
-    user.subscribe(comment.comment_thread) if value_to_boolean params["auto_subscribe"]
+    user.subscribe(comment.comment_thread) if bool_auto_subscribe
     sub_comment.to_hash.to_json
   end
 end
@@ -225,7 +225,7 @@ post "#{api_prefix}/users" do
 end
 
 get "#{api_prefix}/users/:user_id" do |user_id|
-  user.to_hash(complete: value_to_boolean(params["complete"])).to_json
+  user.to_hash(complete: bool_complete).to_json
 end
 
 put "#{api_prefix}/users/:user_id" do |user_id|
