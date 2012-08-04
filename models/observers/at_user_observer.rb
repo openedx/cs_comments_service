@@ -36,7 +36,7 @@ class AtUserObserver < Mongoid::Observer
       notification.target = content
       receivers = new_user_ids.map { |id| User.find(id) }
       receivers.delete(content.author)
-      notification.receiverss << receivers
+      notification.receivers << receivers
       notification.save!
     end
   end
