@@ -12,6 +12,7 @@ class Comment < Content
   field :course_id, type: String
   field :endorsed, type: Boolean, default: false
   field :anonymous, type: Boolean, default: false
+  field :at_position_list, type: Array, default: []
 
   belongs_to :author, class_name: "User", index: true
   belongs_to :comment_thread, index: true
@@ -26,7 +27,6 @@ class Comment < Content
   counter_cache :comment_thread
 
   before_destroy :delete_descendants # TODO async
-  after_create :generate_notifications
   
   def self.hash_tree(nodes)
     nodes.map{|node, sub_nodes| node.to_hash.merge("children" => hash_tree(sub_nodes).compact)}
@@ -52,31 +52,5 @@ class Comment < Content
                   .merge("votes" => votes.slice(*%w[count up_count down_count point]))
     end
   end
-
-private
-  def generate_notifications
-    if comment_thread.subscribers or (author.followers if not anonymous)
-      notification = Notification.new(
-        notification_type: "post_reply",
-        info: {
-          thread_id: comment_thread.id,
-          thread_title: comment_thread.title,
-          comment_id: id,
-          commentable_id: comment_thread.commentable_id,
-        },
-      )
-      notification.actor = author if not anonymous
-      notification.target = self
-      receivers = comment_thread.subscribers
-      if not anonymous
-        receivers = (receivers + author.followers).uniq_by(&:id)
-      end
-      receivers.delete(author)
-      notification.receivers << receivers
-      notification.save!
-    end
-  end
-
-  handle_asynchronously :generate_notifications
 
 end

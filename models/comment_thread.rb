@@ -13,6 +13,7 @@ class CommentThread < Content
   field :course_id, type: String
   field :commentable_id, type: String
   field :anonymous, type: Boolean, default: false
+  field :at_position_list, type: Array, default: []
 
   include Sunspot::Mongoid
   searchable do
@@ -46,8 +47,6 @@ class CommentThread < Content
 
   validate :tag_names_valid
   validate :tag_names_unique
-
-  after_create :generate_notifications
 
   def self.new_dumb_thread(options={})
     c = self.new
@@ -106,28 +105,6 @@ class CommentThread < Content
   end
 
 private
-  def generate_notifications
-    if subscribers or (author.followers if not anonymous)
-      notification = Notification.new(
-        notification_type: "post_topic",
-        info: {
-          commentable_id: commentable_id,
-          #commentable_type: commentable.commentable_type,
-          thread_id: id,
-          thread_title: title,
-        },
-      )
-      notification.actor = author if not anonymous
-      notification.target = self
-      receivers = commentable.subscribers
-      if not anonymous
-        receivers = (receivers + author.followers).uniq_by(&:id)
-      end
-      receivers.delete(author)
-      notification.receivers << receivers
-      notification.save!
-    end
-  end
 
   RE_HEADCHAR = /[a-z0-9]/
   RE_ENDONLYCHAR = /\+/
@@ -149,6 +126,4 @@ private
       errors.add :tags, "must be unique"
     end
   end
-
-  handle_asynchronously :generate_notifications
 end

@@ -39,8 +39,8 @@ what is the 'at' symbol doing there? @dementrock
   describe "#get_valid_at_position_list(text)" do
     it "returns the list of positions for the valid @ notifications, filtering out the ones in code blocks" do
       list = Content.get_valid_at_position_list(@text)
-      list.should include [0, "tom", "1"]
-      list.should include [1, "pi314", "2"]
+      list.should include({ position: 0, username: "tom", user_id: "1" })
+      list.should include({ position: 1, username: "pi314", user_id: "2" })
       list.length.should == 2
     end
   end

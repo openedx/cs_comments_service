@@ -22,6 +22,10 @@ Mongoid.logger.level = Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
+Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
+
+Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
+Mongoid.instantiate_observers
 
 api_prefix = CommentService::API_PREFIX
 
@@ -227,7 +231,6 @@ end
 
 put "#{api_prefix}/users/:user_id" do |user_id|
   user.update_attributes(params.slice(*%w[username email]))
-  user.save
   if user.errors.any?
     error 400, user.errors.full_messages.to_json
   else
