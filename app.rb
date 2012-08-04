@@ -204,8 +204,31 @@ delete '/api/v1/threads/:thread_id/votes' do |thread_id|
   undo_vote_for thread
 end
 
+post '/api/v1/users' do
+  user = User.new
+  user.external_id = params["id"]
+  user.username = params["username"]
+  user.email = params["email"]
+  user.save
+  if user.errors.any?
+    error 400, user.errors.full_messages.to_json
+  else
+    user.to_hash.to_json
+  end
+end
+
 get '/api/v1/users/:user_id' do |user_id|
   user.to_hash(complete: value_to_boolean(params["complete"])).to_json
+end
+
+put '/api/v1/users/:user_id' do |user_id|
+  user.update_attributes(params.slice(*%w[username email])
+  user.save
+  if user.errors.any?
+    error 400, user.errors.full_messages.to_json
+  else
+    user.to_hash.to_json
+  end
 end
 
 get '/api/v1/users/:user_id/notifications' do |user_id|
