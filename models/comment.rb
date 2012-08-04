@@ -44,7 +44,7 @@ class Comment < Content
     if params[:recursive]
       self.class.hash_tree(subtree(sort: sort_by_parent_and_time)).first
     else
-      as_document.slice(*%w[body course_id endorsed anonymous created_at updated_at])
+      as_document.slice(*%w[body course_id endorsed anonymous created_at updated_at at_position_list])
                   .merge("id" => _id)
                   .merge("user_id" => author.id)
                   .merge("depth" => depth)
