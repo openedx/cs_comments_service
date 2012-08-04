@@ -213,8 +213,7 @@ delete "#{api_prefix}/threads/:thread_id/votes" do |thread_id|
 end
 
 post "#{api_prefix}/users" do
-  user = User.new
-  user.external_id = params["id"]
+  user = User.new(external_id: params["id"])
   user.username = params["username"]
   user.email = params["email"]
   user.save
@@ -230,6 +229,10 @@ get "#{api_prefix}/users/:user_id" do |user_id|
 end
 
 put "#{api_prefix}/users/:user_id" do |user_id|
+  user = User.where(external_id: user_id).first
+  if not user
+    user = User.new(external_id: user_id)
+  end
   user.update_attributes(params.slice(*%w[username email]))
   if user.errors.any?
     error 400, user.errors.full_messages.to_json
