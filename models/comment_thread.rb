@@ -13,6 +13,7 @@ class CommentThread < Content
   field :course_id, type: String
   field :commentable_id, type: String
   field :anonymous, type: Boolean, default: false
+  field :closed, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
 
@@ -42,7 +43,7 @@ class CommentThread < Content
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
   has_many :comments, dependent: :destroy#, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
 
-  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous
+  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :closed
 
   validates_presence_of :title
   validates_presence_of :body
@@ -86,7 +87,7 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-    doc = as_document.slice(*%w[title body course_id anonymous commentable_id created_at updated_at at_position_list])
+    doc = as_document.slice(*%w[title body course_id anonymous commentable_id created_at updated_at at_position_list closed])
                       .merge("id" => _id)
                       .merge("user_id" => author.id)
                       .merge("username" => author.username)
