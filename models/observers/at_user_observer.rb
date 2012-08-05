@@ -23,16 +23,27 @@ class AtUserObserver < Mongoid::Observer
 
     new_user_ids = current_user_ids - prev_user_ids
 
+    if content_type == :thread
+      thread_title = content.title
+      thread_id = content.id
+      commentable_id = content.commentable_id
+    else
+      thread_title = content.comment_thread.title
+      thread_id = content.comment_thread.id
+      commentable_id = content.comment_thread.commentable_id
+    end
+
     unless new_user_ids.empty?
 
       notification = Notification.new(
         notification_type: "at_user",
         info: {
-          content_id: content.id,
+          comment_id: (content.id if content_type == :comment),
           content_type: content_type,
-          thread_title: content.thread_title,
+          thread_title: thread_title,
+          thread_id: thread_id,
           actor_username: content.author_with_anonymity(:username),
-          commentable_id: content.commentable_id,
+          commentable_id: commentable_id,
         }
       )
       notification.actor = content.author_with_anonymity

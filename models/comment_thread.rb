@@ -14,14 +14,19 @@ class CommentThread < Content
   field :commentable_id, type: String
   field :anonymous, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
+  field :last_activity_at, type: Time
 
   include Sunspot::Mongoid
   searchable do
     text :title, boost: 5.0, stored: true, more_like_this: true
     text :body, stored: true, more_like_this: true
+    text :tags do
+      tags_array.join " "
+    end
 
     time :created_at
     time :updated_at
+    time :last_activity_at
     integer :comment_count
     integer :votes_point do
       votes_point
@@ -47,6 +52,10 @@ class CommentThread < Content
 
   validate :tag_names_valid
   validate :tag_names_unique
+
+  before_create :set_last_activity_at
+  before_update :set_last_activity_at
+
 
   def self.new_dumb_thread(options={})
     c = self.new
@@ -105,10 +114,6 @@ class CommentThread < Content
     !!(tag =~ RE_TAG)
   end
 
-  def thread_title
-    title
-  end
-
 private
 
   RE_HEADCHAR = /[a-z0-9]/
@@ -130,5 +135,9 @@ private
     unless tags_array.uniq.size == tags_array.size
       errors.add :tags, "must be unique"
     end
+  end
+
+  def set_last_activity_at
+    self.last_activity_at = Time.now.utc unless last_activity_at_changed? 
   end
 end

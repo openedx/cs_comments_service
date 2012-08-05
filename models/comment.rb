@@ -27,21 +27,12 @@ class Comment < Content
   counter_cache :comment_thread
 
   before_destroy :delete_descendants # TODO async
-  
+
+  before_create :set_thread_last_activity_at
+  before_update :set_thread_last_activity_at
+
   def self.hash_tree(nodes)
     nodes.map{|node, sub_nodes| node.to_hash.merge("children" => hash_tree(sub_nodes).compact)}
-  end
-
-  def thread_title
-    comment_thread.title
-  end
-
-  def commentable
-    comment_thread.commentable
-  end
-
-  def commentable_id
-    comment_thread.commentable_id
   end
 
   def to_hash(params={})
@@ -64,6 +55,12 @@ class Comment < Content
                   .merge("thread_id" => comment_thread.id)
                   .merge("votes" => votes.slice(*%w[count up_count down_count point]))
     end
+  end
+
+private
+
+  def set_thread_last_activity_at
+    self.comment_thread.update_attributes!(last_activity_at: Time.now.utc)
   end
 
 end
