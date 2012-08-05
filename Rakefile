@@ -95,9 +95,9 @@ namespace :db do
     Subscription.delete_all
   end
 
-  THREADS_PER_COMMENTABLE = 15
-  TOP_COMMENTS_PER_THREAD = 3
-  ADDITIONAL_COMMENTS_PER_THREAD = 5
+  THREADS_PER_COMMENTABLE = 20
+  TOP_COMMENTS_PER_THREAD = 4
+  ADDITIONAL_COMMENTS_PER_THREAD = 20
 
   COURSE_ID = "MITx/6.002x/2012_Fall"
 
@@ -152,13 +152,13 @@ namespace :db do
       end
     end
 
-    puts "voting"
+    # puts "voting"
 
-    (threads + top_comments + additional_comments).each do |c|
-      users.each do |user|
-        user.vote(c, [:up, :down].sample)
-      end
-    end
+    # (threads + top_comments + additional_comments).each do |c|
+    #   users.each do |user|
+    #     user.vote(c, [:up, :down].sample)
+    #   end
+    # end
     puts "finished"
   end
 
@@ -167,6 +167,28 @@ namespace :db do
 
     generate_comments_for(args[:commentable_id])
 
+  end
+
+  task :seed_fast => :environment do
+    ADDITIONAL_COMMENTS_PER_THREAD = 20
+
+
+    config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["sessions"]["default"]
+    connnection = Mongo::Connection.new(config["hosts"][0].split(":")[0], config["hosts"][0].split(":")[1])
+    db = Mongo::Connection.new.db(config["database"])
+    coll = db.collection("contents")
+    Comment.delete_all
+    CommentThread.each do |thread|
+      ADDITIONAL_COMMENTS_PER_THREAD.times do
+        doc = {"_type" => "Comment", "anonymous" => false, "at_position_list" => [], 
+          "author_id" => rand(1..10).to_s, "body" => Faker::Lorem.paragraphs.join("\n\n"), 
+          "comment_thread_id" => BSON::ObjectId.from_string(thread.id.to_s), "course_id" => COURSE_ID, 
+          "created_at" => Time.now,
+          "endorsed" => [true, false].sample, "parent_ids" => [], "updated_at" => Time.now,
+          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+        coll.insert(doc)
+      end
+    end
   end
 
   task :seed => :environment do
@@ -180,16 +202,16 @@ namespace :db do
     beginning_time = Time.now
 
     users = (1..10).map {|id| create_test_user(id)}
-    3.times do
-      other_user = users[1..9].sample
-      users.first.subscribe(other_user)
-    end
+    # 3.times do
+    #   other_user = users[1..9].sample
+    #   users.first.subscribe(other_user)
+    # end
 
-    10.times do
-      user = users.sample
-      other_user = users.select{|u| u != user}.sample
-      user.subscribe(other_user)
-    end
+    # 10.times do
+    #   user = users.sample
+    #   other_user = users.select{|u| u != user}.sample
+    #   user.subscribe(other_user)
+    # end
     generate_comments_for("video_1")
     generate_comments_for("lab_1")
     generate_comments_for("lab_2")

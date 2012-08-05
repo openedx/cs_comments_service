@@ -16,6 +16,7 @@ gem 'sqlite3'
 
 gem 'ampex'
 
+gem 'mongo'
 gem 'moped'
 gem 'mongoid', "~> 3.0"
 gem 'bson_ext'
