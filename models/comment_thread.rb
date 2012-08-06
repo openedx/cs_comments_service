@@ -21,8 +21,8 @@ class CommentThread < Content
   include Tire::Model::Callbacks
 
   mapping do
-    indexes :title, type: :string, analyzer: :snowball, boost: 5.0
-    indexes :body, type: :string, analyzer: :snowball
+    indexes :title, type: :string, analyzer: :snowball, boost: 5.0, stored: true, term_vector: :with_positions_offsets
+    indexes :body, type: :string, analyzer: :snowball, stored: true, term_vector: :with_positions_offsets
     indexes :tags_in_text, type: :string, as: 'tags_array', index: :analyzed
     indexes :tags_array, type: :string, as: 'tags_array', index: :not_analyzed, included_in_all: false
     indexes :created_at, type: :date, included_in_all: false
@@ -55,11 +55,8 @@ class CommentThread < Content
   before_update :set_last_activity_at
 
   def self.recreate_index
-    Tire.index 'comment_threads' do
-      delete
-      create
-      CommentThread.tire.index.import CommentThread.all
-    end
+    Tire.index 'comment_threads' do delete; end
+    CommentThread.create_elastic_index
   end
 
   def self.new_dumb_thread(options={})
@@ -74,8 +71,29 @@ class CommentThread < Content
     c
   end
 
+  def self.search_text_with_highlight(text)
+    search = tire.search do |search|
+      search.query { |query| query.text :_all, text }
+      search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<strong>" })
+    end
+    search.results
+  end
+
+  def self.search_result_to_hash(result, params={})
+
+    comment_thread = self.find(result.id)
+    highlight = result.highlight || {}
+
+    highlighted_body = (highlight[:body] || []).first || comment_thread.body
+    highlighted_title = (highlight[:title] || []).first || comment_thread.title
+    find(result.id).to_hash(params).merge(highlighted_body: highlighted_body, highlighted_title: highlighted_title)
+  end
+      
+
   def self.search_tags(tags)
     tire.search do |search|
+      
+=begin
       search.query do |query|
         query.boolean do |boolean|
           for tag in tags
@@ -83,6 +101,7 @@ class CommentThread < Content
           end
         end
       end
+=end
     end.results
   end
 
