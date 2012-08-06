@@ -28,16 +28,14 @@ gem 'voteable_mongo', :git => 'git@github.com:dementrock/voteable_mongo.git'
 gem 'mongoid_taggable', :git => 'git@github.com:dementrock/mongoid_taggable.git'
 gem 'mongoid_magic_counter_cache', :git => 'git@github.com:dementrock/mongoid-magic-counter-cache.git'
 
-gem 'sunspot'
-gem 'sunspot_solr'
-gem 'sunspot_mongoid', :git => 'git@github.com:dementrock/sunspot_mongoid.git'
-
 gem 'kaminari', :require => 'kaminari/sinatra', :git => 'git@github.com:dementrock/kaminari.git'
 
 gem 'faker'
 
 gem 'rdiscount'
 gem 'nokogiri'
+
+gem 'tire'
 
 group :test do
   gem 'rspec'

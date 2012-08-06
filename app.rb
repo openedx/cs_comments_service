@@ -51,15 +51,18 @@ get "#{api_prefix}/search/threads" do
   else
     page = (params["page"] || 1).to_i
     per_page = (params["per_page"] || 20).to_i
-    search = CommentThread.solr_search do
-      fulltext(params["text"]) if params["text"]
-      with(:commentable_id, params["commentable_id"]) if params["commentable_id"]
-      with(:course_id, params["course_id"]) if params["course_id"]
-      with(:tags).all_of(params["tags"].split /,/) if params["tags"]
-      paginate :page => page, :per_page => per_page
-      order_by(sort_key, sort_order) if sort_key && sort_order
+    binding.pry
+    search = CommentThread.tire.search page: page, per_page: per_page, load: true do |search|
+      search.query do |query|
+        query.text(:_all, params["text"]) if params["text"]
+        query.term(:commentable_id, params["commentable_id"]) if params["commentable_id"]
+        query.term(:course_id, params["course_id"]) if params["course_id"]
+        query.terms(:tags, params["tags"].split(/,/), minimum_match: params["tags"].split(/,/).length) if params["tags"]
+      end
+      search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order
     end
-    num_pages = [1, (search.total / per_page.to_f).ceil].max
+    
+    num_pages = search.total_pages
     {
       collection: search.results.map{|t| t.to_hash(recursive: bool_recursive)},
       num_pages: num_pages,
