@@ -54,11 +54,6 @@ class CommentThread < Content
   before_create :set_last_activity_at
   before_update :set_last_activity_at
 
-  def self.recreate_index
-    Tire.index 'comment_threads' do delete; end
-    CommentThread.create_elastic_index
-  end
-
   def self.new_dumb_thread(options={})
     c = self.new
     c.title = options[:title] || "title"
@@ -69,40 +64,6 @@ class CommentThread < Content
     c.tags = options[:tags] || "test-tag-1, test-tag-2"
     c.save!
     c
-  end
-
-  def self.search_text_with_highlight(text)
-    search = tire.search do |search|
-      search.query { |query| query.text :_all, text }
-      search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<strong>" })
-    end
-    search.results
-  end
-
-  def self.search_result_to_hash(result, params={})
-
-    comment_thread = self.find(result.id)
-    highlight = result.highlight || {}
-
-    highlighted_body = (highlight[:body] || []).first || comment_thread.body
-    highlighted_title = (highlight[:title] || []).first || comment_thread.title
-    find(result.id).to_hash(params).merge(highlighted_body: highlighted_body, highlighted_title: highlighted_title)
-  end
-      
-
-  def self.search_tags(tags)
-    tire.search do |search|
-      
-=begin
-      search.query do |query|
-        query.boolean do |boolean|
-          for tag in tags
-            boolean.must { string "tags_array:#{tag}" }
-          end
-        end
-      end
-=end
-    end.results
   end
 
   def root_comments
