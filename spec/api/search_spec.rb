@@ -17,7 +17,7 @@ describe "app" do
         thread2.tags = [ai, ml, random2].join ","
         thread2.save
 
-        Sunspot.commit
+        sleep 1
 
         get "/api/v1/search/threads", tags: [ai, ml].join(",")
         last_response.should be_ok

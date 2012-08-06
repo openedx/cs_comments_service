@@ -34,6 +34,8 @@ def init_without_subscriptions
   User.delete_all
   Notification.delete_all
   Subscription.delete_all
+  Tire.index 'comment_threads' do delete end
+  CommentThread.create_elasticsearch_index
   
   commentable = Commentable.new("question_1")
 
@@ -104,6 +106,9 @@ def init_with_subscriptions
   User.delete_all
   Notification.delete_all
   Subscription.delete_all
+
+  Tire.index 'comment_threads' do delete end
+  CommentThread.create_elasticsearch_index
 
   user1 = create_test_user(1)
   user2 = create_test_user(2)

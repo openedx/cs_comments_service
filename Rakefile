@@ -198,6 +198,8 @@ namespace :db do
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
+    Tire.index 'comment_threads' do delete end
+    CommentThread.create_elasticsearch_index
 
     beginning_time = Time.now
 
@@ -215,11 +217,6 @@ namespace :db do
     generate_comments_for("video_1")
     generate_comments_for("lab_1")
     generate_comments_for("lab_2")
-
-    puts "reindexing solr..."
-
-    CommentThread.remove_all_from_index!
-    Sunspot.index!(CommentThread.all.to_a)
 
     end_time = Time.now
 

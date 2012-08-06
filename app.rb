@@ -51,17 +51,27 @@ get "#{api_prefix}/search/threads" do
   else
     page = (params["page"] || 1).to_i
     per_page = (params["per_page"] || 20).to_i
-    search = CommentThread.solr_search do
-      fulltext(params["text"]) if params["text"]
-      with(:commentable_id, params["commentable_id"]) if params["commentable_id"]
-      with(:course_id, params["course_id"]) if params["course_id"]
-      with(:tags).all_of(params["tags"].split /,/) if params["tags"]
-      paginate :page => page, :per_page => per_page
-      order_by(sort_key, sort_order) if sort_key && sort_order
+    tags = params["tags"].split /,/ if params["tags"]
+
+    search = CommentThread.tire.search page: page, per_page: per_page do |search|
+      if params["text"]
+        search.query do |query|
+          query.text(:_all, params["text"])
+        end
+        search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
+      end
+
+      search.filter :bool, :must => tags.map{ |tag| { :term => { :tags_array => tag } } } if params["tags"]
+
+      search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
+      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+      search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
+
     end
-    num_pages = [1, (search.total / per_page.to_f).ceil].max
+
+    num_pages = search.total_pages
     {
-      collection: search.results.map{|t| t.to_hash(recursive: bool_recursive)},
+      collection: search.results.map{|t| CommentThread.search_result_to_hash(t, recursive: bool_recursive)},
       num_pages: num_pages,
       page: page,
     }.to_json

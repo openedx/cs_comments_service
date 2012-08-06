@@ -17,27 +17,24 @@ class CommentThread < Content
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
 
-  include Sunspot::Mongoid
-  searchable do
-    text :title, boost: 5.0, stored: true, more_like_this: true
-    text :body, stored: true, more_like_this: true
-    text :tags do
-      tags_array.join " "
-    end
+  include Tire::Model::Search
+  include Tire::Model::Callbacks
 
-    time :created_at
-    time :updated_at
-    time :last_activity_at
-    integer :comment_count
-    integer :votes_point do
-      votes_point
-    end
-    string :course_id
-    string :commentable_id
-    string :author_id
-    string :tags, multiple: true do
-      tags_array
-    end
+  mapping do
+    indexes :title, type: :string, analyzer: :snowball, boost: 5.0, stored: true, term_vector: :with_positions_offsets
+    indexes :body, type: :string, analyzer: :snowball, stored: true, term_vector: :with_positions_offsets
+    indexes :tags_in_text, type: :string, as: 'tags_array', index: :analyzed
+    indexes :tags_array, type: :string, as: 'tags_array', index: :not_analyzed, included_in_all: false
+    indexes :created_at, type: :date, included_in_all: false
+    indexes :updated_at, type: :date, included_in_all: false
+    indexes :last_activity_at, type: :date, included_in_all: false
+
+    indexes :comment_count, type: :integer, included_in_all: false
+    indexes :votes_point, type: :integer, as: 'votes_point', included_in_all: false
+
+    indexes :course_id, type: :string, index: :not_analyzed, incldued_in_all: false
+    indexes :commentable_id, type: :string, index: :not_analyzed, incldued_in_all: false
+    indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, incldued_in_all: false
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
@@ -56,7 +53,6 @@ class CommentThread < Content
 
   before_create :set_last_activity_at
   before_update :set_last_activity_at
-
 
   def self.new_dumb_thread(options={})
     c = self.new
@@ -100,15 +96,6 @@ class CommentThread < Content
       doc = doc.merge("comments_count" => comments.count)
     end
     doc
-  end
-
-  def self.search_text(text, commentable_id=nil)
-    self.solr_search do
-      fulltext(text)
-      if commentable_id
-        with(:commentable_id, commentable_id)
-      end
-    end
   end
 
   def self.tag_name_valid?(tag)
