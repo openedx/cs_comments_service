@@ -51,17 +51,25 @@ get "#{api_prefix}/search/threads" do
   else
     page = (params["page"] || 1).to_i
     per_page = (params["per_page"] || 20).to_i
-    binding.pry
+    tags = params["tags"].split /,/ if params["tags"]
     search = CommentThread.tire.search page: page, per_page: per_page, load: true do |search|
-      search.query do |query|
-        query.text(:_all, params["text"]) if params["text"]
-        query.term(:commentable_id, params["commentable_id"]) if params["commentable_id"]
-        query.term(:course_id, params["course_id"]) if params["course_id"]
-        query.terms(:tags, params["tags"].split(/,/), minimum_match: params["tags"].split(/,/).length) if params["tags"]
+      if params["text"] or params["tags"]
+        search.query do |query|
+          query.text(:_all, params["text"]) if params["text"]
+          if params["tags"]
+            query.boolean do |boolean|
+              for tag in tags
+                boolean.must { string "tags_array:#{tag}" } 
+              end
+            end
+          end
+        end
       end
+      search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
+      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
       search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order
     end
-    
+
     num_pages = search.total_pages
     {
       collection: search.results.map{|t| t.to_hash(recursive: bool_recursive)},

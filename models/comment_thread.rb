@@ -20,36 +20,11 @@ class CommentThread < Content
   include Tire::Model::Search
   include Tire::Model::Callbacks
 
-  #def to_indexed_json
-  #  self.to_json
-  #end
-  
-  settings :analyzer => {
-    :tags_analyzer => {
-      'type' => 'stop',
-      'stopwords' => [','],
-      #'tokenizer' => "keyword",
-      #'type' => "custom",
-      #'filter' => ['unique'],
-    }
-  }
-=begin
-  , :properties => {
-    :tags_array => {
-      :type => "mutli_field",
-      :fields => {
-        :tags => { :type => :array, index: :analyzed},
-        :untouched_tags => { :type => :array, index: :not_analyzed},
-      }
-    }
-  }
-=end
   mapping do
-
-    indexes :title, type: :string, analyzer: 'i_do_not_exist'#:whitespace#:snowball#, boost: 5.0
-    indexes :body, type: :string, analyzer: :whitespace#:snowball
-    indexes :tags_in_text, type: :array, as: 'tags_array', index: :analyzed#proc {puts tags_array; tags_array}#, analyzer: :whitespace
-    indexes :tags, type: :string, as: 'tags_array', index: :not_analyzed#:analyzer: "lowercase_keyword"#, included_in_all: false
+    indexes :title, type: :string, analyzer: :snowball, boost: 5.0
+    indexes :body, type: :string, analyzer: :snowball
+    indexes :tags_in_text, type: :string, as: 'tags_array', index: :analyzed
+    indexes :tags_array, type: :string, as: 'tags_array', index: :not_analyzed, included_in_all: false
     indexes :created_at, type: :date, included_in_all: false
     indexes :updated_at, type: :date, included_in_all: false
     indexes :last_activity_at, type: :date, included_in_all: false
@@ -97,6 +72,18 @@ class CommentThread < Content
     c.tags = options[:tags] || "test-tag-1, test-tag-2"
     c.save!
     c
+  end
+
+  def self.search_tags(tags)
+    tire.search do |search|
+      search.query do |query|
+        query.boolean do |boolean|
+          for tag in tags
+            boolean.must { string "tags_array:#{tag}" }
+          end
+        end
+      end
+    end.results
   end
 
   def root_comments
