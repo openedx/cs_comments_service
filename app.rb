@@ -134,7 +134,7 @@ get "#{api_prefix}/threads/:thread_id" do |thread_id|
 end
 
 put "#{api_prefix}/threads/:thread_id" do |thread_id|
-  thread.update_attributes(params.slice(*%w[title body]))
+  thread.update_attributes(params.slice(*%w[title body closed]))
   if params["tags"]
     thread.tags = params["tags"]
     thread.save
