@@ -66,6 +66,16 @@ class CommentThread < Content
     c
   end
 
+  def self.search_result_to_hash(result, params={})
+
+    comment_thread = self.find(result.id)
+    highlight = result.highlight || {}
+
+    highlighted_body = (highlight[:body] || []).first || comment_thread.body
+    highlighted_title = (highlight[:title] || []).first || comment_thread.title
+    find(result.id).to_hash(params).merge(highlighted_body: highlighted_body, highlighted_title: highlighted_title)
+  end
+
   def root_comments
     Comment.roots.where(comment_thread_id: self.id)
   end
