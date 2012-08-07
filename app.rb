@@ -4,6 +4,8 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
+require 'tire/queries/more_like_this'
+
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
 environment = env_arg || ENV["SINATRA_ENV"] || "development"
@@ -79,7 +81,11 @@ get "#{api_prefix}/search/threads" do
 end
 
 get "#{api_prefix}/search/threads/more_like_this" do 
-  CommentThread.tire.search { query { more_like_this 'mollitia consequatur', fields: ["title", "body"], min_doc_freq: 1, min_term_freq: 1 } }
+  CommentThread.tire.search page: 1, per_page: 5, load: true do |search|
+    search.query do |query|
+      query.more_like_this params["text"], fields: ["title", "body"], min_doc_freq: 1, min_term_freq: 1
+    end
+  end.results.map(&:to_hash).to_json
 end
 
 delete "#{api_prefix}/:commentable_id/threads" do |commentable_id|

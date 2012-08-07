@@ -37,6 +37,7 @@ gem 'rdiscount'
 gem 'nokogiri'
 
 gem 'tire'
+gem 'tire-contrib'
 
 group :test do
   gem 'rspec'
