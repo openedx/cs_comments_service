@@ -33,6 +33,7 @@ get "#{api_prefix}/search/threads" do
 
   sort_key_mapper = {
     "date" => :created_at,
+    "activity" => :last_activity_at,
     "votes" => :votes_point,
     "comments" => :comment_count,
   }
@@ -87,6 +88,7 @@ get "#{api_prefix}/:commentable_id/threads" do |commentable_id|
 
   sort_key_mapper = {
     "date" => :created_at,
+    "activity" => :last_activity_at,
     "votes" => :"votes.point",
     "comments" => :comment_count,
   }
