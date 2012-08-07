@@ -115,13 +115,17 @@ get "#{api_prefix}/search/threads/recent_active" do
   comment_threads.to_a.sort {|x, y| y.last_activity_at <=> x.last_activity_at}[0..4].to_json
 end
 
-#
-#get "#{api_prefix}/search/tags/trending" do
-#  query_params = {}
-#  query_params["course_id"] = params["course_id"] if params["course_id"]
-#  query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
-#  CommentThread.all.where(query_params).to_a.map(&:tags_array).flatten.g
-#end
+
+get "#{api_prefix}/search/tags/trending" do
+  query_params = {}
+  query_params["course_id"] = params["course_id"] if params["course_id"]
+  query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
+  CommentThread.all.where(query_params).to_a
+               .map(&:tags_array).flatten.group_by{|x| x}
+               .map{|k, v| [k, v.count]}
+               .sort_by {|x| - x.last}[0..4]
+               .to_json
+end
 
 delete "#{api_prefix}/:commentable_id/threads" do |commentable_id|
   commentable.comment_threads.destroy_all
