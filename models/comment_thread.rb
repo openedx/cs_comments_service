@@ -76,6 +76,24 @@ class CommentThread < Content
     find(result.id).to_hash(params).merge(highlighted_body: highlighted_body, highlighted_title: highlighted_title)
   end
 
+  def self.perform_search(params, options={})
+    page = [1, options[:page] || 1].max
+    per_page = options[:per_page] || 20
+    sort_key = options[:sort_key]
+    sort_order = options[:sort_order]
+    search = Tire::Search::Search.new 'comment_threads'
+    search.query {|query| query.text :_all, params["text"]} if params["text"]
+    search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
+    search.filter(:bool, :must => params["tags"].split(/,/).map{ |tag| { :term => { :tags_array => tag } } }) if params["tags"]
+    search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
+    search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+    search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
+
+    search.size per_page
+    search.from per_page * (page - 1)
+    search
+  end
+
   def root_comments
     Comment.roots.where(comment_thread_id: self.id)
   end

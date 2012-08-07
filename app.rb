@@ -29,6 +29,7 @@ Mongoid.instantiate_observers
 
 api_prefix = CommentService::API_PREFIX
 
+
 get "#{api_prefix}/search/threads" do 
 
   sort_key_mapper = {
@@ -45,6 +46,7 @@ get "#{api_prefix}/search/threads" do
   
   sort_key = sort_key_mapper[params["sort_key"]]
   sort_order = sort_order_mapper[params["sort_order"]]
+
   sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
 
   if (!params["text"] && !params["tags"]) || !sort_keyword_valid
@@ -52,31 +54,32 @@ get "#{api_prefix}/search/threads" do
   else
     page = (params["page"] || 1).to_i
     per_page = (params["per_page"] || 20).to_i
-    tags = params["tags"].split /,/ if params["tags"]
 
-    search = CommentThread.tire.search page: page, per_page: per_page do |search|
-      if params["text"]
-        search.query do |query|
-          query.text(:_all, params["text"])
-        end
-        search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
-      end
+    options = {
+      sort_key: sort_key,
+      sort_order: sort_order,
+      page: page,
+      per_page: per_page,
+    }
 
-      search.filter :bool, :must => tags.map{ |tag| { :term => { :tags_array => tag } } } if params["tags"]
+    results = CommentThread.perform_search(params, options).results
 
-      search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
-      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
-      search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
-
+    if page > results.total_pages #TODO find a better way for this
+      results = CommentThread.perform_search(params, options.merge(page: results.total_pages)).results
     end
 
-    num_pages = search.total_pages
+    num_pages = results.total_pages
+    page = [num_pages, [1, page].max].min
     {
-      collection: search.results.map{|t| CommentThread.search_result_to_hash(t, recursive: bool_recursive)},
+      collection: results.map{|t| CommentThread.search_result_to_hash(t, recursive: bool_recursive)},
       num_pages: num_pages,
       page: page,
     }.to_json
   end
+end
+
+get "#{api_prefix}/search/threads/more_like_this" do 
+  CommentThread.tire.search { query { more_like_this 'mollitia consequatur', fields: ["title", "body"], min_doc_freq: 1, min_term_freq: 1 } }
 end
 
 delete "#{api_prefix}/:commentable_id/threads" do |commentable_id|
