@@ -74,7 +74,7 @@ private
       username = parts.first[1..-1]
       user = User.where(username: username).first
       if user
-        list << { position: parts.last.to_i, username: parts.first[1..-1], user_id: user.id }#parts.last.to_i, parts.first[1..-1], user.id]
+        list << { position: parts.last.to_i, username: parts.first[1..-1], user_id: user.id }
       end
     end
     list

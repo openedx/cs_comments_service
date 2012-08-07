@@ -130,7 +130,8 @@ namespace :db do
       comment_thread.course_id = COURSE_ID
       comment_thread.save!
       threads << comment_thread
-      TOP_COMMENTS_PER_THREAD.times do
+      users.sample(3).each {|user| user.subscribe(comment_thread)}
+      (1 + rand(TOP_COMMENTS_PER_THREAD)).times do
         comment = comment_thread.comments.new(body: Faker::Lorem.paragraph(2))
         comment.author = users.sample
         comment.endorsed = [true, false].sample
@@ -140,7 +141,7 @@ namespace :db do
         top_comments << comment
         inner_top_comments << comment
       end
-      ADDITIONAL_COMMENTS_PER_THREAD.times do
+      (1 + rand(ADDITIONAL_COMMENTS_PER_THREAD)).times do
         comment = inner_top_comments.sample
         sub_comment = comment.children.new(body: Faker::Lorem.paragraph(2))
         sub_comment.author = users.sample

@@ -41,6 +41,22 @@ class User
     subscriptions_as_subscriber.where(source_type: "User").map(&:source_id)
   end
 
+  def subscribed_threads
+    subscribed_thread_ids.map {|id| CommentThread.find(id)}
+  end
+
+  def subscribed_commentables
+    subscribed_commentable_ids.map {|id| Commentable.find(id)}
+  end
+
+  def subscribed_users
+    subscribed_user_ids.map {|id| User.find(id)}
+  end
+
+  
+
+  
+
   def to_hash(params={})
     hash = as_document.slice(*%w[_id username external_id])
     if params[:complete]

@@ -39,6 +39,7 @@ class CommentThread < Content
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
   has_many :comments, dependent: :destroy#, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
+  has_many :activities, autosave: true
 
   attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :closed
 
@@ -53,6 +54,8 @@ class CommentThread < Content
 
   before_create :set_last_activity_at
   before_update :set_last_activity_at
+
+  scope :active_since, ->(from_time) { where(:last_activity_at => {:$gte => from_time}) }
 
   def self.new_dumb_thread(options={})
     c = self.new
@@ -93,6 +96,23 @@ class CommentThread < Content
     search.from per_page * (page - 1)
     search
   end
+
+  def activity_since(from_time=nil)
+    if from_time
+      activities.where(:created_at => {:$gte => from_time})
+    else
+      activities
+    end
+  end
+
+  def activity_today; activity_since(Date.today.to_time); end
+
+  def activity_this_week; activity_since(Date.today.to_time - 1.weeks); end
+
+  def activity_this_month; activity_since(Date.today.to_time - 1.months); end
+
+  def activity_overall; activity_since(nil); end
+
 
   def root_comments
     Comment.roots.where(comment_thread_id: self.id)
@@ -138,8 +158,6 @@ private
   RE_CHAR = /[a-z0-9\-\#\.]/
   RE_WORD = /#{RE_HEADCHAR}(((#{RE_CHAR})*(#{RE_ENDCHAR})+)?(#{RE_ENDONLYCHAR})*)?/
   RE_TAG = /^#{RE_WORD}( #{RE_WORD})*$/
-
-  
 
   def tag_names_valid
     unless tags_array.all? {|tag| self.class.tag_name_valid? tag}

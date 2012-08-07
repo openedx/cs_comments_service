@@ -2,10 +2,19 @@ class PostReplyObserver < Mongoid::Observer
   observe :comment
 
   def after_create(comment)
-    self.class.delay.generate_notifications(comment)
+    self.class.delay.generate_activity_and_notifications(comment)
   end
     
-  def self.generate_notifications(comment)
+  def self.generate_activity_and_notifications(comment)
+
+    activity = Activity.new
+    activity.happend_at = comment.created_at
+    activity.anonymous = comment.anonymous
+    activity.actor = comment.author
+    activity.target = comment.comment_thread
+    activity.activity_type = "post_reply"
+    activity.save!
+
     if comment.comment_thread.subscribers or (comment.author.followers if not comment.anonymous)
       notification = Notification.new(
         notification_type: "post_reply",

@@ -88,6 +88,41 @@ get "#{api_prefix}/search/threads/more_like_this" do
   end.results.map(&:to_hash).to_json
 end
 
+get "#{api_prefix}/search/threads/recent_active" do
+
+  return [].to_json if not params["course_id"]
+
+  follower_id = params["follower_id"] 
+  from_time = {
+    "today" => Date.today.to_time,
+    "this_week" => Date.today.to_time - 1.weeks,
+    "this_month" => Date.today.to_time - 1.months,
+  }[params["from_time"] || "today"]
+
+  query_params = {}
+  query_params["course_id"] = params["course_id"] if params["course_id"]
+  query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
+
+  comment_threads = if follower_id 
+    User.find(follower_id).subscribed_threads.select do |thread|
+      thread.last_activity_at >= from_time and \
+      query_params.to_a.map {|query| thread[query.first] == query.last}.all?
+    end
+  else
+    CommentThread.all.where(query_params.merge(:last_activity_at => {:$gte => from_time}))
+  end
+
+  comment_threads.to_a.sort {|x, y| y.last_activity_at <=> x.last_activity_at}[0..4].to_json
+end
+
+#
+#get "#{api_prefix}/search/tags/trending" do
+#  query_params = {}
+#  query_params["course_id"] = params["course_id"] if params["course_id"]
+#  query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
+#  CommentThread.all.where(query_params).to_a.map(&:tags_array).flatten.g
+#end
+
 delete "#{api_prefix}/:commentable_id/threads" do |commentable_id|
   commentable.comment_threads.destroy_all
   {}.to_json
