@@ -53,17 +53,14 @@ class User
     subscribed_user_ids.map {|id| User.find(id)}
   end
 
-  
-
-  
-
   def to_hash(params={})
-    hash = as_document.slice(*%w[_id username external_id])
+    hash = as_document.slice(*%w[username external_id])
     if params[:complete]
       hash = hash.merge("subscribed_thread_ids" => subscribed_thread_ids,
                         "subscribed_commentable_ids" => subscribed_commentable_ids,
                         "subscribed_user_ids" => subscribed_user_ids,
                         "follower_ids" => subscriptions_as_source.map(&:subscriber_id),
+                        "id" => id,
                         "upvoted_ids" => upvoted_ids,
                         "downvoted_ids" => downvoted_ids)
     end

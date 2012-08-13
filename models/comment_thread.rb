@@ -55,6 +55,8 @@ class CommentThread < Content
   before_create :set_last_activity_at
   before_update :set_last_activity_at
 
+  before_destroy :destroy_subscriptions
+
   scope :active_since, ->(from_time) { where(:last_activity_at => {:$gte => from_time}) }
 
   def self.new_dumb_thread(options={})
@@ -173,5 +175,9 @@ private
 
   def set_last_activity_at
     self.last_activity_at = Time.now.utc unless last_activity_at_changed? 
+  end
+
+  def destroy_subscriptions
+    subscriptions.delete_all
   end
 end
