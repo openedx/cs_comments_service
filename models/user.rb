@@ -64,6 +64,11 @@ class User
                         "upvoted_ids" => upvoted_ids,
                         "downvoted_ids" => downvoted_ids)
     end
+    if params[:course_id]
+      hash = hash.merge("threads_count" => comment_threads.where(course_id: params[:course_id]).count,
+                        "comments_count" => comments.where(course_id: params[:course_id]).count,
+                       )
+    end
     hash
   end
 

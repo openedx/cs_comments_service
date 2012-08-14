@@ -285,7 +285,7 @@ post "#{api_prefix}/users" do
 end
 
 get "#{api_prefix}/users/:user_id" do |user_id|
-  user.to_hash(complete: bool_complete).to_json
+  user.to_hash(complete: bool_complete, course_id: params["course_id"]).to_json
 end
 
 put "#{api_prefix}/users/:user_id" do |user_id|
