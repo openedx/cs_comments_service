@@ -33,7 +33,16 @@ APIPREFIX = CommentService::API_PREFIX
 DEFAULT_PAGE = 1
 DEFAULT_PER_PAGE = 20
 
-Dir[File.dirname(__FILE__) + '/api/*.rb'].each {|file| require file}
+# these files must be required in order
+
+require './api/search'
+require './api/commentables'
+require './api/comment_threads'
+require './api/comments'
+require './api/users'
+require './api/votes'
+require './api/tags'
+require './api/notifications_and_subscriptions'
 
 if environment.to_s == "development"
   get "#{APIPREFIX}/clean" do

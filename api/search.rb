@@ -63,7 +63,7 @@ get "#{APIPREFIX}/search/threads/recent_active" do
     "today" => Date.today.to_time,
     "this_week" => Date.today.to_time - 1.weeks,
     "this_month" => Date.today.to_time - 1.months,
-  }[params["from_time"] || "today"]
+  }[params["from_time"] || "this_week"]
 
   query_params = {}
   query_params["course_id"] = params["course_id"] if params["course_id"]

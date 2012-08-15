@@ -82,6 +82,7 @@ class CommentThread < Content
   end
 
   def self.perform_search(params, options={})
+    puts "params: #{params}"
     page = [1, options[:page] || 1].max
     per_page = options[:per_page] || 20
     sort_key = options[:sort_key]
