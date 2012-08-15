@@ -37,11 +37,11 @@ DEFAULT_PER_PAGE = 20
 
 require './api/search'
 require './api/commentables'
+require './api/tags'
 require './api/comment_threads'
 require './api/comments'
 require './api/users'
 require './api/votes'
-require './api/tags'
 require './api/notifications_and_subscriptions'
 
 if environment.to_s == "development"

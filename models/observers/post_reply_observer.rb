@@ -24,10 +24,9 @@ class PostReplyObserver < Mongoid::Observer
           comment_id: comment.id,
           commentable_id: comment.comment_thread.commentable_id,
           actor_username: comment.author_with_anonymity(:username),
+          actor_id: comment.author_with_anonymity(:id),
         },
       )
-      notification.actor = comment.author_with_anonymity
-      notification.target = comment
       receivers = (comment.comment_thread.subscribers + comment.author_with_anonymity(:followers, [])).uniq_by(&:id)
       receivers.delete(comment.author)
       notification.receivers << receivers

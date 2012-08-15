@@ -10,7 +10,7 @@ class Activity
   belongs_to :target, inverse_of: :activities, polymorphic: true, index: true, autosave: true
 
   validates_presence_of :actor
-  validates_presence_of :target
+  #validates_presence_of :target
 
 
 end

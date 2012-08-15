@@ -43,11 +43,10 @@ class AtUserObserver < Mongoid::Observer
           thread_title: thread_title,
           thread_id: thread_id,
           actor_username: content.author_with_anonymity(:username),
+          actor_id: content.author_with_anonymity(:id),
           commentable_id: commentable_id,
         }
       )
-      notification.actor = content.author_with_anonymity
-      notification.target = content
       receivers = new_user_ids.map { |id| User.find(id) }
       receivers.delete(content.author)
       notification.receivers << receivers

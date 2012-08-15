@@ -1,12 +1,17 @@
 class Commentable
 
-  attr_accessor :id
+  attr_accessor :id, :_type
   alias_attribute :_id, :id
   
   class << self; alias_method :find, :new; end
 
   def initialize(id)
     self.id = id
+    self._type = self.class.to_s
+  end
+
+  def self.where(params={})
+    params[:id] ? [self.new(params[:id])] : self
   end
 
   def comment_threads

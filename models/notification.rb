@@ -5,13 +5,10 @@ class Notification
   field :notification_type, type: String
   field :info, type: Hash
 
-  #belongs_to :actor, class_name: "User", inverse_of: :activities, index: true, autosave: true
-  #belongs_to :target, inverse_of: :activities, polymorphic: true, index: true, autosave: true
-
   attr_accessible :notification_type, :info
 
   validates_presence_of :notification_type
-  validates_presence_of :target
+  validates_presence_of :info
 
   has_and_belongs_to_many :receivers, class_name: "User", inverse_of: :notifications, autosave: true
 

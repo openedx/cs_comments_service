@@ -1,3 +1,5 @@
+ENV["SINATRA_ENV"] = "test"
+
 require File.join(File.dirname(__FILE__), '..', 'app')
 
 require 'sinatra'
@@ -18,6 +20,10 @@ end
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
+end
+
+Mongoid.configure do |config|
+  config.connect_to "cs_comments_service_test"
 end
 
 def parse(text)
