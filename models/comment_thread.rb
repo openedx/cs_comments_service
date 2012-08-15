@@ -142,9 +142,8 @@ class CommentThread < Content
 
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
-    else
-      doc = doc.merge("comments_count" => comments.count)
     end
+    doc = doc.merge("comments_count" => comments.count)
     doc
   end
 

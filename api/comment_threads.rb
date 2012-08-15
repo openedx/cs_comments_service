@@ -1,3 +1,7 @@
+get "#{APIPREFIX}/threads" do # retrieve threads by course
+  handle_threads_query(CommentThread.where(course_id: params["course_id"]))
+end
+
 get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   CommentThread.find(thread_id).to_hash(recursive: bool_recursive).to_json
 end
