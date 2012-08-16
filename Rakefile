@@ -51,7 +51,7 @@ namespace :db do
   task :clean => :environment do
     Comment.delete_all
     CommentThread.delete_all
-    CommentThread.recalculate_all_context_tag_weights!
+    Content.recalculate_all_context_tag_weights!
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
@@ -183,7 +183,7 @@ namespace :db do
 
     Comment.delete_all
     CommentThread.delete_all
-    CommentThread.recalculate_all_context_tag_weights!
+    Content.recalculate_all_context_tag_weights!
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
