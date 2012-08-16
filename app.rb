@@ -46,11 +46,7 @@ require './api/notifications_and_subscriptions'
 
 if environment.to_s == "development"
   get "#{APIPREFIX}/clean" do
-    Comment.delete_all
-    CommentThread.delete_all
-    User.delete_all
-    Notification.delete_all
-    Subscription.delete_all
+    [Comment, CommentThread, User, Notification, Subscription, Activity].each(&:delete_all)
     {}.to_json
   end
 end

@@ -39,6 +39,8 @@ gem 'nokogiri'
 gem 'tire'
 gem 'tire-contrib'
 
+gem 'rest-client'
+
 group :test do
   gem 'rspec'
   gem 'rack-test', :require => "rack/test"

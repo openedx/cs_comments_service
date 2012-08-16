@@ -30,7 +30,7 @@ def create_test_user(id)
   User.create!(external_id: id, username: "user#{id}", email: "user#{id}@test.com")
 end
 
-Dir.glob('lib/tasks/*.rake').each { |r| import r }
+#Dir.glob('lib/tasks/*.rake').each { |r| import r }
 
 task :console => :environment do
   binding.pry
@@ -204,8 +204,8 @@ namespace :db do
     #   user.subscribe(other_user)
     # end
     generate_comments_for("video_1")
-    generate_comments_for("lab_1")
-    generate_comments_for("lab_2")
+    #generate_comments_for("lab_1")
+    #generate_comments_for("lab_2")
 
     end_time = Time.now
 

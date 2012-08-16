@@ -20,9 +20,10 @@ put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
 end
 
 post "#{APIPREFIX}/threads/:thread_id/comments" do |thread_id|
-  comment = thread.comments.new(params.slice(*%w[body course_id]))
+  comment = Comment.new(params.slice(*%w[body course_id]))
   comment.anonymous = bool_anonymous || false
   comment.author = user 
+  comment.comment_thread = thread
   comment.save
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
