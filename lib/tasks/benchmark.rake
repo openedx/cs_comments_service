@@ -28,7 +28,7 @@ namespace :benchmark do
 
       x.report "create new threads" do
         (1..THREADS).each do |t|
-          data = {title: "Interesting question", body: "cool", anonymous: false, \
+          data = {title: Faker::Lorem.sentence(6) + " token#{rand(10)} token#{rand(10)}", body: Faker::Lorem.paragraphs.join("\n\n") + " token#{rand(10)} token#{rand(10)}", anonymous: false, \
                             course_id: "1", user_id: (rand(USERS) + 1).to_s, \
                             tags: (1..5).map{|x| "tag#{rand(TAGS)}"}.join(",")}
 
@@ -41,7 +41,7 @@ namespace :benchmark do
 
       x.report("create top comments") do
         TOP_COMMENTS.times do
-          data = {body: "lalala", anonymous: false,
+          data = {body: Faker::Lorem.paragraphs.join("\n\n") + " token#{rand(10)} token#{rand(10)}", anonymous: false,
                             course_id: "1", user_id: (rand(USERS) + 1).to_s}
           RestClient.post "#{PREFIX}/threads/#{comment_thread_ids.sample}/comments", data
                             
@@ -52,7 +52,7 @@ namespace :benchmark do
 
       x.report("create sub comments") do
         SUB_COMMENTS.times do
-          data = {body: "lalala", anonymous: false,
+          data = {body: Faker::Lorem.paragraphs.join("\n\n") + " token#{rand(10)} token#{rand(10)}", anonymous: false,
                             course_id: "1", user_id: (rand(USERS) + 1).to_s}
           RestClient.post "#{PREFIX}/comments/#{top_comment_ids.sample}", data
                             
@@ -83,6 +83,13 @@ namespace :benchmark do
         COURSE_THREAD_QUERY.times do
           query_params = { course_id: "1", sort_key: sort_keys.sample, sort_order: sort_order, page: 1 + rand(100), per_page: 5 }
           RestClient.get "#{PREFIX}/threads", params: query_params
+        end
+      end
+      x.report("searching threads in a course") do
+        
+        COURSE_THREAD_QUERY.times do
+          query_params = { course_id: "1", text: "token#{rand(10)} token#{rand(10)} token#{rand(10)}", sort_key: sort_keys.sample, sort_order: sort_order, page: 1 + rand(10), per_page: 5 }
+          RestClient.get "#{PREFIX}/search/threads", params: query_params
         end
       end
     end
