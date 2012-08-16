@@ -7,17 +7,8 @@ end
 describe "app" do
   describe "benchmark" do
     it "bulk generate" do
-      Comment.delete_all
-      CommentThread.delete_all
-      CommentThread.recalculate_all_context_tag_weights!
-      User.delete_all
-      Notification.delete_all
-      Subscription.delete_all
-      Comment.create_indexes
-      CommentThread.create_indexes
-      User.create_indexes
-      Notification.create_indexes
-      Subscription.create_indexes
+      [Comment, CommentThread, User, Notification, Subscription].each(&:delete_all).each(&:create_indexes)
+      
       Delayed::Backend::Mongoid::Job.create_indexes
 
       COMMENTABLES = 20
