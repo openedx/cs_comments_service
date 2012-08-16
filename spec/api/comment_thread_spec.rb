@@ -137,7 +137,7 @@ describe "app" do
   end
   describe "GET /api/v1/threads/tags" do
     it "get all tags used in threads" do
-      CommentThread.recalculate_all_context_tag_weights!
+      Content.recalculate_all_context_tag_weights!
       thread1 = CommentThread.all.to_a.first
       thread2 = CommentThread.all.to_a.last
       thread1.tags = "a, b, c"
@@ -162,7 +162,7 @@ describe "app" do
     end
     it "returns autocomplete results" do
       CommentThread.delete_all
-      CommentThread.recalculate_all_context_tag_weights!
+      Content.recalculate_all_context_tag_weights!
       create_comment_thread "c++, clojure, common-lisp, c#, c, coffeescript"
       create_comment_thread "c++, clojure, common-lisp, c#, c"
       create_comment_thread "c++, clojure, common-lisp, c#"
