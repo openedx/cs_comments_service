@@ -1,8 +1,10 @@
 seed_size:
   commentables: 20
   users: 100
-  threads: 1000
-  top_comments: 1000
-  sub_comments: 2000
-  votes: 10000
+  threads: 100
+  top_comments: 100
+  sub_comments: 200
+  votes: 1000
   tags: 100
+query_amount:
+  course_thread_query: 1000
