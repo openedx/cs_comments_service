@@ -3,11 +3,9 @@ require_relative 'content'
 class CommentThread < Content
   include Mongo::Voteable
   include Mongoid::Timestamps
-  include Mongoid::TaggableWithContext
-  include Mongoid::TaggableWithContext::AggregationStrategy::RealTime
+  
 
   voteable self, :up => +1, :down => -1
-  taggable separator: ',', default: []
 
   field :comment_count, type: Integer, default: 0
   field :title, type: String
