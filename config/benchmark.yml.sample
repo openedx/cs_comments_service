@@ -1,0 +1,8 @@
+seed_size:
+  commentables: 20
+  users: 100
+  threads: 1000
+  top_comments: 1000
+  sub_comments: 2000
+  votes: 10000
+  tags: 100

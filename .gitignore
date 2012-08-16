@@ -23,3 +23,5 @@ Gemfile.lock
 .*.swo
 .*.swm
 *.pid
+
+config/benchmark.yml
