@@ -7,7 +7,7 @@ class CommentThread < Content
   include Mongoid::TaggableWithContext
   include Mongoid::TaggableWithContext::AggregationStrategy::RealTime
 
-  taggable separator: ',', default: [], sparse_index: true 
+  taggable separator: ',', default: []
 
   voteable self, :up => +1, :down => -1
 
