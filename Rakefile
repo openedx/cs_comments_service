@@ -30,6 +30,8 @@ def create_test_user(id)
   User.create!(external_id: id, username: "user#{id}", email: "user#{id}@test.com")
 end
 
+Dir.glob('lib/tasks/*.rake').each { |r| import r }
+
 task :console => :environment do
   binding.pry
 end
@@ -130,9 +132,34 @@ namespace :db do
 
   end
 
+  task :bulk_seed, [:num] => :environment do |t, args|
+    Mongoid.configure do |config|
+      config.connect_to("cs_comments_service_bulk_test")
+    end
+    connnection = Mongo::Connection.new("127.0.0.1", "27017")
+    db = Mongo::Connection.new.db("cs_comments_service_bulk_test")
+
+    CommentThread.create_indexes
+    Comment.create_indexes
+    Content.delete_all
+    coll = db.collection("contents")
+    args[:num].to_i.times do
+      doc = {"_type" => "CommentThread", "anonymous" => [true, false].sample, "at_position_list" => [], 
+          "tags_array" => [], 
+          "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s, 
+          "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
+          "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
+          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+      coll.insert(doc)
+    end
+    binding.pry
+    Tire.index('comment_threads').delete
+    CommentThread.create_elasticsearch_index
+    Tire.index('comment_threads') { import CommentThread.all }
+  end
+
   task :seed_fast => :environment do
     ADDITIONAL_COMMENTS_PER_THREAD = 20
-
 
     config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["sessions"]["default"]
     connnection = Mongo::Connection.new(config["hosts"][0].split(":")[0], config["hosts"][0].split(":")[1])
