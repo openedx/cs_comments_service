@@ -3,5 +3,5 @@ get "#{APIPREFIX}/threads/tags" do
 end
 
 get "#{APIPREFIX}/threads/tags/autocomplete" do
-  CommentThread.tags_autocomplete(params["value"].strip, max: 5, sort_by_count: true).map(&:first).to_json
+  CommentThread.tags_autocomplete(:tags, params["value"].strip, max: 5, sort_by_count: true).map(&:first).to_json
 end

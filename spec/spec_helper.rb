@@ -37,6 +37,7 @@ end
 def init_without_subscriptions
   Comment.delete_all
   CommentThread.delete_all
+  CommentThread.recalculate_all_context_tag_weights!
   User.delete_all
   Notification.delete_all
   Subscription.delete_all
@@ -109,6 +110,7 @@ end
 def init_with_subscriptions
   Comment.delete_all
   CommentThread.delete_all
+  CommentThread.recalculate_all_context_tag_weights!
   User.delete_all
   Notification.delete_all
   Subscription.delete_all

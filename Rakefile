@@ -30,47 +30,6 @@ def create_test_user(id)
   User.create!(external_id: id, username: "user#{id}", email: "user#{id}@test.com")
 end
 
-namespace :test do
-  task :nested_comments => :environment do
-    puts "checking"
-    50.times do
-      Comment.delete_all
-      CommentThread.delete_all
-      User.delete_all
-      Notification.delete_all
-      Subscription.delete_all
-      
-      user = create_test_user(1)
-
-      comment_thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: "question_1")
-      comment_thread.author = user
-      comment_thread.save!
-
-      comment = comment_thread.comments.new(body: "this problem is so easy", course_id: "1")
-      comment.author = user
-      comment.save!
-      comment1 = comment.children.new(body: "not for me!", course_id: "1")
-      comment1.author = user
-      comment1.comment_thread = comment_thread
-      comment1.save!
-      comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
-      comment2.author = user
-      comment2.comment_thread = comment_thread
-      comment2.save!
-
-      children = comment_thread.root_comments.first.to_hash(recursive: true)["children"]
-      if children.length == 2
-        pp comment_thread.to_hash(recursive: true)
-        pp comment_thread.root_comments.first.descendants_and_self.to_a
-        puts "error!"
-        break
-      end
-      puts "passed once"
-    end
-    puts "passed"
-  end
-end
-
 task :console => :environment do
   binding.pry
 end
@@ -90,6 +49,7 @@ namespace :db do
   task :clean => :environment do
     Comment.delete_all
     CommentThread.delete_all
+    CommentThread.recalculate_all_context_tag_weights!
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
@@ -196,6 +156,7 @@ namespace :db do
 
     Comment.delete_all
     CommentThread.delete_all
+    CommentThread.recalculate_all_context_tag_weights!
     User.delete_all
     Notification.delete_all
     Subscription.delete_all

@@ -3,9 +3,11 @@ require_relative 'content'
 class CommentThread < Content
   include Mongo::Voteable
   include Mongoid::Timestamps
-  include Mongoid::Taggable
+  include Mongoid::TaggableWithContext
+  include Mongoid::TaggableWithContext::AggregationStrategy::RealTime
 
   voteable self, :up => +1, :down => -1
+  taggable separator: ',', default: []
 
   field :comment_count, type: Integer, default: 0
   field :title, type: String
@@ -114,7 +116,6 @@ class CommentThread < Content
   def activity_this_month; activity_since(Date.today.to_time - 1.months); end
 
   def activity_overall; activity_since(nil); end
-
 
   def root_comments
     Comment.roots.where(comment_thread_id: self.id)
