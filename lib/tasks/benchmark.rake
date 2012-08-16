@@ -2,9 +2,6 @@ require 'rest_client'
 
 namespace :benchmark do
   task :bulk_generate => :environment do
-    [Comment, CommentThread, User, Notification, Subscription].each(&:delete_all).each(&:create_indexes)
-      
-    Delayed::Backend::Mongoid::Job.create_indexes
 
     seed_config = YAML.load_file("config/benchmark.yml").with_indifferent_access
 
