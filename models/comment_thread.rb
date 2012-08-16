@@ -1,9 +1,13 @@
 require_relative 'content'
 
 class CommentThread < Content
+
   include Mongo::Voteable
   include Mongoid::Timestamps
-  
+  include Mongoid::TaggableWithContext
+  include Mongoid::TaggableWithContext::AggregationStrategy::RealTime
+
+  taggable separator: ',', default: [], sparse_index: true 
 
   voteable self, :up => +1, :down => -1
 

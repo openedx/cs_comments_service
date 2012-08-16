@@ -4,7 +4,6 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
-
 desc "Load the environment"
 task :environment do
   environment = ENV["SINATRA_ENV"] || "development"
@@ -30,7 +29,7 @@ def create_test_user(id)
   User.create!(external_id: id, username: "user#{id}", email: "user#{id}@test.com")
 end
 
-#Dir.glob('lib/tasks/*.rake').each { |r| import r }
+Dir.glob('lib/tasks/*.rake').each { |r| import r }
 
 task :console => :environment do
   binding.pry
@@ -38,28 +37,23 @@ end
 
 namespace :db do
   task :init => :environment do
-    puts "creating indexes..."
-    Comment.create_indexes
-    CommentThread.create_indexes
-    User.create_indexes
-    Notification.create_indexes
-    Subscription.create_indexes
-    Delayed::Backend::Mongoid::Job.create_indexes
+    puts "recreating indexes..."
+    [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:remove_indexes).each(&:create_indexes)
     puts "finished"
   end
 
   task :clean => :environment do
     Comment.delete_all
     CommentThread.delete_all
-    Content.recalculate_all_context_tag_weights!
+    CommentThread.recalculate_all_context_tag_weights!
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
   end
 
   THREADS_PER_COMMENTABLE = 20
-  TOP_COMMENTS_PER_THREAD = 4
-  ADDITIONAL_COMMENTS_PER_THREAD = 20
+  TOP_COMMENTS_PER_THREAD = 3
+  ADDITIONAL_COMMENTS_PER_THREAD = 4
 
   COURSE_ID = "MITx/6.002x/2012_Fall"
 
@@ -115,13 +109,13 @@ namespace :db do
       end
     end
 
-    # puts "voting"
+    puts "voting"
 
-    # (threads + top_comments + additional_comments).each do |c|
-    #   users.each do |user|
-    #     user.vote(c, [:up, :down].sample)
-    #   end
-    # end
+    (threads + top_comments + additional_comments).each do |c|
+      users.each do |user|
+        user.vote(c, [:up, :down].sample)
+      end
+    end
     puts "finished"
   end
 
@@ -183,7 +177,7 @@ namespace :db do
 
     Comment.delete_all
     CommentThread.delete_all
-    Content.recalculate_all_context_tag_weights!
+    CommentThread.recalculate_all_context_tag_weights!
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
@@ -204,8 +198,8 @@ namespace :db do
     #   user.subscribe(other_user)
     # end
     generate_comments_for("video_1")
-    #generate_comments_for("lab_1")
-    #generate_comments_for("lab_2")
+    generate_comments_for("lab_1")
+    generate_comments_for("lab_2")
 
     end_time = Time.now
 

@@ -1,6 +1,7 @@
 require_relative 'content'
 
 class Comment < Content
+
   include Mongoid::Tree
   include Mongo::Voteable
   include Mongoid::Timestamps

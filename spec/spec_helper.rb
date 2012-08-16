@@ -35,12 +35,8 @@ def create_test_user(id)
 end
 
 def init_without_subscriptions
-  Comment.delete_all
-  CommentThread.delete_all
-  Content.recalculate_all_context_tag_weights!
-  User.delete_all
-  Notification.delete_all
-  Subscription.delete_all
+
+  [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
   Tire.index 'comment_threads' do delete end
   CommentThread.create_elasticsearch_index
   
@@ -108,12 +104,7 @@ def init_without_subscriptions
 end
 
 def init_with_subscriptions
-  Comment.delete_all
-  CommentThread.delete_all
-  Content.recalculate_all_context_tag_weights!
-  User.delete_all
-  Notification.delete_all
-  Subscription.delete_all
+  [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
 
   Tire.index 'comment_threads' do delete end
   CommentThread.create_elasticsearch_index

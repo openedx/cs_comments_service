@@ -1,10 +1,10 @@
 require 'rest_client'
 
 namespace :benchmark do
-  task :bulk_generate do
-    #[Comment, CommentThread, User, Notification, Subscription].each(&:delete_all).each(&:create_indexes)
+  task :bulk_generate => :environment do
+    [Comment, CommentThread, User, Notification, Subscription].each(&:delete_all).each(&:create_indexes)
       
-    #Delayed::Backend::Mongoid::Job.create_indexes
+    Delayed::Backend::Mongoid::Job.create_indexes
 
     seed_config = YAML.load_file("config/benchmark.yml").with_indifferent_access
 
@@ -18,18 +18,18 @@ namespace :benchmark do
 
     PREFIX = "http://localhost:4567/api/v1"
 
-    #Benchmark.bm(31) do |x|
+    Benchmark.bm(31) do |x|
       
       RestClient.get "#{PREFIX}/clean"
 
-      #x.report "create users via api" do
+      x.report "create users via api" do
         (1..USERS).each do |user_id|
           data = { id: user_id, username: "user#{user_id}", email: "user#{user_id}@test.com" }
           RestClient.post "#{PREFIX}/users", data
         end
-      #end
+      end
 
-      #x.report "create new threads via api" do
+      x.report "create new threads via api" do
         (1..THREADS).each do |t|
           data = {title: "Interesting question", body: "cool", anonymous: false, \
                             course_id: "1", user_id: (rand(USERS) + 1).to_s, \
@@ -38,39 +38,37 @@ namespace :benchmark do
           RestClient.post "#{PREFIX}/question_#{rand(COMMENTABLES).to_s}/threads", data
                             
         end
-      #end
+      end
 
-      #comment_thread_ids = CommentThread.all.to_a.map(&:id)
+      comment_thread_ids = CommentThread.all.to_a.map(&:id)
 
-      #binding.pry
-
-      #x.report("create top comments via api") do
+      x.report("create top comments via api") do
         TOP_COMMENTS.times do
           data = {body: "lalala", anonymous: false,
                             course_id: "1", user_id: (rand(USERS) + 1).to_s}
           RestClient.post "#{PREFIX}/threads/#{comment_thread_ids.sample}/comments", data
                             
         end
-      #end
+      end
 
-      #top_comment_ids = Comment.all.to_a.map(&:id)
+      top_comment_ids = Comment.all.to_a.map(&:id)
 
-      #x.report("create sub comments") do
+      x.report("create sub comments") do
         SUB_COMMENTS.times do
           data = {body: "lalala", anonymous: false,
                             course_id: "1", user_id: (rand(USERS) + 1).to_s}
           RestClient.post "#{PREFIX}/comments/#{top_comment_ids.sample}", data
                             
         end
-      #end
+      end
 
-      #x.report("create votes") do
+      x.report("create votes") do
         VOTES.times do
           data = {user_id: (rand(USERS) + 1).to_s, value: [:up, :down].sample}
           RestClient.put "#{PREFIX}/threads/#{comment_thread_ids.sample}/votes", data
           RestClient.put "#{PREFIX}/comments/#{top_comment_ids.sample}/votes", data
         end
-      #end
+      end
     end
-  #end
+  end
 end
