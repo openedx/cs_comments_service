@@ -75,14 +75,14 @@ class CommentThread < Content
     c
   end
 
-  def self.search_result_to_hash(result, params={})
+  def self.search_result_id_to_hash(id, params={})
 
     comment_thread = self.find(result.id)
     highlight = result.highlight || {}
 
     highlighted_body = (highlight[:body] || []).first || comment_thread.body
     highlighted_title = (highlight[:title] || []).first || comment_thread.title
-    find(result.id).to_hash(params).merge(highlighted_body: highlighted_body, highlighted_title: highlighted_title)
+    find(id).to_hash(params).merge(highlighted_body: highlighted_body, highlighted_title: highlighted_title)
   end
 
   def self.perform_search(params, options={})
@@ -90,6 +90,12 @@ class CommentThread < Content
     per_page = options[:per_page] || 20
     sort_key = options[:sort_key]
     sort_order = options[:sort_order]
+    if CommentService.config[:cache_enabled]
+      memcached_key = "threads_search_#{params.merge(options).hash}"
+      results = Sinatra::Application.cache.get(memcached_key)
+      return results if results
+      puts "cache miss"
+    end
     search = Tire::Search::Search.new 'comment_threads'
     search.query {|query| query.text :_all, params["text"]} if params["text"]
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
@@ -100,7 +106,14 @@ class CommentThread < Content
 
     search.size per_page
     search.from per_page * (page - 1)
-    search
+    results = {
+      result_ids: search.results.map(&:id),
+      total_pages: search.results.total_pages,
+    }
+    if CommentService.config[:cache_enabled]
+      Sinatra::Application.cache.set(memcached_key, results, CommentService.config[:cache_timeout][:threads_search].to_i)
+    end
+    results
   end
 
   def activity_since(from_time=nil)

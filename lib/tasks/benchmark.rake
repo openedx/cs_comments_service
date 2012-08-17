@@ -88,7 +88,7 @@ namespace :benchmark do
       x.report("searching threads in a course") do
         
         COURSE_THREAD_QUERY.times do
-          query_params = { course_id: "1", text: "token#{rand(10)} token#{rand(10)} token#{rand(10)}", sort_key: sort_keys.sample, sort_order: sort_order, page: 1 + rand(10), per_page: 5 }
+          query_params = { course_id: "1", text: "token#{rand(10)} token#{rand(10)}", sort_key: sort_keys.sample, sort_order: sort_order, page: 1 + rand(10), per_page: 5 }
           RestClient.get "#{PREFIX}/search/threads", params: query_params
         end
       end

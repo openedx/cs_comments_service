@@ -39,6 +39,8 @@ gem 'nokogiri'
 gem 'tire'
 gem 'tire-contrib'
 
+gem 'dalli'
+
 gem 'rest-client'
 
 group :test do

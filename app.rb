@@ -9,15 +9,17 @@ require 'tire/queries/more_like_this'
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
 environment = env_arg || ENV["SINATRA_ENV"] || "development"
-RACK_ENV = environment
 
+RACK_ENV = environment
 module CommentService
   class << self; attr_accessor :config; end
   API_VERSION = 'v1'
   API_PREFIX = "/api/#{API_VERSION}"
 end
 
-CommentService.config = YAML.load_file("config/application.yml")
+set :cache, Dalli::Client.new
+
+CommentService.config = YAML.load_file("config/application.yml").with_indifferent_access
 
 Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
@@ -44,7 +46,7 @@ require './api/users'
 require './api/votes'
 require './api/notifications_and_subscriptions'
 
-if environment.to_s == "development"
+if RACK_ENV.to_s == "development"
   get "#{APIPREFIX}/clean" do
     [Delayed::Backend::Mongoid::Job, Comment, CommentThread, User, Notification, Subscription, Activity].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
     {}.to_json
