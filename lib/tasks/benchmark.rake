@@ -80,15 +80,15 @@ namespace :benchmark do
 
       x.report("querying threads in a course") do
         
-        COURSE_THREAD_QUERY.times do
-          query_params = { course_id: "1", sort_key: sort_keys.sample, sort_order: sort_order, page: 1 + rand(100), per_page: 5 }
+        (1..COURSE_THREAD_QUERY).each do |seed|
+          query_params = { course_id: "1", sort_key: sort_keys[seed % 4], sort_order: sort_order, page: seed % 5 + 1, per_page: 5 }
           RestClient.get "#{PREFIX}/threads", params: query_params
         end
       end
       x.report("searching threads in a course") do
         
-        COURSE_THREAD_QUERY.times do
-          query_params = { course_id: "1", text: "token#{rand(10)} token#{rand(10)}", sort_key: sort_keys.sample, sort_order: sort_order, page: 1 + rand(10), per_page: 5 }
+        (1..COURSE_THREAD_QUERY).each do |seed|
+          query_params = { course_id: "1", text: "token#{seed % 10} token#{(seed * seed) % 10}", sort_key: sort_keys[seed % 4], sort_order: sort_order, page: seed % 5 + 1, per_page: 5 }
           RestClient.get "#{PREFIX}/search/threads", params: query_params
         end
       end
