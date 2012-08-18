@@ -68,6 +68,23 @@ helpers do
   end
 
   def handle_threads_query(comment_threads)
+
+    if CommentService.config[:cache_enabled]
+      query_params = params.slice(*%w[course_id commentable_id sort_key sort_order page per_page])
+      memcached_key = "threads_query_#{query_params.hash}"
+      cached_results = Sinatra::Application.cache.get(memcached_key)
+      if cached_results
+        puts "cache hit"
+        return {
+          collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive)},
+          num_pages: cached_results[:num_pages],
+          page: cached_results[:page],
+        }
+      end
+    end
+
+    puts "cache miss"
+
     sort_key_mapper = {
       "date" => :created_at,
       "activity" => :last_activity_at,
@@ -92,6 +109,14 @@ helpers do
       num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
       page = [num_pages, [1, page].max].min
       paged_comment_threads = comment_threads.page(page).per(per_page)
+      if CommentService.config[:cache_enabled]
+        cached_results = {
+          collection_ids: paged_comment_threads.map(&:id),
+          num_pages: num_pages,
+          page: page,
+        }.to_json
+        Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
+      end
       {
         collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive)},
         num_pages: num_pages,
