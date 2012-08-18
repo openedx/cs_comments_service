@@ -75,14 +75,14 @@ class CommentThread < Content
     c
   end
 
-  def self.search_result_id_to_hash(id, params={})
+  def self.search_result_to_hash(result, params={})
 
     comment_thread = self.find(result.id)
     highlight = result.highlight || {}
 
     highlighted_body = (highlight[:body] || []).first || comment_thread.body
     highlighted_title = (highlight[:title] || []).first || comment_thread.title
-    find(id).to_hash(params).merge(highlighted_body: highlighted_body, highlighted_title: highlighted_title)
+    comment_thread.to_hash(params).merge(highlighted_body: highlighted_body, highlighted_title: highlighted_title)
   end
 
   def self.perform_search(params, options={})
@@ -109,14 +109,10 @@ class CommentThread < Content
 
     search.size per_page
     search.from per_page * (page - 1)
-    results = {
-      result_ids: search.results.map(&:id),
-      total_pages: search.results.total_pages,
-    }
     if CommentService.config[:cache_enabled]
-      Sinatra::Application.cache.set(memcached_key, results, CommentService.config[:cache_timeout][:threads_search].to_i)
+      Sinatra::Application.cache.set(memcached_key, search.results, CommentService.config[:cache_timeout][:threads_search].to_i)
     end
-    results
+    search.results
   end
 
   def activity_since(from_time=nil)
