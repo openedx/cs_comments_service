@@ -32,14 +32,14 @@ get "#{APIPREFIX}/search/threads" do
 
     results = CommentThread.perform_search(params, options)
 
-    if page > results[:total_pages] #TODO find a better way for this
-      results = CommentThread.perform_search(params, options.merge(page: results[:total_pages]))
+    if page > results.total_pages #TODO find a better way for this
+      results = CommentThread.perform_search(params, options.merge(page: results.total_pages))
     end
 
-    num_pages = results[:total_pages]
+    num_pages = results.total_pages
     page = [num_pages, [1, page].max].min
     {
-      collection: results[:result_ids].map{|id| CommentThread.search_result_id_to_hash(id, recursive: bool_recursive)},
+      collection: results.map{|t| CommentThread.search_result_to_hash(t, recursive: bool_recursive)},
       num_pages: num_pages,
       page: page,
     }.to_json
