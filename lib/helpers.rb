@@ -79,7 +79,7 @@ helpers do
           collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive)},
           num_pages: cached_results[:num_pages],
           page: cached_results[:page],
-        }
+        }.to_json
       end
     end
 
@@ -114,7 +114,7 @@ helpers do
           collection_ids: paged_comment_threads.map(&:id),
           num_pages: num_pages,
           page: page,
-        }.to_json
+        }
         Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
       end
       {
