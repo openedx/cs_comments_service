@@ -44,10 +44,5 @@ gem 'rest-client'
 group :test do
   gem 'rspec'
   gem 'rack-test', :require => "rack/test"
-  gem 'sqlite3'
-end
-
-group :dev do
-  gem 'sqlite3'
 end
 
