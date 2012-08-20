@@ -22,7 +22,7 @@ gem 'mongoid', "~> 3.0"
 gem 'bson_ext'
 
 gem 'delayed_job'
-gem 'delayed_job_mongoid', :git => 'git@github.com:dementrock/delayed_job_mongoid.git'
+gem 'delayed_job_mongoid', :git => 'https://github.com/dementrock/delayed_job_mongoid.git'
 
 gem 'mongoid-tree', :git => 'git@github.com:dementrock/mongoid-tree.git'
 gem 'voteable_mongo', :git => 'git@github.com:dementrock/voteable_mongo.git'
