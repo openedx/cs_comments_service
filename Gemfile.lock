@@ -70,6 +70,7 @@ GEM
     builder (3.0.0)
     coderay (1.0.7)
     columnize (0.3.6)
+    dalli (2.1.0)
     debugger (1.2.0)
       columnize (>= 0.3.1)
       debugger-linecache (~> 1.1.1)
@@ -153,6 +154,7 @@ DEPENDENCIES
   ampex
   bson_ext
   bundler
+  dalli
   debugger
   delayed_job
   delayed_job_mongoid!
