@@ -12,6 +12,24 @@ test:
       hosts:
         - localhost:27017
 
+staging2:
+  sessions:
+    default:
+      database: cs_comments_service_staging
+      hosts:
+        - alex.mongohq.com:10079
+      username: forum
+      password: forum
+
+staging:
+  sessions:
+    default:
+      database: cs_comments_service_staging
+      hosts:
+        - ds037047.mongolab.com:37047
+      username: forum
+      password: forum
+
 defaults: &defaults
   use_utc: false
   use_activesupport_time_zone: true

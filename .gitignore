@@ -17,7 +17,6 @@ tmp
 _yardoc
 doc/
 
-Gemfile.lock
 *.sqlite3
 .*.swp
 .*.swo
