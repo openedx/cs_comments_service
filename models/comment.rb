@@ -49,13 +49,14 @@ class Comment < Content
       self.class.hash_tree(subtree(sort: sort_by_parent_and_time)).first
     else
       as_document.slice(*%w[body course_id endorsed anonymous created_at updated_at at_position_list])
-                  .merge("id" => _id)
-                  .merge("user_id" => author.id)
-                  .merge("username" => author.username)
-                  .merge("depth" => depth)
-                  .merge("closed" => comment_thread.closed)
-                  .merge("thread_id" => comment_thread.id)
-                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
+                 .merge("id" => _id)
+                 .merge("user_id" => author.id)
+                 .merge("username" => author.username)
+                 .merge("depth" => depth)
+                 .merge("closed" => comment_thread.closed)
+                 .merge("thread_id" => comment_thread.id)
+                 .merge("votes" => votes.slice(*%w[count up_count down_count point]))
+                 .merge("type" => "comment")
     end
   end
 

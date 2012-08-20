@@ -1,5 +1,5 @@
 level_limit: 3
-cache_enabled: true
+cache_enabled: false
 cache_timeout:
-  threads_search: 60
-  threads_query: 60
+  threads_search: 10
+  threads_query: 10
