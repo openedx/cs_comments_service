@@ -94,10 +94,8 @@ class CommentThread < Content
       memcached_key = "threads_search_#{params.merge(options).hash}"
       results = Sinatra::Application.cache.get(memcached_key)
       if results
-        puts "cache hit"
         return results
       end
-      puts "cache miss"
     end
     search = Tire::Search::Search.new 'comment_threads'
     search.query {|query| query.text :_all, params["text"]} if params["text"]
