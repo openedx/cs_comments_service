@@ -1,6 +1,7 @@
 level_limit: 3
 cache_enabled: false
 api_key: "PUT_YOUR_API_KEY_HERE"
+elasticsearch_server: "http://localhost:9200"
 cache_timeout:
   threads_search: 10
   threads_query: 10
