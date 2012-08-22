@@ -55,6 +55,7 @@ class Comment < Content
                  .merge("depth" => depth)
                  .merge("closed" => comment_thread.closed)
                  .merge("thread_id" => comment_thread.id)
+                 .merge("commentable_id" => comment_thread.commentable_id)
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                  .merge("type" => "comment")
     end
