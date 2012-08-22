@@ -21,6 +21,10 @@ set :cache, Dalli::Client.new
 
 CommentService.config = YAML.load_file("config/application.yml").with_indifferent_access
 
+Tire.configure do
+  url CommentService.config[:elasticsearch_server]
+end
+
 Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
 
