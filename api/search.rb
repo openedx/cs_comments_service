@@ -78,7 +78,7 @@ get "#{APIPREFIX}/search/threads/recent_active" do
     CommentThread.all.where(query_params.merge(:last_activity_at => {:$gte => from_time}))
   end
 
-  comment_threads.to_a.sort {|x, y| y.last_activity_at <=> x.last_activity_at}[0..4].to_json
+  comment_threads.to_a.sort {|x, y| y.last_activity_at <=> x.last_activity_at}[0..4].map(&:to_hash).to_json
 end
 
 
