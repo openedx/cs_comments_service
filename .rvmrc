@@ -1,1 +1,2 @@
-rvm use 1.9.3@cs_comments_service
+rvm 1.9.3@cs_comments_service --create
+
