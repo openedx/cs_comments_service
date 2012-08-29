@@ -6,7 +6,8 @@ class User
   field :external_id, type: String
   field :username, type: String
   field :email, type: String
-  
+  field :default_sort_key, type: String, default: "date"
+
   has_many :comments, inverse_of: :author
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
@@ -62,7 +63,8 @@ class User
                         "follower_ids" => subscriptions_as_source.map(&:subscriber_id),
                         "id" => id,
                         "upvoted_ids" => upvoted_ids,
-                        "downvoted_ids" => downvoted_ids)
+                        "downvoted_ids" => downvoted_ids,
+                        "default_sort_key" => default_sort_key)
     end
     if params[:course_id]
       hash = hash.merge("threads_count" => comment_threads.where(course_id: params[:course_id]).count,
