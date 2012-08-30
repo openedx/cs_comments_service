@@ -48,7 +48,7 @@ put "#{APIPREFIX}/users/:user_id" do |user_id|
   if not user
     user = User.new(external_id: user_id)
   end
-  user.update_attributes(params.slice(*%w[username email]))
+  user.update_attributes(params.slice(*%w[username email default_sort_key]))
   if user.errors.any?
     error 400, user.errors.full_messages.to_json
   else

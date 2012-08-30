@@ -25,3 +25,6 @@ doc/
 
 config/benchmark.yml
 benchmark_log
+
+# bundler binstubs
+bin/
