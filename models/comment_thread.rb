@@ -57,7 +57,7 @@ class CommentThread < Content
   validate :tag_names_unique
 
   before_create :set_last_activity_at
-  before_update :set_last_activity_at
+  before_update :set_last_activity_at, :unless => closed_changed?
 
   before_destroy :destroy_subscriptions
 
@@ -187,7 +187,7 @@ private
   end
 
   def set_last_activity_at
-    self.last_activity_at = Time.now.utc unless last_activity_at_changed? 
+    self.last_activity_at = Time.now.utc unless last_activity_at_changed?
   end
 
   def destroy_subscriptions
