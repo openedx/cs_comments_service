@@ -57,7 +57,7 @@ class CommentThread < Content
   validate :tag_names_unique
 
   before_create :set_last_activity_at
-  before_update :set_last_activity_at, :unless => closed_changed?
+  before_update :set_last_activity_at, :unless => lambda { closed_changed? }
 
   before_destroy :destroy_subscriptions
 
