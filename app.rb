@@ -18,7 +18,7 @@ module CommentService
   API_PREFIX = "/api/#{API_VERSION}"
 end
 
-if environment == "staging" or environment == "production"
+if ["staging", "production", "loadtest"].include? environment
   require 'newrelic_rpm'
 end
 
