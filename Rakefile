@@ -4,8 +4,10 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
+application_yaml = ERB.new(File.read("config/application.yml")).result()
+
 Tire.configure do
-  url YAML.load_file("config/application.yml")['elasticsearch_server'] 
+  url YAML.load(application_yaml)['elasticsearch_server'] 
 end
 
 desc "Load the environment"
@@ -18,7 +20,7 @@ task :environment do
     class << self; attr_accessor :config; end
   end
 
-  CommentService.config = YAML.load_file("config/application.yml")
+  CommentService.config = YAML.load(application_yaml)
 
   Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
   Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
@@ -62,7 +64,7 @@ namespace :db do
   COURSE_ID = "MITx/6.002x/2012_Fall"
 
   def generate_comments_for(commentable_id)
-    level_limit = YAML.load_file("config/application.yml")["level_limit"]
+    level_limit = YAML.load(application_yaml)["level_limit"]
 
     tag_seeds = [
       "artificial-intelligence",
