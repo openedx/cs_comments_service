@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'bundler'
+require 'erb'
 
 Bundler.setup
 Bundler.require
@@ -17,9 +18,14 @@ module CommentService
   API_PREFIX = "/api/#{API_VERSION}"
 end
 
+if environment == "staging" or environment == "production"
+  require 'newrelic_rpm'
+end
+
 set :cache, Dalli::Client.new
 
-CommentService.config = YAML.load_file("config/application.yml").with_indifferent_access
+application_yaml = ERB.new(File.read("config/application.yml")).result()
+CommentService.config = YAML.load(application_yaml).with_indifferent_access
 
 Tire.configure do
   url CommentService.config[:elasticsearch_server]

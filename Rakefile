@@ -4,6 +4,10 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
+Tire.configure do
+  url YAML.load_file("config/application.yml")['elasticsearch_server'] 
+end
+
 desc "Load the environment"
 task :environment do
   environment = ENV["SINATRA_ENV"] || "development"

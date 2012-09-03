@@ -12,23 +12,20 @@ test:
       hosts:
         - localhost:27017
 
-staging2:
+production:
   sessions:
     default:
-      database: cs_comments_service_staging
-      hosts:
-        - alex.mongohq.com:10079
-      username: forum
-      password: forum
+      uri: <%= ENV['MONGOHQ_URL'] %>
 
 staging:
   sessions:
     default:
-      database: cs_comments_service_staging
-      hosts:
-        - ds037047.mongolab.com:37047
-      username: forum
-      password: forum
+      uri: <%= ENV['MONGOHQ_URL'] %>
+
+loadtest:
+  sessions:
+    default:
+      uri: <%= ENV['MONGOHQ_URL'] %>
 
 defaults: &defaults
   use_utc: false
