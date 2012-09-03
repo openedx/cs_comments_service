@@ -253,3 +253,8 @@ staging:
   <<: *default_settings
   monitor_mode: true
   app_name: <%= ENV["NEW_RELIC_APP_NAME"] %> (Staging)
+
+loadtest:
+  <<: *default_settings
+  monitor_mode: true
+  app_name: <%= ENV["NEW_RELIC_APP_NAME"] %> (Staging)
