@@ -43,7 +43,7 @@ class User
   end
 
   def subscribed_threads
-    CommentThread.where(:id.in => subscribed_thread_ids).without(:body)
+    CommentThread.where(:id.in => subscribed_thread_ids)
   end
 
   def subscribed_commentables
