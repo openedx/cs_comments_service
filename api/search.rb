@@ -70,15 +70,12 @@ get "#{APIPREFIX}/search/threads/recent_active" do
   query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
 
   comment_threads = if follower_id 
-    User.find(follower_id).subscribed_threads.select do |thread|
-      thread.last_activity_at >= from_time and \
-      query_params.to_a.map {|query| thread[query.first] == query.last}.all?
-    end
+    User.find(follower_id).subscribed_threads
   else
-    CommentThread.all.where(query_params.merge(:last_activity_at => {:$gte => from_time}))
+    CommentThread.all
   end
 
-  comment_threads.to_a.sort {|x, y| y.last_activity_at <=> x.last_activity_at}[0..4].map(&:to_hash).to_json
+  comment_threads.where(query_params.merge(:last_activity_at => {:$gte => from_time})).order_by(:last_activity_at.desc).limit(5).to_a.map(&:to_hash).to_json
 end
 
 
@@ -86,7 +83,7 @@ get "#{APIPREFIX}/search/tags/trending" do
   query_params = {}
   query_params["course_id"] = params["course_id"] if params["course_id"]
   query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
-  CommentThread.all.where(query_params).to_a
+  CommentThread.where(query_params).only(:tags_array).to_a
                .map(&:tags_array).flatten.group_by{|x| x}
                .map{|k, v| [k, v.count]}
                .sort_by {|x| - x.last}[0..4]
