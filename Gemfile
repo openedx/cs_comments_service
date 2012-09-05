@@ -50,3 +50,7 @@ end
 
 gem 'newrelic_rpm'
 gem 'unicorn'
+
+gem 'guard'
+gem 'passenger'
+gem 'guard-passenger'
