@@ -21,6 +21,8 @@ class CommentThread < Content
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
 
+  index({author_id: 1, course_id: 1})
+
   include Tire::Model::Search
   include Tire::Model::Callbacks
 

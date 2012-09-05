@@ -7,6 +7,8 @@ class Subscription
   field :source_type, type: String
   
   index({subscriber_id: 1, source_id: 1, source_type: 1})
+  index({subscriber_id: 1, source_type: 1})
+  index({subscriber_id: 1})
 
   def to_hash
     as_document.slice(*%w[subscriber_id source_id source_type])
