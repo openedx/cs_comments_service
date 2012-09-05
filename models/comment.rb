@@ -15,6 +15,8 @@ class Comment < Content
   field :anonymous, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
 
+  index({author_id: 1, course_id: 1})
+
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: "User", index: true
 
