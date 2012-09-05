@@ -31,23 +31,23 @@ class User
   end
 
   def subscribed_thread_ids
-    subscriptions_as_subscriber.where(source_type: "CommentThread").map(&:source_id)
+    Subscription.where(subscriber_id: id.to_s, source_type: "CommentThread").only(:source_id).map(&:source_id)
   end
 
   def subscribed_commentable_ids
-    subscriptions_as_subscriber.where(source_type: "Commentable").map(&:source_id)
+    subscriptions_as_subscriber.where(source_type: "Commentable").only(:source_id).map(&:source_id)
   end
 
   def subscribed_user_ids
-    subscriptions_as_subscriber.where(source_type: "User").map(&:source_id)
+    subscriptions_as_subscriber.where(source_type: "User").only(:source_id).map(&:source_id)
   end
 
   def subscribed_threads
-    subscribed_thread_ids.map {|id| CommentThread.find(id)}
+    CommentThread.where(:id.in => subscribed_thread_ids)
   end
 
   def subscribed_commentables
-    subscribed_commentable_ids.map {|id| Commentable.find(id)}
+    Commentable.find(*subscribed_commentable_ids).only(:id).map(&:id)
   end
 
   def subscribed_users
@@ -60,15 +60,16 @@ class User
       hash = hash.merge("subscribed_thread_ids" => subscribed_thread_ids,
                         "subscribed_commentable_ids" => subscribed_commentable_ids,
                         "subscribed_user_ids" => subscribed_user_ids,
-                        "follower_ids" => subscriptions_as_source.map(&:subscriber_id),
+                        "follower_ids" => subscriptions_as_source.only(:subscriber_id).map(&:subscriber_id),
                         "id" => id,
                         "upvoted_ids" => upvoted_ids,
                         "downvoted_ids" => downvoted_ids,
-                        "default_sort_key" => default_sort_key)
+                        "default_sort_key" => default_sort_key
+                       )
     end
     if params[:course_id]
-      hash = hash.merge("threads_count" => comment_threads.where(course_id: params[:course_id]).count,
-                        "comments_count" => comments.where(course_id: params[:course_id]).count,
+      hash = hash.merge("threads_count" => CommentThread.where(user_id: id, course_id: params[:course_id]).count,
+                        "comments_count" => Comment.where(user_id: id, course_id: params[:course_id]).count
                        )
     end
     hash
