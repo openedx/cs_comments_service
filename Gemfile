@@ -46,6 +46,8 @@ gem 'rest-client'
 group :test do
   gem 'rspec'
   gem 'rack-test', :require => "rack/test"
+  gem 'guard'
+  gem 'guard-unicorn'
 end
 
 gem 'newrelic_rpm'
