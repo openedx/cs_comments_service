@@ -147,6 +147,10 @@ class CommentThread < Content
     subscriptions.map(&:subscriber)
   end
 
+  def endorsed?
+    comments.where(endorsed: true).exists?
+  end
+
   def to_hash(params={})
     doc = as_document.slice(*%w[title body course_id anonymous commentable_id created_at updated_at at_position_list closed])
                      .merge("id" => _id)
@@ -155,6 +159,7 @@ class CommentThread < Content
                      .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                      .merge("tags" => tags_array)
                      .merge("type" => "thread")
+                     .merge("endorsed" => endorsed?)
 
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
