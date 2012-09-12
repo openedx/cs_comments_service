@@ -7,7 +7,7 @@ Bundler.require
 application_yaml = ERB.new(File.read("config/application.yml")).result()
 
 Tire.configure do
-  url YAML.load(application_yaml)['elasticsearch_server'] 
+  url YAML.load(application_yaml)['elasticsearch_server']
 end
 
 desc "Load the environment"
@@ -63,8 +63,8 @@ namespace :db do
 
   COURSE_ID = "MITx/6.002x/2012_Fall"
 
-  def generate_comments_for(commentable_id)
-    level_limit = YAML.load(application_yaml)["level_limit"]
+  def generate_comments_for(commentable_id, num_threads=THREADS_PER_COMMENTABLE, num_top_comments=TOP_COMMENTS_PER_THREAD, num_subcomments=ADDITIONAL_COMMENTS_PER_THREAD)
+    level_limit = CommentService.config["level_limit"]
 
     tag_seeds = [
       "artificial-intelligence",
@@ -83,7 +83,7 @@ namespace :db do
     top_comments = []
     additional_comments = []
 
-    THREADS_PER_COMMENTABLE.times do
+    num_threads.times do
       inner_top_comments = []
 
       comment_thread = CommentThread.new(commentable_id: commentable_id, body: Faker::Lorem.paragraphs.join("\n\n"), title: Faker::Lorem.sentence(6))
@@ -93,7 +93,7 @@ namespace :db do
       comment_thread.save!
       threads << comment_thread
       users.sample(3).each {|user| user.subscribe(comment_thread)}
-      (1 + rand(TOP_COMMENTS_PER_THREAD)).times do
+      (1 + rand(num_top_comments)).times do
         comment = comment_thread.comments.new(body: Faker::Lorem.paragraph(2))
         comment.author = users.sample
         comment.endorsed = [true, false].sample
@@ -103,15 +103,20 @@ namespace :db do
         top_comments << comment
         inner_top_comments << comment
       end
-      (1 + rand(ADDITIONAL_COMMENTS_PER_THREAD)).times do
-        comment = inner_top_comments.sample
-        sub_comment = comment.children.new(body: Faker::Lorem.paragraph(2))
-        sub_comment.author = users.sample
-        sub_comment.endorsed = [true, false].sample
-        sub_comment.comment_thread = comment_thread
-        sub_comment.course_id = COURSE_ID
-        sub_comment.save!
-        additional_comments << sub_comment
+      previous_level_comments = inner_top_comments
+      (level_limit-1).times do
+        current_level_comments = []
+        (1 + rand(num_subcomments)).times do
+          comment = previous_level_comments.sample
+          sub_comment = comment.children.new(body: Faker::Lorem.paragraph(2))
+          sub_comment.author = users.sample
+          sub_comment.endorsed = [true, false].sample
+          sub_comment.comment_thread = comment_thread
+          sub_comment.course_id = COURSE_ID
+          sub_comment.save!
+          current_level_comments << sub_comment
+        end
+        previous_level_comments = current_level_comments
       end
     end
 
@@ -126,9 +131,11 @@ namespace :db do
   end
 
 
-  task :generate_comments, [:commentable_id] => :environment do |t, args|
-
-    generate_comments_for(args[:commentable_id])
+  task :generate_comments, [:commentable_id, :num_threads, :num_top_comments, :num_subcomments] => :environment do |t, args|
+    args.with_defaults(:num_threads => THREADS_PER_COMMENTABLE,
+                       :num_top_comments=>TOP_COMMENTS_PER_THREAD,
+                       :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
+    generate_comments_for(args[:commentable_id], args[:num_threads], args[:num_top_comments], args[:num_subcomments])
 
   end
 
@@ -144,9 +151,9 @@ namespace :db do
     Content.delete_all
     coll = db.collection("contents")
     args[:num].to_i.times do
-      doc = {"_type" => "CommentThread", "anonymous" => [true, false].sample, "at_position_list" => [], 
-          "tags_array" => [], 
-          "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s, 
+      doc = {"_type" => "CommentThread", "anonymous" => [true, false].sample, "at_position_list" => [],
+          "tags_array" => [],
+          "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
           "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
           "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
           "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
@@ -168,9 +175,9 @@ namespace :db do
     Comment.delete_all
     CommentThread.each do |thread|
       ADDITIONAL_COMMENTS_PER_THREAD.times do
-        doc = {"_type" => "Comment", "anonymous" => false, "at_position_list" => [], 
-          "author_id" => rand(1..10).to_s, "body" => Faker::Lorem.paragraphs.join("\n\n"), 
-          "comment_thread_id" => BSON::ObjectId.from_string(thread.id.to_s), "course_id" => COURSE_ID, 
+        doc = {"_type" => "Comment", "anonymous" => false, "at_position_list" => [],
+          "author_id" => rand(1..10).to_s, "body" => Faker::Lorem.paragraphs.join("\n\n"),
+          "comment_thread_id" => BSON::ObjectId.from_string(thread.id.to_s), "course_id" => COURSE_ID,
           "created_at" => Time.now,
           "endorsed" => [true, false].sample, "parent_ids" => [], "updated_at" => Time.now,
           "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
@@ -216,7 +223,7 @@ namespace :db do
 
   end
 
-  task :reindex_search => :environment do 
+  task :reindex_search => :environment do
     Tire.index('comment_threads').delete
     CommentThread.create_elasticsearch_index
     Tire.index('comment_threads') { import CommentThread.all }
