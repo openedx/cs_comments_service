@@ -68,8 +68,8 @@ class User
                        )
     end
     if params[:course_id]
-      hash = hash.merge("threads_count" => CommentThread.where(author_id: id, course_id: params[:course_id]).count,
-                        "comments_count" => Comment.where(author_id: id, course_id: params[:course_id]).count
+      hash = hash.merge("threads_count" => CommentThread.where(author_id: id,course_id: params[:course_id], anonymous: false, anonymous_to_peers: false).count,
+                        "comments_count" => Comment.where(author_id: id, course_id: params[:course_id], anonymous: false, anonymous_to_peers: false).count
                        )
     end
     hash
