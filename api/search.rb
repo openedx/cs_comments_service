@@ -1,4 +1,4 @@
-get "#{APIPREFIX}/search/threads" do 
+get "#{APIPREFIX}/search/threads" do
 
   sort_key_mapper = {
     "date" => :created_at,
@@ -11,18 +11,19 @@ get "#{APIPREFIX}/search/threads" do
     "desc" => :desc,
     "asc" => :asc,
   }
-  
+
   sort_key = sort_key_mapper[params["sort_key"]]
   sort_order = sort_order_mapper[params["sort_order"]]
 
   sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
 
-  if (!params["text"] && !params["tags"]) || !sort_keyword_valid
+  if (!params["text"] && !params["tags"] && !params["commentable_ids"]) || !sort_keyword_valid
     {}.to_json
   else
     page = (params["page"] || DEFAULT_PAGE).to_i
     per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
-
+    # for multi commentable searching
+    params["commentable_ids"] = params["commentable_ids"].split(',') if params["commentable_ids"]
     options = {
       sort_key: sort_key,
       sort_order: sort_order,
@@ -46,7 +47,7 @@ get "#{APIPREFIX}/search/threads" do
   end
 end
 
-get "#{APIPREFIX}/search/threads/more_like_this" do 
+get "#{APIPREFIX}/search/threads/more_like_this" do
   CommentThread.tire.search page: 1, per_page: 5, load: true do |search|
     search.query do |query|
       query.more_like_this params["text"], fields: ["title", "body"], min_doc_freq: 1, min_term_freq: 1
@@ -58,7 +59,7 @@ get "#{APIPREFIX}/search/threads/recent_active" do
 
   return [].to_json if not params["course_id"]
 
-  follower_id = params["follower_id"] 
+  follower_id = params["follower_id"]
   from_time = {
     "today" => Date.today.to_time,
     "this_week" => Date.today.to_time - 1.weeks,
@@ -69,7 +70,7 @@ get "#{APIPREFIX}/search/threads/recent_active" do
   query_params["course_id"] = params["course_id"] if params["course_id"]
   query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
 
-  comment_threads = if follower_id 
+  comment_threads = if follower_id
     User.find(follower_id).subscribed_threads
   else
     CommentThread.all

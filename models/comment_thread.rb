@@ -104,6 +104,7 @@ class CommentThread < Content
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
     search.filter(:bool, :must => params["tags"].split(/,/).map{ |tag| { :term => { :tags_array => tag } } }) if params["tags"]
     search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
+    search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
     search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
 
