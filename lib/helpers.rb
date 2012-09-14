@@ -63,6 +63,10 @@ helpers do
     value_to_boolean params["anonymous"]
   end
 
+  def bool_anonymous_to_peers
+    value_to_boolean params["anonymous_to_peers"]
+  end
+
   def handle_paged_threads_query(paged_comment_threads)
 
   end
@@ -126,7 +130,7 @@ helpers do
     contents.map do |content|
       content['children'] = author_contents_only(content['children'], author_id)
       if content['children'].length > 0 or \
-       (content['user_id'] == author_id and not content['anonymous'])
+       (content['user_id'] == author_id and not content['anonymous'] and not content['anonymous_to_peers'])
           content
       else
         nil

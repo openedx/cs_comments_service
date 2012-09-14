@@ -8,13 +8,13 @@ class PostTopicObserver < Mongoid::Observer
   def self.generate_notifications(comment_thread)
     activity = Activity.new
     activity.happend_at = comment_thread.created_at
-    activity.anonymous = comment_thread.anonymous
+    activity.anonymous = (comment_thread.anonymous || comment_thread.anonymous_to_peers)
     activity.actor = comment_thread.author
     #activity.target_id = comment_thread.commentable.id
     #activity.target_type = comment_thread.commentable._type
     activity.activity_type = "post_topic"
     activity.save!
-    if comment_thread.commentable.subscribers or (author.followers if not anonymous)
+    if comment_thread.commentable.subscribers or (author.followers if not activity.anonymous)
       notification = Notification.new(
         notification_type: "post_topic",
         info: {

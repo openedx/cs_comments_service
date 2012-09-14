@@ -9,13 +9,13 @@ class PostReplyObserver < Mongoid::Observer
 
     activity = Activity.new
     activity.happend_at = comment.created_at
-    activity.anonymous = comment.anonymous
+    activity.anonymous = (comment.anonymous || comment.anonymous_to_peers)
     activity.actor = comment.author
     activity.target = comment.comment_thread
     activity.activity_type = "post_reply"
     activity.save!
 
-    if comment.comment_thread.subscribers or (comment.author.followers if not comment.anonymous)
+    if comment.comment_thread.subscribers or (comment.author.followers if not activity.anonymous)
       notification = Notification.new(
         notification_type: "post_reply",
         info: {

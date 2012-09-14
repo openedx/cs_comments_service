@@ -13,6 +13,7 @@ class Comment < Content
   field :body, type: String
   field :endorsed, type: Boolean, default: false
   field :anonymous, type: Boolean, default: false
+  field :anonymous_to_peers, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
 
   index({author_id: 1, course_id: 1})
@@ -20,7 +21,7 @@ class Comment < Content
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: "User", index: true
 
-  attr_accessible :body, :course_id, :anonymous, :endorsed
+  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed
 
   validates_presence_of :comment_thread, autosave: false
   validates_presence_of :body
@@ -50,7 +51,7 @@ class Comment < Content
     if params[:recursive]
       self.class.hash_tree(subtree(sort: sort_by_parent_and_time)).first
     else
-      as_document.slice(*%w[body course_id endorsed anonymous created_at updated_at at_position_list])
+      as_document.slice(*%w[body course_id endorsed anonymous anonymous_to_peers created_at updated_at at_position_list])
                  .merge("id" => _id)
                  .merge("user_id" => author.id)
                  .merge("username" => author.username)

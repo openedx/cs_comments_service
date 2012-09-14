@@ -14,6 +14,7 @@ end
 post "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
   sub_comment.anonymous = bool_anonymous || false
+  sub_comment.anonymous_to_peers = bool_anonymous_to_peers || false
   sub_comment.author = user
   sub_comment.comment_thread = comment.comment_thread
   sub_comment.save

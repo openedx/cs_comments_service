@@ -23,7 +23,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
   page = (params["page"] || DEFAULT_PAGE).to_i
   per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
 
-  active_contents = Content.where(author_id: user_id, anonymous: false, course_id: params["course_id"])
+  active_contents = Content.where(author_id: user_id, anonymous: false, anonymous_to_peers: false, course_id: params["course_id"])
                            .order_by(updated_at: :desc)
 
   num_pages = [1, (active_contents.count / per_page.to_f).ceil].max
