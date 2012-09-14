@@ -228,6 +228,10 @@ namespace :db do
     CommentThread.create_elasticsearch_index
     Tire.index('comment_threads') { import CommentThread.all }
   end
+
+  task :add_anonymous_to_peers => :environment do
+    Content.collection.find(:anonymous_to_peers=>nil).update_all({"$set" => {'anonymous_to_peers' => false}})
+  end
 end
 
 namespace :jobs do
