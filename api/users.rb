@@ -43,11 +43,27 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
   
 end
 
-put "#{APIPREFIX}/users/:user_id" do |user_id|
-  user = User.where(external_id: user_id).first
-  if not user
-    user = User.new(external_id: user_id)
+put "#{APIPREFIX}/users/:user_id/read_states" do |user_id|
+  user = User.find_or_create_by(external_id: user_id)
+  read_state = user.read_states.find_or_create_by(course_id: params["course_id"])
+  # support updating single thread data or bulk update
+  if params["last_read_time"] and params["thread_id"]
+    read_state.last_read_time = read_state.last_read_time.with_indifferent_access.merge({
+      params["thread_id"] => params["last_read_time"]
+    })
+  elsif params["read_states"]
+    read_state.last_read_time = read_state.last_read_time.with_indifferent_access.merge(params["read_states"])
   end
+  read_state.save
+  if read_state.errors.any?
+    error 400, read_state.errors.full_messages.to_json
+  else
+    read_state.to_hash.to_json
+  end
+end
+
+put "#{APIPREFIX}/users/:user_id" do |user_id|
+  user = User.find_or_create_by(external_id: user_id)
   user.update_attributes(params.slice(*%w[username email default_sort_key]))
   if user.errors.any?
     error 400, user.errors.full_messages.to_json

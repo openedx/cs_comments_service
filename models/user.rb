@@ -8,6 +8,7 @@ class User
   field :email, type: String
   field :default_sort_key, type: String, default: "date"
 
+  embeds_many :read_states
   has_many :comments, inverse_of: :author
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
@@ -101,4 +102,17 @@ class User
     subscription
   end
 
+end
+
+class ReadState
+  include Mongoid::Document
+  field :course_id, type: String
+  field :last_read_time, type: Hash, default: {}
+  embedded_in :user
+
+  validates :course_id, uniqueness: true, presence: true
+  
+  def to_hash
+    to_json
+  end
 end

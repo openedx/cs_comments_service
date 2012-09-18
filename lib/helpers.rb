@@ -16,6 +16,10 @@ helpers do
     @comment ||= Comment.find(params[:comment_id])
   end
 
+  def profile
+    @profile ||= user.profiles.find_or_create_by(course_id: params["course_id"])
+  end
+
   def source
     @source ||= case params["source_type"]
     when "user"
@@ -79,7 +83,7 @@ helpers do
       cached_results = Sinatra::Application.cache.get(memcached_key)
       if cached_results
         return {
-          collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive)},
+          collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive, user_id: params["user_id"])},
           num_pages: cached_results[:num_pages],
           page: cached_results[:page],
         }.to_json
@@ -119,7 +123,7 @@ helpers do
         Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
       end
       {
-        collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive)},
+        collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive, user_id: params["user_id"])},
         num_pages: num_pages,
         page: page,
       }.to_json

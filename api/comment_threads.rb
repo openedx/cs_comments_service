@@ -3,7 +3,7 @@ get "#{APIPREFIX}/threads" do # retrieve threads by course
 end
 
 get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
-  CommentThread.find(thread_id).to_hash(recursive: bool_recursive).to_json
+  CommentThread.find(thread_id).to_hash(recursive: bool_recursive, user_id: params["user_id"]).to_json
 end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
