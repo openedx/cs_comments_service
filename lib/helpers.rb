@@ -74,7 +74,7 @@ helpers do
   def handle_threads_query(comment_threads)
 
     if CommentService.config[:cache_enabled]
-      query_params = params.slice(*%w[course_id commentable_id sort_key sort_order page per_page])
+      query_params = params.slice(*%w[course_id commentable_id sort_key sort_order page per_page user_id])
       memcached_key = "threads_query_#{query_params.hash}"
       cached_results = Sinatra::Application.cache.get(memcached_key)
       if cached_results
@@ -97,7 +97,7 @@ helpers do
       "desc" => :desc,
       "asc" => :asc,
     }
-    
+
     sort_key = sort_key_mapper[params["sort_key"]]
     sort_order = sort_order_mapper[params["sort_order"]]
     sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
