@@ -1,0 +1,10 @@
+source 'https://rubygems.org'
+
+gem 'rspec', '~> 2.7.0'
+gem 'rspec-steps'
+gem 'capybara'
+gem 'launchy'
+gem 'poltergeist'
+gem 'capybara-webkit'
+gem 'faker'
+gem 'pry'
