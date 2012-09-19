@@ -165,10 +165,13 @@ class CommentThread < Content
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
     end
+
+    comments_count = comments.count
+
     if params[:user_id]
       user = User.find_or_create_by(external_id: params[:user_id])
       read_state = user.read_states.where(course_id: self.course_id).first
-      last_read_time = Time.parse(read_state.last_read_time[self.id.to_s]) if read_state
+      last_read_time = Time.parse(read_state.last_read_times[self.id.to_s]) if read_state
       # comments created by the user are excluded in the count
       # this is rather like a hack but it avoids the following situation:
       #   when you reply to a thread and while you are editing,
@@ -187,14 +190,18 @@ class CommentThread < Content
         unread_count = self.comments.where(:author_id => {:$ne => params[:user_id]}).count
         viewed = false
       end
-      doc = doc.merge("unread_comments_count" => unread_count)
-               .merge("viewed" => viewed)
     else
-      doc = doc.merge("unread_comments_count" => comments.count)
-               .merge("viewed" => false)
+      # If there's no user, say it's not viewed and all comments are unread
+      unread_count = comments_count
+      viewed = false
     end
-    doc = doc.merge("comments_count" => comments.count)
+
+    doc = doc.merge("unread_comments_count" => unread_count)
+             .merge("viewed" => viewed)
+             .merge("comments_count" => comments_count)
+
     doc
+
   end
 
   def self.tag_name_valid?(tag)

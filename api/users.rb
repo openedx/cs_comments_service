@@ -48,11 +48,11 @@ put "#{APIPREFIX}/users/:user_id/read_states" do |user_id|
   read_state = user.read_states.find_or_create_by(course_id: params["course_id"])
   # support updating single thread data or bulk update
   if params["last_read_time"] and params["thread_id"]
-    read_state.last_read_time = read_state.last_read_time.with_indifferent_access.merge({
+    read_state.last_read_times = read_state.last_read_times.with_indifferent_access.merge({
       params["thread_id"] => params["last_read_time"]
     })
-  elsif params["read_states"]
-    read_state.last_read_time = read_state.last_read_time.with_indifferent_access.merge(params["read_states"])
+  elsif params["last_read_times"]
+    read_state.last_read_times = read_state.last_read_times.with_indifferent_access.merge(params["last_read_times"])
   end
   read_state.save
   if read_state.errors.any?

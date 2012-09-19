@@ -16,10 +16,6 @@ helpers do
     @comment ||= Comment.find(params[:comment_id])
   end
 
-  def profile
-    @profile ||= user.profiles.find_or_create_by(course_id: params["course_id"])
-  end
-
   def source
     @source ||= case params["source_type"]
     when "user"

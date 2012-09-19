@@ -107,7 +107,7 @@ end
 class ReadState
   include Mongoid::Document
   field :course_id, type: String
-  field :last_read_time, type: Hash, default: {}
+  field :last_read_times, type: Hash, default: {}
   embedded_in :user
 
   validates :course_id, uniqueness: true, presence: true
