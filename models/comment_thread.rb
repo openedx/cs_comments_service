@@ -165,8 +165,43 @@ class CommentThread < Content
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
     end
-    doc = doc.merge("comments_count" => comments.count)
+
+    comments_count = comments.count
+
+    if params[:user_id]
+      user = User.find_or_create_by(external_id: params[:user_id])
+      read_state = user.read_states.where(course_id: self.course_id).first
+      last_read_time = read_state.last_read_times[self.id.to_s] if read_state
+      # comments created by the user are excluded in the count
+      # this is rather like a hack but it avoids the following situation:
+      #   when you reply to a thread and while you are editing,
+      #   other people also replied to the thread. Now if we simply
+      #   update the last_read_time, then the other people's replies
+      #   will not be included in the unread_count; if we leave it
+      #   that way, then your own comment will be included in the
+      #   unread count
+      if last_read_time
+        unread_count = self.comments.where(
+            :updated_at => {:$gte => last_read_time},
+            :author_id => {:$ne => params[:user_id]},
+        ).count
+        read = last_read_time >= self.updated_at
+      else
+        unread_count = self.comments.where(:author_id => {:$ne => params[:user_id]}).count
+        read = false
+      end
+    else
+      # If there's no user, say it's unread and all comments are unread
+      unread_count = comments_count
+      read = false
+    end
+
+    doc = doc.merge("unread_comments_count" => unread_count)
+             .merge("read" => read)
+             .merge("comments_count" => comments_count)
+
     doc
+
   end
 
   def self.tag_name_valid?(tag)

@@ -40,7 +40,7 @@ get "#{APIPREFIX}/search/threads" do
     num_pages = results.total_pages
     page = [num_pages, [1, page].max].min
     {
-      collection: results.map{|t| CommentThread.search_result_to_hash(t, recursive: bool_recursive)},
+      collection: results.map{|t| CommentThread.search_result_to_hash(t, recursive: bool_recursive, user_id: params[:user_id])},
       num_pages: num_pages,
       page: page,
     }.to_json
