@@ -185,19 +185,19 @@ class CommentThread < Content
             :updated_at => {:$gte => last_read_time},
             :author_id => {:$ne => params[:user_id]},
         ).count
-        unread = last_read_time >= self.updated_at
+        read = last_read_time >= self.updated_at
       else
         unread_count = self.comments.where(:author_id => {:$ne => params[:user_id]}).count
-        unread = false
+        read = false
       end
     else
       # If there's no user, say it's unread and all comments are unread
       unread_count = comments_count
-      unread = false
+      read = false
     end
 
     doc = doc.merge("unread_comments_count" => unread_count)
-             .merge("unread" => unread)
+             .merge("read" => read)
              .merge("comments_count" => comments_count)
 
     doc
