@@ -8,6 +8,7 @@ class User
   field :email, type: String
   field :default_sort_key, type: String, default: "date"
 
+  embeds_many :read_states
   has_many :comments, inverse_of: :author
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
@@ -101,4 +102,23 @@ class User
     subscription
   end
 
+  def mark_as_read(thread)
+    read_state = read_states.find_or_create_by(course_id: thread.course_id)
+    read_state.last_read_times[thread.id] = Time.now.utc
+    read_state.save
+  end
+
+end
+
+class ReadState
+  include Mongoid::Document
+  field :course_id, type: String
+  field :last_read_times, type: Hash, default: {}
+  embedded_in :user
+
+  validates :course_id, uniqueness: true, presence: true
+  
+  def to_hash
+    to_json
+  end
 end

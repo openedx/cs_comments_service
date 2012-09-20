@@ -51,6 +51,10 @@ helpers do
     value_to_boolean params["recursive"]
   end
 
+  def bool_mark_as_read
+    value_to_boolean params["mark_as_read"]
+  end
+
   def bool_complete
     value_to_boolean params["complete"]
   end
@@ -79,7 +83,7 @@ helpers do
       cached_results = Sinatra::Application.cache.get(memcached_key)
       if cached_results
         return {
-          collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive)},
+          collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive, user_id: params["user_id"])},
           num_pages: cached_results[:num_pages],
           page: cached_results[:page],
         }.to_json
@@ -119,7 +123,7 @@ helpers do
         Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
       end
       {
-        collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive)},
+        collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive, user_id: params["user_id"])},
         num_pages: num_pages,
         page: page,
       }.to_json
