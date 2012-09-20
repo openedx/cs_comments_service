@@ -6,8 +6,8 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   thread = CommentThread.find(thread_id)
 
   if params["user_id"] and bool_mark_as_read
-    user = User.only([:id, :read_states]).find_or_create_by(external_id: params["user_id"])
-    user.mark_as_read(thread)
+    user = User.only([:id, :read_states]).find_by(external_id: params["user_id"])
+    user.mark_as_read(thread) if user
   end
 
   thread.to_hash(recursive: bool_recursive, user_id: params["user_id"]).to_json
