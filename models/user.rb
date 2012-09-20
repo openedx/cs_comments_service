@@ -102,6 +102,12 @@ class User
     subscription
   end
 
+  def mark_as_read(thread)
+    read_state = read_states.find_or_create_by(course_id: thread.course_id)
+    read_state.last_read_times[thread.id] = Time.now.utc
+    read_state.save
+  end
+
 end
 
 class ReadState

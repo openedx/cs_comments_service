@@ -171,7 +171,7 @@ class CommentThread < Content
     if params[:user_id]
       user = User.find_or_create_by(external_id: params[:user_id])
       read_state = user.read_states.where(course_id: self.course_id).first
-      last_read_time = Time.parse(read_state.last_read_times[self.id.to_s]) if read_state
+      last_read_time = read_state.last_read_times[self.id.to_s] if read_state
       # comments created by the user are excluded in the count
       # this is rather like a hack but it avoids the following situation:
       #   when you reply to a thread and while you are editing,

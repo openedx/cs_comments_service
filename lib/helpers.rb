@@ -51,6 +51,10 @@ helpers do
     value_to_boolean params["recursive"]
   end
 
+  def bool_mark_as_read
+    value_to_boolean params["mark_as_read"]
+  end
+
   def bool_complete
     value_to_boolean params["complete"]
   end
