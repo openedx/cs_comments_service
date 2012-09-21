@@ -166,6 +166,8 @@ class CommentThread < Content
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
     end
 
+    doc = doc.merge("responded_user_ids" => comments.where(:anonymous=>false, :anonymous_to_peers=>false).map {|c| c.author_id }.uniq)
+
     comments_count = comments.count
 
     if params[:user_id]
