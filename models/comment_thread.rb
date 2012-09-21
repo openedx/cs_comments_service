@@ -30,6 +30,7 @@ class CommentThread < Content
   mapping do
     indexes :title, type: :string, analyzer: :snowball, boost: 5.0, stored: true, term_vector: :with_positions_offsets
     indexes :body, type: :string, analyzer: :snowball, stored: true, term_vector: :with_positions_offsets
+    indexes :author_name, type: :string, as: 'author.username'
     indexes :tags_in_text, type: :string, as: 'tags_array', index: :analyzed
     indexes :tags_array, type: :string, as: 'tags_array', index: :not_analyzed, included_in_all: false
     indexes :created_at, type: :date, included_in_all: false
