@@ -30,7 +30,7 @@ post "#{APIPREFIX}/threads/:thread_id/comments" do |thread_id|
   comment = Comment.new(params.slice(*%w[body course_id]))
   comment.anonymous = bool_anonymous || false
   comment.anonymous_to_peers = bool_anonymous_to_peers || false
-  comment.author = user 
+  comment.author = user
   comment.comment_thread = thread
   comment.save
   if comment.errors.any?
