@@ -232,6 +232,10 @@ namespace :db do
   task :add_anonymous_to_peers => :environment do
     Content.collection.find(:anonymous_to_peers=>nil).update_all({"$set" => {'anonymous_to_peers' => false}})
   end
+
+  task :add_slugs_to_comment_threads => :environment do
+    CommentThread.all.each &:to_param
+  end
 end
 
 namespace :jobs do

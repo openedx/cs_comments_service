@@ -6,6 +6,7 @@ class CommentThread < Content
   include Mongoid::Timestamps
   include Mongoid::TaggableWithContext
   include Mongoid::TaggableWithContext::AggregationStrategy::RealTime
+  include Mongoid::Slug
 
   taggable separator: ',', default: []
 
@@ -21,6 +22,8 @@ class CommentThread < Content
   field :closed, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
+
+  slug :title
 
   index({author_id: 1, course_id: 1})
 
@@ -236,4 +239,5 @@ private
   def destroy_subscriptions
     subscriptions.delete_all
   end
+
 end

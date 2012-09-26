@@ -52,3 +52,5 @@ end
 
 gem 'newrelic_rpm'
 gem 'unicorn'
+
+gem "mongoid_slug", "~> 1.0.0.rc2"
