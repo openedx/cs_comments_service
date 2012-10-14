@@ -12,10 +12,25 @@ test:
       hosts:
         - localhost:27017
 
+#production:
+#  sessions:
+#    default:
+#      uri: <%= ENV['MONGOHQ_URL'] %>
+
 production:
   sessions:
     default:
-      uri: <%= ENV['MONGOHQ_URL'] %>
+      hosts:
+        - - hurley.member0.mongohq.com
+          - 10000
+        - - hurley.member1.mongohq.com
+          - 10000
+      username: <%= ENV['MONGOHQ_USER'] %>
+      password: <%= ENV['MONGOHQ_PASS'] %>
+      database: app6929933
+      options:
+        skip_version_check: true
+        safe: true
 
 staging:
   sessions:
@@ -25,7 +40,17 @@ staging:
 loadtest:
   sessions:
     default:
-      uri: <%= ENV['MONGOHQ_URL'] %>
+      hosts:
+        - - sayid.member0.mongohq.com
+          - 10007
+        - - sayid.member1.mongohq.com
+          - 10007
+      username: <%= ENV['MONGOHQ_USER'] %>
+      password: <%= ENV['MONGOHQ_PASS'] %>
+      database: app7276251
+      options:
+        skip_version_check: true
+        safe: true
 
 defaults: &defaults
   use_utc: false
