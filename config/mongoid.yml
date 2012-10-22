@@ -28,6 +28,7 @@ production:
       options:
         skip_version_check: true
         safe: true
+        consistency: strong
 
 staging:
   sessions:
