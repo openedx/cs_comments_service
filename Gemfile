@@ -3,7 +3,7 @@ ruby "1.9.3"
 
 gem 'pry'
 gem 'pry-nav'
-gem 'debugger'
+# gem 'debugger'
 
 gem 'bundler'
 
