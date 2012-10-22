@@ -22,7 +22,6 @@ production:
     default:
       hosts:
         - hurley.member0.mongohq.com:10000
-        - hurley.member1.mongohq.com:10000
       username: <%= ENV['MONGOHQ_USER'] %>
       password: <%= ENV['MONGOHQ_PASS'] %>
       database: app6929933
