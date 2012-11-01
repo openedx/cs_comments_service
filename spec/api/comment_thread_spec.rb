@@ -57,7 +57,7 @@ describe "app" do
     describe "PUT /api/v1/threads/:thread_id" do
       it "update information of comment thread" do
         thread = CommentThread.first
-        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new commentable_id"
+        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id"
         last_response.should be_ok
         changed_thread = CommentThread.find(thread.id)
         changed_thread.body.should == "new body"
