@@ -156,9 +156,9 @@ namespace :db do
           "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
           "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
           "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
-          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "spoiler_count" => []}}
       coll.insert(doc)
-    end
+    endson if hes working that woul
     binding.pry
     Tire.index('comment_threads').delete
     CommentThread.create_elasticsearch_index

@@ -37,11 +37,18 @@ helpers do
     obj.reload.to_hash.to_json
   end
 
+  def flag_as_abuse(obj)
+    raise ArgumentError, "User id is required" unless user
+    obj.abuse_flaggers << user.id unless obj.abuse_flaggers.include? user.id
+    obj.reload.to_hash.to_json
+  end
+
   def undo_vote_for(obj)
     raise ArgumentError, "must provide user id" unless user
     user.unvote(obj)
     obj.reload.to_hash.to_json
   end
+  
 
   def value_to_boolean(value)
     !!(value.to_s =~ /^true$/i)

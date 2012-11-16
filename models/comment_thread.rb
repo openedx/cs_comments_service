@@ -158,6 +158,8 @@ class CommentThread < Content
                      .merge("id" => _id, "user_id" => author.id,
                             "username" => author.username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),
+                            "abuse_flaggers" => abuse_flaggers,
+                            "spoiler_flaggers" => spoiler_flaggers,
                             "tags" => tags_array,
                             "type" => "thread",
                             "endorsed" => endorsed?)
