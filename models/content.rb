@@ -1,5 +1,5 @@
 class Content
-
+  
   include Mongoid::Document
   
   field :visible, type: Boolean, default: true

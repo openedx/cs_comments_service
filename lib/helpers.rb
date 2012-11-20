@@ -7,7 +7,7 @@ helpers do
     raise ArgumentError, "User id is required" unless @user || params[:user_id]
     @user ||= User.find_by(external_id: params[:user_id])
   end
-
+  
   def thread
     @thread ||= CommentThread.find(params[:thread_id])
   end
@@ -40,6 +40,7 @@ helpers do
   def flag_as_abuse(obj)
     raise ArgumentError, "User id is required" unless user
     obj.abuse_flaggers << user.id unless obj.abuse_flaggers.include? user.id
+    obj.save
     obj.reload.to_hash.to_json
   end
 
