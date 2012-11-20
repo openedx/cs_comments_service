@@ -1,0 +1,68 @@
+--- 
+cursor_positions: 
+  - :path: README.md
+    :cursor_offset: 176
+    :timestamp: 2012-09-21 19:42:27 -04:00
+  - :path: edx_specs/discussion.rb
+    :cursor_offset: 958
+    :timestamp: 2012-09-21 19:42:27 -04:00
+  - :path: models/commentable.rb
+    :cursor_offset: 202
+    :timestamp: 2012-09-21 19:42:27 -04:00
+  - :path: api/contents.rb
+    :cursor_offset: 5
+    :timestamp: 2012-11-16 10:52:33 -05:00
+  - :path: api/votes.rb
+    :cursor_offset: 0
+    :timestamp: 2012-11-16 11:09:55 -05:00
+  - :path: lib/helpers.rb
+    :cursor_offset: 1257
+    :timestamp: 2012-11-16 15:16:38 -05:00
+  - :path: models/comment.rb
+    :cursor_offset: 132
+    :timestamp: 2012-11-16 15:03:04 -05:00
+  - :path: models/comment_thread.rb
+    :cursor_offset: 6177
+    :timestamp: 2012-11-16 15:02:48 -05:00
+    :selection_offset: 6181
+    :block_selection_mode: false
+  - :path: api/flags.rb
+    :cursor_offset: 185
+    :timestamp: 2012-11-16 11:08:32 -05:00
+  - :path: api/commentables.rb
+    :cursor_offset: 0
+    :timestamp: 2012-09-21 19:42:27 -04:00
+  - :path: config/mongoid.yml
+    :cursor_offset: 522
+    :timestamp: 2012-10-29 13:43:09 -04:00
+  - :path: api/comment_threads.rb
+    :cursor_offset: 677
+    :timestamp: 2012-11-16 09:06:04 -05:00
+  - :path: config/application.rb
+    :cursor_offset: 335
+    :timestamp: 2012-11-20 14:39:23 -05:00
+  - :path: models/content.rb
+    :cursor_offset: 446
+    :timestamp: 2012-11-20 14:34:39 -05:00
+  - :path: models/user.rb
+    :cursor_offset: 214
+    :timestamp: 2012-11-16 11:13:19 -05:00
+  - :path: lib/utils.rb
+    :cursor_offset: 46
+    :timestamp: 2012-09-21 19:42:27 -04:00
+  - :path: log/newrelic_agent.log
+    :cursor_offset: 0
+    :timestamp: 2012-11-20 14:45:24 -05:00
+  - :path: config/application.yml
+    :cursor_offset: 227
+    :timestamp: 2012-09-21 19:42:27 -04:00
+  - :path: app.rb
+    :cursor_offset: 1936
+    :timestamp: 2012-11-20 15:01:44 -05:00
+  - :path: Rakefile
+    :cursor_offset: 404
+    :timestamp: 2012-11-16 14:42:01 -05:00
+  - :path: api/comments.rb
+    :cursor_offset: 353
+    :timestamp: 2012-09-21 19:42:27 -04:00
+files_to_retain: 0
