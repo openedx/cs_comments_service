@@ -158,7 +158,7 @@ namespace :db do
           "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
           "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "spoiler_count" => []}}
       coll.insert(doc)
-    endson if hes working that woul
+    end
     binding.pry
     Tire.index('comment_threads').delete
     CommentThread.create_elasticsearch_index
