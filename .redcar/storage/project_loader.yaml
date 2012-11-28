@@ -1,3 +1,3 @@
 --- 
-open_files: []
-
+open_files: 
+  - .gitignore

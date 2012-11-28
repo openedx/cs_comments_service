@@ -1,240 +1,31 @@
-1353458193
-#get_marked_text(text)	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	describe "#get_marked_text(text)" do
-#get_valid_at_position_list(text)	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	describe "#get_valid_at_position_list(text)" do
-A	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	class A
-A	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	    class A
-APIPREFIX	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	APIPREFIX =
-API_PREFIX	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	  API_PREFIX =
-API_VERSION	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	  API_VERSION =
-AT_NOTIFICATION_REGEX	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/at_user_observer.rb	  AT_NOTIFICATION_REGEX =
-Activity	/Users/kevinchugh/mitx_all/cs_comments_service/models/activity.rb	class Activity
-AtUserObserver	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/at_user_observer.rb	class AtUserObserver 
-Comment	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment.rb	class Comment 
-CommentService	/Users/kevinchugh/mitx_all/cs_comments_service/config/application.rb	module CommentService
-CommentService	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	module CommentService
-CommentThread	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	class CommentThread 
-Commentable	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	class Commentable
-Content	/Users/kevinchugh/mitx_all/cs_comments_service/models/content.rb	class Content
-DEFAULT_PAGE	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	DEFAULT_PAGE =
-DEFAULT_PER_PAGE	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	DEFAULT_PER_PAGE =
-DELETE /api/v1/:commentable_id/threads	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	describe "DELETE /api/v1/:commentable_id/threads" do
-DELETE /api/v1/comments/:comment_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	describe "DELETE /api/v1/comments/:comment_id" do
-DELETE /api/v1/comments/:comment_id/votes	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	describe "DELETE /api/v1/comments/:comment_id/votes" do
-DELETE /api/v1/threads/:thread_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "DELETE /api/v1/threads/:thread_id" do
-DELETE /api/v1/threads/:thread_id/votes	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	describe "DELETE /api/v1/threads/:thread_id/votes" do
-GET /api/v1/:commentable_id/threads	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	describe "GET /api/v1/:commentable_id/threads" do
-GET /api/v1/comments/:comment_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	describe "GET /api/v1/comments/:comment_id" do
-GET /api/v1/search/threads	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/search_spec.rb	describe "GET /api/v1/search/threads" do
-GET /api/v1/threads/:thread_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "GET /api/v1/threads/:thread_id" do
-GET /api/v1/threads/tags	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "GET /api/v1/threads/tags" do
-GET /api/v1/threads/tags/autocomplete	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "GET /api/v1/threads/tags/autocomplete" do
-GET /api/v1/users/:user_id/notifications	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	describe "GET /api/v1/users/:user_id/notifications" do
-NilClass	/Users/kevinchugh/mitx_all/cs_comments_service/lib/utils.rb	class NilClass
-Notification	/Users/kevinchugh/mitx_all/cs_comments_service/models/notification.rb	class Notification
-POST /api/v1/:commentable_id/threads	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	describe "POST /api/v1/:commentable_id/threads" do
-POST /api/v1/comments/:comment_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	describe "POST /api/v1/comments/:comment_id" do
-POST /api/v1/threads/:thread_id/comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "POST /api/v1/threads/:thread_id/comments" do
-POST /api/v1/users	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	describe "POST /api/v1/users" do
-POST /api/v1/users/:user_id/subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	describe "POST /api/v1/users/:user_id/subscriptions" do
-PUT /api/v1/comments/:comment_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	describe "PUT /api/v1/comments/:comment_id" do
-PUT /api/v1/comments/:comment_id/votes	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	describe "PUT /api/v1/comments/:comment_id/votes" do
-PUT /api/v1/threads/:thread_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "PUT /api/v1/threads/:thread_id" do
-PUT /api/v1/threads/:thread_id/votes	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	describe "PUT /api/v1/threads/:thread_id/votes" do
-PUT /api/v1/users/:user_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	describe "PUT /api/v1/users/:user_id" do
-PostReplyObserver	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/post_reply_observer.rb	class PostReplyObserver 
-PostTopicObserver	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/post_topic_observer.rb	class PostTopicObserver 
-RACK_ENV	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	RACK_ENV =
-RE_CHAR	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_CHAR =
-RE_ENDCHAR	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_ENDCHAR =
-RE_ENDONLYCHAR	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_ENDONLYCHAR =
-RE_HEADCHAR	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_HEADCHAR =
-RE_TAG	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_TAG =
-RE_WORD	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_WORD =
-ReadState	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	class ReadState
-Subscription	/Users/kevinchugh/mitx_all/cs_comments_service/models/subscription.rb	class Subscription
-User	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	class User
-_type	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	  attr_accessor :id, :_type
-accepts [a-z 0-9 + # - .]words, numbers, dashes, spaces but no underscores in tags	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "accepts [a-z 0-9 + # - .]words, numbers, dashes, spaces but no underscores in tags" do
-activity_overall	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_overall;
-activity_since	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_since(from_time=nil)
-activity_this_month	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_this_month;
-activity_this_week	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_this_week;
-activity_today	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_today;
-after_create	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/post_topic_observer.rb	  def after_create(comment_thread)
-after_create	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/post_reply_observer.rb	  def after_create(comment)
-after_create	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/at_user_observer.rb	  def after_create(content)
-allows anonymous comment	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "allows anonymous comment" do
-allows anonymous thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "allows anonymous thread" do
-app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def app
-app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	describe "app" do
-app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	describe "app" do
-app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	describe "app" do
-app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/search_spec.rb	describe "app" do
-app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	describe "app" do
-app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "app" do
-app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	describe "app" do
-author_contents_only	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def author_contents_only(contents, author_id)
-author_with_anonymity	/Users/kevinchugh/mitx_all/cs_comments_service/models/content.rb	  def author_with_anonymity(attr=nil, attr_when_anonymous=nil)
-bool_anonymous	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_anonymous
-bool_anonymous_to_peers	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_anonymous_to_peers
-bool_auto_subscribe	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_auto_subscribe
-bool_complete	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_complete
-bool_mark_as_read	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_mark_as_read
-bool_recursive	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_recursive
-build_criteria	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/comment_thread_spec.rb	    def build_criteria(thread, options)
-comment	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def comment
-comment threads	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "comment threads" do
-comment_threads	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	  def comment_threads
-commentable	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def commentable
-commentable	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def commentable
-commentables	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	describe "commentables" do
-comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	describe "comments" do
-config	/Users/kevinchugh/mitx_all/cs_comments_service/config/application.rb	  class << self; attr_accessor :config; end
-config	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	  class << self; attr_accessor :config; end
-create a comment to the comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "create a comment to the comment thread" do
-create a new comment thread for a new commentable object	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "create a new comment thread for a new commentable object" do
-create a new comment thread for the commentable object	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "create a new comment thread for the commentable object" do
-create a new comment thread with tag	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "create a new comment thread with tag" do
-create a sub comment to the comment	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "create a sub comment to the comment" do
-create or update the vote on the comment	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "create or update the vote on the comment" do
-create or update the vote on the thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "create or update the vote on the thread" do
-create_comment_thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	    def create_comment_thread(tags)
-create_test_user	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def create_test_user(id)
-creates a user	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	it "creates a user" do
-delete all associated threads and comments of a commentable	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "delete all associated threads and comments of a commentable" do
-delete the comment and its sub comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "delete the comment and its sub comments" do
-delete the comment thread and its comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "delete the comment thread and its comments" do
-destroy_subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def destroy_subscriptions
-does not follow oneself	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "does not follow oneself" do
-does not follow the same user twice	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "does not follow the same user twice" do
-does not update id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	it "does not update id" do
-downvoted_ids	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def downvoted_ids
-end	/Users/kevinchugh/mitx_all/cs_comments_service/config/application.rb	  class << self; attr_accessor :config; end
-end	/Users/kevinchugh/mitx_all/cs_comments_service/app.rb	  class << self; attr_accessor :config; end
-endorsed?	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def endorsed?
-fill_in_wmd_body	/Users/kevinchugh/mitx_all/cs_comments_service/edx_specs/helpers.rb	def fill_in_wmd_body(container, body)
-find	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	  class << self; alias_method :find
-flag_as_abuse	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def flag_as_abuse(obj)
-follow user	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "follow user" do
-followers	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def followers
-generate_activity_and_notifications	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/post_reply_observer.rb	  def self.generate_activity_and_notifications(comment)
-generate_notifications	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/post_topic_observer.rb	  def self.generate_notifications(comment_thread)
-get all comment threads and comments associated with a commentable object	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "get all comment threads and comments associated with a commentable object" do
-get all comment threads associated with a commentable object	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "get all comment threads associated with a commentable object" do
-get all notifications on the followed user for the user	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "get all notifications on the followed user for the user" do
-get all notifications on the subscribed comment threads for the user	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "get all notifications on the subscribed comment threads for the user" do
-get all notifications on the subscribed commentable for the user	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "get all notifications on the subscribed commentable for the user" do
-get all tags used in threads	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "get all tags used in threads" do
-get information of a single comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "get information of a single comment thread" do
-get information of a single comment thread with its comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "get information of a single comment thread with its comments" do
-get information of a single comment thread with its tags	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "get information of a single comment thread with its tags" do
-get_at_position_list	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/at_user_observer.rb	  def self.get_at_position_list(text)
-get_marked_text	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/at_user_observer.rb	  def self.get_marked_text(text)
-get_some_variable	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	      def get_some_variable
-get_valid_at_position_list	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/at_user_observer.rb	  def self.get_valid_at_position_list(text)
-goto_course	/Users/kevinchugh/mitx_all/cs_comments_service/edx_specs/helpers.rb	def goto_course(course)
-handle normally when commentable does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "handle normally when commentable does not exist" do
-handle_paged_threads_query	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def handle_paged_threads_query(paged_comment_threads)
-handle_threads_query	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def handle_threads_query(comment_threads)
-hash_tree	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment.rb	  def self.hash_tree(nodes)
-id	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	  attr_accessor :id, :_type
-init_with_subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def init_with_subscriptions
-init_without_subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def init_without_subscriptions
-initialize	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	  def initialize(id)
-knows if it is #endorsed?	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/comment_thread_spec.rb	it "knows if it is #endorsed?" do
-knows when it is not #endorsed?	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/comment_thread_spec.rb	it "knows when it is not #endorsed?" do
-log_in	/Users/kevinchugh/mitx_all/cs_comments_service/edx_specs/helpers.rb	def log_in
-mark_as_read	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def mark_as_read(thread)
-new_dumb_thread	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.new_dumb_thread(options={})
-parse	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def parse(text)
-perform_search	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.perform_search(params, options={})
-process_at_notifications	/Users/kevinchugh/mitx_all/cs_comments_service/models/observers/at_user_observer.rb	  def self.process_at_notifications(content)
-respond ok when unfollowing user twice	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "respond ok when unfollowing user twice" do
-retrieve information of a single comment	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "retrieve information of a single comment" do
-retrieve information of a single comment with its sub comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "retrieve information of a single comment with its sub comments" do
-returns 400 when the comment does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when the comment does not exist" do
-returns 400 when the comment does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when the comment does not exist" do
-returns 400 when the comment does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when the comment does not exist" do
-returns 400 when the comment does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "returns 400 when the comment does not exist" do
-returns 400 when the comment does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "returns 400 when the comment does not exist" do
-returns 400 when the comment does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "returns 400 when the comment does not exist" do
-returns 400 when the comment does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "returns 400 when the comment does not exist" do
-returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when the thread does not exist" do
-returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns 400 when the thread does not exist" do
-returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns 400 when the thread does not exist" do
-returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns 400 when the thread does not exist" do
-returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns 400 when the thread does not exist" do
-returns 400 when user_id is not provided	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when user_id is not provided" do
-returns 400 when user_id is not provided	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when user_id is not provided" do
-returns 400 when user_id is not provided	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when user_id is not provided" do
-returns 400 when user_id is not provided	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when user_id is not provided" do
-returns 400 when value is not provided or invalid	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when value is not provided or invalid" do
-returns 400 when value is not provided or invalid	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "returns 400 when value is not provided or invalid" do
-returns all threads tagged with all tags	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/search_spec.rb	it "returns all threads tagged with all tags" do
-returns an empty array when the commentable object does not exist (no threads)	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "returns an empty array when the commentable object does not exist (no threads)" do
-returns autocomplete results	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns autocomplete results" do
-returns error if new information has conflict with other users	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	it "returns error if new information has conflict with other users" do
-returns error if user does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	it "returns error if user does not exist" do
-returns error if user does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "returns error if user does not exist" do
-returns error when body or course_id does not exist, or when body is blank	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns error when body or course_id does not exist, or when body is blank" do
-returns error when id / username / email already exists	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	it "returns error when id / username / email already exists" do
-returns error when title or body is blank (only consists of spaces and new lines)	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "returns error when title or body is blank (only consists of spaces and new lines)" do
-returns error when title, body or course id does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "returns error when title, body or course id does not exist" do
-returns marked at text	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	it "returns marked at text" do
-returns the list of positions for the valid @ notifications, filtering out the ones in code blocks	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	it "returns the list of positions for the valid @ notifications, filtering out the ones in code blocks" do
-root_comments	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def root_comments
-search	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/search_spec.rb	describe "search" do
-search_result_to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.search_result_to_hash(result, params={})
-set_last_activity_at	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def set_last_activity_at
-set_some_variable	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	  def set_some_variable
-set_thread_last_activity_at	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment.rb	  def set_thread_last_activity_at
-source	/Users/kevinchugh/mitx_all/cs_comments_service/models/subscription.rb	  def source
-source	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def source
-strip spaces in tags	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/commentable_spec.rb	it "strip spaces in tags" do
-subscribe	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscribe(source)
-subscribe a comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "subscribe a comment thread" do
-subscribe a commentable	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "subscribe a commentable" do
-subscribed_commentable_ids	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscribed_commentable_ids
-subscribed_commentables	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscribed_commentables
-subscribed_thread_ids	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscribed_thread_ids
-subscribed_threads	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscribed_threads
-subscribed_user_ids	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscribed_user_ids
-subscribed_users	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscribed_users
-subscriber	/Users/kevinchugh/mitx_all/cs_comments_service/models/subscription.rb	  def subscriber
-subscribers	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	  def subscribers
-subscribers	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def subscribers
-subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	  def subscriptions
-subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def subscriptions
-subscriptions and notifications	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	describe "subscriptions and notifications" do
-subscriptions_as_source	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscriptions_as_source
-subscriptions_as_subscriber	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def subscriptions_as_subscriber
-tag_name_valid?	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.tag_name_valid?(tag)
-tag_names_unique	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def tag_names_unique
-tag_names_valid	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def tag_names_valid
-thread	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def thread
-to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def to_hash(params={})
-to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def to_hash
-to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/subscription.rb	  def to_hash
-to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/notification.rb	  def to_hash(params={})
-to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def to_hash(params={})
-to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment.rb	  def to_hash(params={})
-to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/lib/utils.rb	  def to_hash
-undo_vote_for	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def undo_vote_for(obj)
-unfollow user	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "unfollow user" do
-unsubscribe	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def unsubscribe(source)
-unsubscribe a comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "unsubscribe a comment thread" do
-unsubscribe a commentable	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "unsubscribe a commentable" do
-unvote on the comment	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "unvote on the comment" do
-unvote on the thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	it "unvote on the thread" do
-update information of comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "update information of comment thread" do
-update information of the comment	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "update information of the comment" do
-updates tag of comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "updates tag of comment thread" do
-updates user information	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	it "updates user information" do
-upvoted_ids	/Users/kevinchugh/mitx_all/cs_comments_service/models/user.rb	  def upvoted_ids
-user	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def user 
-users	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/user_spec.rb	describe "users" do
-validates tag name	/Users/kevinchugh/mitx_all/cs_comments_service/spec/models/comment_thread_spec.rb	it "validates tag name" do
-value_to_boolean	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def value_to_boolean(value)
-vote_for	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def vote_for(obj)
-votes	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/vote_spec.rb	describe "votes" do
-where	/Users/kevinchugh/mitx_all/cs_comments_service/models/commentable.rb	  def self.where(params={})
+1354120149
+Comment	/home/kevin/mitx_all/cs_comments_service/models/comment.rb	class Comment 
+CommentThread	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	class CommentThread 
+RE_CHAR	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_CHAR =
+RE_ENDCHAR	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_ENDCHAR =
+RE_ENDONLYCHAR	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_ENDONLYCHAR =
+RE_HEADCHAR	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_HEADCHAR =
+RE_TAG	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_TAG =
+RE_WORD	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_WORD =
+activity_overall	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_overall;
+activity_since	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_since(from_time=nil)
+activity_this_month	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_this_month;
+activity_this_week	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_this_week;
+activity_today	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_today;
+commentable	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def commentable
+destroy_subscriptions	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def destroy_subscriptions
+endorsed?	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def endorsed?
+hash_tree	/home/kevin/mitx_all/cs_comments_service/models/comment.rb	  def self.hash_tree(nodes)
+new_dumb_thread	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.new_dumb_thread(options={})
+perform_search	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.perform_search(params, options={})
+root_comments	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def root_comments
+search_result_to_hash	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.search_result_to_hash(result, params={})
+set_last_activity_at	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def set_last_activity_at
+set_thread_last_activity_at	/home/kevin/mitx_all/cs_comments_service/models/comment.rb	  def set_thread_last_activity_at
+subscribers	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def subscribers
+subscriptions	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def subscriptions
+tag_name_valid?	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.tag_name_valid?(tag)
+tag_names_unique	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def tag_names_unique
+tag_names_valid	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def tag_names_valid
+to_hash	/home/kevin/mitx_all/cs_comments_service/models/comment.rb	  def to_hash(params={})
+to_hash	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def to_hash(params={})

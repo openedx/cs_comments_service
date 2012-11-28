@@ -30,3 +30,4 @@ benchmark_log
 bin/
 
 log/
+/.redcar
