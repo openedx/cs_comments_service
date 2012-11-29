@@ -84,7 +84,9 @@ helpers do
   end
 
   def handle_threads_query(comment_threads)
-    comment_threads = comment_threads.where(:course_id=>params[:course_id])
+    if params[:course_id]
+      comment_threads = comment_threads.where(:course_id=>params[:course_id])
+    end
     if CommentService.config[:cache_enabled]
       query_params = params.slice(*%w[course_id commentable_id sort_key sort_order page per_page user_id])
       memcached_key = "threads_query_#{query_params.hash}"
