@@ -15,4 +15,12 @@ cursor_positions:
   - :path: models/comment_thread.rb
     :cursor_offset: 6463
     :timestamp: 2012-12-02 08:32:40 -05:00
+  - :path: api/flags.rb
+    :cursor_offset: 191
+    :timestamp: 2012-12-02 13:58:32 -05:00
+  - :path: lib/helpers.rb
+    :cursor_offset: 367
+    :timestamp: 2012-12-02 13:22:28 -05:00
+    :selection_offset: 358
+    :block_selection_mode: false
 files_to_retain: 0

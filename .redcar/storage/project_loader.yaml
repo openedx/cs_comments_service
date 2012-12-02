@@ -1,3 +1,4 @@
 --- 
 open_files: 
-  - .gitignore
+  - api/flags.rb
+  - lib/helpers.rb
