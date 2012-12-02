@@ -1,6 +1,18 @@
 --- 
 cursor_positions: 
   - :path: .gitignore
-    :cursor_offset: 0
-    :timestamp: 2012-09-21 19:42:27 -04:00
+    :cursor_offset: 71
+    :timestamp: 2012-12-02 00:17:35 -05:00
+  - :path: api/votes.rb
+    :cursor_offset: 277
+    :timestamp: 2012-11-20 19:17:31 -05:00
+  - :path: api/commentables.rb
+    :cursor_offset: 208
+    :timestamp: 2012-11-20 19:17:31 -05:00
+  - :path: api/comment_threads.rb
+    :cursor_offset: 195
+    :timestamp: 2012-11-20 19:17:31 -05:00
+  - :path: models/comment_thread.rb
+    :cursor_offset: 6463
+    :timestamp: 2012-12-02 08:32:40 -05:00
 files_to_retain: 0

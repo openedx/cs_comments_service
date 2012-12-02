@@ -1,31 +1,96 @@
-1354120149
-Comment	/home/kevin/mitx_all/cs_comments_service/models/comment.rb	class Comment 
-CommentThread	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	class CommentThread 
-RE_CHAR	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_CHAR =
-RE_ENDCHAR	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_ENDCHAR =
-RE_ENDONLYCHAR	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_ENDONLYCHAR =
-RE_HEADCHAR	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_HEADCHAR =
-RE_TAG	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_TAG =
-RE_WORD	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_WORD =
-activity_overall	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_overall;
-activity_since	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_since(from_time=nil)
-activity_this_month	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_this_month;
-activity_this_week	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_this_week;
-activity_today	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_today;
-commentable	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def commentable
-destroy_subscriptions	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def destroy_subscriptions
-endorsed?	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def endorsed?
-hash_tree	/home/kevin/mitx_all/cs_comments_service/models/comment.rb	  def self.hash_tree(nodes)
-new_dumb_thread	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.new_dumb_thread(options={})
-perform_search	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.perform_search(params, options={})
-root_comments	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def root_comments
-search_result_to_hash	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.search_result_to_hash(result, params={})
-set_last_activity_at	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def set_last_activity_at
-set_thread_last_activity_at	/home/kevin/mitx_all/cs_comments_service/models/comment.rb	  def set_thread_last_activity_at
-subscribers	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def subscribers
-subscriptions	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def subscriptions
-tag_name_valid?	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.tag_name_valid?(tag)
-tag_names_unique	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def tag_names_unique
-tag_names_valid	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def tag_names_valid
-to_hash	/home/kevin/mitx_all/cs_comments_service/models/comment.rb	  def to_hash(params={})
-to_hash	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def to_hash(params={})
+1354462766
+Comment	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment.rb	class Comment 
+CommentThread	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	class CommentThread 
+Content	/Users/kevinchugh/mitx_all/cs_comments_service/models/content.rb	class Content
+DELETE /api/v1/threads/:thread_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "DELETE /api/v1/threads/:thread_id" do
+GET /api/v1/threads/:thread_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "GET /api/v1/threads/:thread_id" do
+GET /api/v1/threads/tags	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "GET /api/v1/threads/tags" do
+GET /api/v1/threads/tags/autocomplete	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "GET /api/v1/threads/tags/autocomplete" do
+POST /api/v1/threads/:thread_id/comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "POST /api/v1/threads/:thread_id/comments" do
+PUT /api/v1/threads/:thread_id	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "PUT /api/v1/threads/:thread_id" do
+RE_CHAR	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_CHAR =
+RE_ENDCHAR	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_ENDCHAR =
+RE_ENDONLYCHAR	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_ENDONLYCHAR =
+RE_HEADCHAR	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_HEADCHAR =
+RE_TAG	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_TAG =
+RE_WORD	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  RE_WORD =
+abuse	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	describe "abuse" do
+activity_overall	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_overall;
+activity_since	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_since(from_time=nil)
+activity_this_month	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_this_month;
+activity_this_week	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_this_week;
+activity_today	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def activity_today;
+allows anonymous comment	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "allows anonymous comment" do
+app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def app
+app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "app" do
+app	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	describe "app" do
+author_contents_only	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def author_contents_only(contents, author_id)
+author_with_anonymity	/Users/kevinchugh/mitx_all/cs_comments_service/models/content.rb	  def author_with_anonymity(attr=nil, attr_when_anonymous=nil)
+bool_anonymous	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_anonymous
+bool_anonymous_to_peers	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_anonymous_to_peers
+bool_auto_subscribe	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_auto_subscribe
+bool_complete	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_complete
+bool_mark_as_read	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_mark_as_read
+bool_recursive	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def bool_recursive
+comment	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def comment
+comment threads	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	describe "comment threads" do
+commentable	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def commentable
+commentable	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def commentable
+create a comment to the comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "create a comment to the comment thread" do
+create or update the abuse_flags on the comment	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	it "create or update the abuse_flags on the comment" do
+create or update the abuse_flags on the thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	it "create or update the abuse_flags on the thread" do
+create_comment_flag	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	def create_comment_flag(comment_id, user_id)
+create_comment_thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	    def create_comment_thread(tags)
+create_flag	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	def create_flag(put_command, user_id)
+create_test_user	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def create_test_user(id)
+create_thread_flag	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	def create_thread_flag(thread_id, user_id)
+delete the comment thread and its comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "delete the comment thread and its comments" do
+destroy_subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def destroy_subscriptions
+endorsed?	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def endorsed?
+flag a comment as abusive	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	describe "flag a comment as abusive" do
+flag a thread as abusive	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	describe "flag a thread as abusive" do
+flag_as_abuse	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def flag_as_abuse(obj)
+get all tags used in threads	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "get all tags used in threads" do
+get information of a single comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "get information of a single comment thread" do
+get information of a single comment thread with its comments	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "get information of a single comment thread with its comments" do
+get information of a single comment thread with its tags	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "get information of a single comment thread with its tags" do
+handle_paged_threads_query	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def handle_paged_threads_query(paged_comment_threads)
+handle_threads_query	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def handle_threads_query(comment_threads)
+has a correct hash	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	it "has a correct hash" do
+has a correct hash	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	it "has a correct hash" do
+hash_tree	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment.rb	  def self.hash_tree(nodes)
+init_with_subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def init_with_subscriptions
+init_without_subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def init_without_subscriptions
+new_dumb_thread	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.new_dumb_thread(options={})
+parse	/Users/kevinchugh/mitx_all/cs_comments_service/spec/spec_helper.rb	def parse(text)
+perform_search	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.perform_search(params, options={})
+returns 400 when the comment does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	it "returns 400 when the comment does not exist" do
+returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns 400 when the thread does not exist" do
+returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns 400 when the thread does not exist" do
+returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns 400 when the thread does not exist" do
+returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns 400 when the thread does not exist" do
+returns 400 when the thread does not exist	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	it "returns 400 when the thread does not exist" do
+returns 400 when user_id is not provided	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	it "returns 400 when user_id is not provided" do
+returns 400 when user_id is not provided	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/abuse_spec.rb	it "returns 400 when user_id is not provided" do
+returns autocomplete results	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns autocomplete results" do
+returns error when body or course_id does not exist, or when body is blank	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "returns error when body or course_id does not exist, or when body is blank" do
+root_comments	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def root_comments
+search_result_to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.search_result_to_hash(result, params={})
+set_last_activity_at	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def set_last_activity_at
+set_thread_last_activity_at	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment.rb	  def set_thread_last_activity_at
+source	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def source
+subscribers	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def subscribers
+subscriptions	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def subscriptions
+tag_name_valid?	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.tag_name_valid?(tag)
+tag_names_unique	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def tag_names_unique
+tag_names_valid	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def tag_names_valid
+thread	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def thread
+to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment.rb	  def to_hash(params={})
+to_hash	/Users/kevinchugh/mitx_all/cs_comments_service/models/comment_thread.rb	  def to_hash(params={})
+un_flag_as_abuse	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def un_flag_as_abuse(obj)
+undo_vote_for	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def undo_vote_for(obj)
+update information of comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "update information of comment thread" do
+updates tag of comment thread	/Users/kevinchugh/mitx_all/cs_comments_service/spec/api/comment_thread_spec.rb	it "updates tag of comment thread" do
+user	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def user 
+value_to_boolean	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def value_to_boolean(value)
+vote_for	/Users/kevinchugh/mitx_all/cs_comments_service/lib/helpers.rb	  def vote_for(obj)

@@ -43,6 +43,13 @@ helpers do
     obj.save
     obj.reload.to_hash.to_json
   end
+  
+  def un_flag_as_abuse(obj)
+    raise ArgumentError, "User id is required" unless user
+    obj.abuse_flaggers.delete user.id
+    obj.save
+    obj.reload.to_hash.to_json
+  end
 
   def undo_vote_for(obj)
     raise ArgumentError, "must provide user id" unless user

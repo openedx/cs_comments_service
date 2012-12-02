@@ -4,7 +4,6 @@ class Content
   
   field :visible, type: Boolean, default: true
   field :abuse_flaggers, type: Array, default: []
-  field :spoiler_flaggers, type: Array, default: []
   
   def author_with_anonymity(attr=nil, attr_when_anonymous=nil)
     if not attr
