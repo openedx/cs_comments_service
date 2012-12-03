@@ -6,6 +6,7 @@ class CommentThread < Content
   include Mongoid::Timestamps
   include Mongoid::TaggableWithContext
   include Mongoid::TaggableWithContext::AggregationStrategy::RealTime
+  include Mongoid::Slug
 
   taggable separator: ',', default: []
 
@@ -21,6 +22,8 @@ class CommentThread < Content
   field :closed, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
+
+  slug :title
 
   index({author_id: 1, course_id: 1})
 
@@ -155,13 +158,13 @@ class CommentThread < Content
 
   def to_hash(params={})
     doc = as_document.slice(*%w[title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
-                     .merge("id" => _id, "user_id" => author.id,
+                     .merge("id" => (_id), "user_id" => author.id,
                             "username" => author.username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),
                             "tags" => tags_array,
                             "type" => "thread",
                             "endorsed" => endorsed?)
-
+    doc['slug'] = slug if slug
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
     end
@@ -236,4 +239,5 @@ private
   def destroy_subscriptions
     subscriptions.delete_all
   end
+
 end
