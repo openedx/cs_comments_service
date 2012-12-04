@@ -61,7 +61,6 @@ class Comment < Content
                  .merge("commentable_id" => comment_thread.commentable_id)
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                  .merge("abuse_flaggers" => abuse_flaggers)
-                 .merge("spoiler_flaggers" => spoiler_flaggers)
                  .merge("type" => "comment")
     end
   end
