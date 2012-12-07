@@ -13,4 +13,15 @@ class Content
     end
   end
   
+    
+  
+  def self.flagged
+    #return an array of flagged content
+    holder = []
+    Content.where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).each do |c|
+      holder << c
+    end
+    holder
+  end
+  
 end
