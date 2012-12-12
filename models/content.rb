@@ -9,4 +9,5 @@ class Content
       (anonymous || anonymous_to_peers) ? attr_when_anonymous : author.send(attr)
     end
   end
+  
 end
