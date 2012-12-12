@@ -1,0 +1,20 @@
+--- 
+cursor_positions: 
+  - :path: models/commentable.rb
+    :cursor_offset: 0
+    :timestamp: 2012-11-29 15:01:52 -05:00
+  - :path: models/comment_thread.rb
+    :cursor_offset: 532
+    :timestamp: 2012-12-02 13:22:28 -05:00
+  - :path: models/comment.rb
+    :cursor_offset: 620
+    :timestamp: 2012-12-04 11:08:37 -05:00
+  - :path: models/content.rb
+    :cursor_offset: 602
+    :timestamp: 2012-12-12 10:56:18 -05:00
+    :selection_offset: 400
+    :block_selection_mode: false
+  - :path: lib/tasks/flags.rake
+    :cursor_offset: 0
+    :timestamp: 2012-12-12 10:56:18 -05:00
+files_to_retain: 0
