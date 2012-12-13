@@ -1,6 +1,0 @@
---- 
-open_files: 
-  - models/comment.rb
-  - lib/tasks/kpis.rake
-  - .gitignore
-  - models/content.rb
