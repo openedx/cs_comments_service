@@ -1,4 +1,4 @@
-1355346191
+1355422201
 #get_marked_text(text)	/home/kevin/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	describe "#get_marked_text(text)" do
 #get_valid_at_position_list(text)	/home/kevin/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	describe "#get_valid_at_position_list(text)" do
 A	/home/kevin/mitx_all/cs_comments_service/spec/models/at_user_observer_spec.rb	class A
@@ -148,6 +148,7 @@ new_dumb_thread	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.r
 parse	/home/kevin/mitx_all/cs_comments_service/spec/spec_helper.rb	def parse(text)
 perform_search	/home/kevin/mitx_all/cs_comments_service/models/comment_thread.rb	  def self.perform_search(params, options={})
 process_at_notifications	/home/kevin/mitx_all/cs_comments_service/models/observers/at_user_observer.rb	  def self.process_at_notifications(content)
+prolific_metric	/home/kevin/mitx_all/cs_comments_service/models/content.rb	  def self.prolific_metric 
 respond ok when unfollowing user twice	/home/kevin/mitx_all/cs_comments_service/spec/api/subscription_and_notification_spec.rb	it "respond ok when unfollowing user twice" do
 retrieve information of a single comment	/home/kevin/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "retrieve information of a single comment" do
 retrieve information of a single comment with its sub comments	/home/kevin/mitx_all/cs_comments_service/spec/api/comment_spec.rb	it "retrieve information of a single comment with its sub comments" do

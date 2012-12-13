@@ -8,43 +8,58 @@ ROOT = roots[ENV['SINATRA_ENV']]
 namespace :kpis do
 
 
-  #USAGE
-  #SINATRA_ENV=development rake kpis:prolific
+  
   
   task :prolific => :environment do
-
-    count = 10
-    
-    contributors = {}
-    
-    map =  "function(){emit(this.author_id,1)}"
-    reduce  =  "function(k, vals) { var sum = 0; for(var i in vals) sum += vals[i]; return sum; }"
+    #USAGE
+    #SINATRA_ENV=development rake kpis:prolific
+    #or
+    #SINATRA_ENV=development bundle exed rake kpis:prolific
     
     courses = Content.all.distinct("course_id")
-    courses.each do |c|
-      contributors[c] = []
-      Content.where(course_id: c).map_reduce(map,reduce).out(replace: "results").each do |d|
-        contributors[c] << d
-      end
-    end
-    
-    #now sort and limit them
+      puts "\n\n*********************************************************************"
+      puts "  Users who have created the most forum content on edX (#{Date.today})      "
+      puts "*********************************************************************\n\n"
     
     courses.each do |c|
-      #first sort destructively
-      contributors[c].sort! {|a,b| -a["value"] <=> -b["value"]}
-      #then trim it
-      contributors[c] = contributors[c][0..(count - 1)]
-      
+      contributors = Content.prolific_metric({"course_id" => c})
       #now output
-      puts "\n\n\n"
       puts c
-      contributors[c].each do |p|
+      puts "*********************"
+      contributors.each do |p|
         url = ROOT + "/courses/#{c}/discussion/forum/users/#{p['_id']}"
         count_string = "#{p['value'].to_i} contributions:".rjust(25)
         puts "#{count_string} #{url} "
       end      
-      
-    end  
+      puts "\n"            
+
+    end
+  end
+  
+  
+  task :starters => :environment do
+    #USAGE
+    #SINATRA_ENV=development rake kpis:starters
+    #or
+    #SINATRA_ENV=development bundle exed rake kpis:startersgimp
+
+    courses = Content.all.distinct("course_id")
+      puts "\n\n*********************************************************************"
+      puts "  Users who have started the most threads on edX (#{Date.today})      "
+      puts "*********************************************************************\n\n"
+    
+    courses.each do |c|
+      contributors = Content.prolific_metric({"course_id" => c, "_type" => "CommentThread"})
+      #now output
+      puts c
+      puts "*********************"
+      contributors.each do |p|
+        url = ROOT + "/courses/#{c}/discussion/forum/users/#{p['_id']}"
+        count_string = "#{p['value'].to_i} contributions:".rjust(25)
+        puts "#{count_string} #{url} "
+      end      
+      puts "\n"            
+
+    end
   end
 end
