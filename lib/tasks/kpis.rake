@@ -41,7 +41,7 @@ namespace :kpis do
     #USAGE
     #SINATRA_ENV=development rake kpis:starters
     #or
-    #SINATRA_ENV=development bundle exed rake kpis:startersgimp
+    #SINATRA_ENV=development bundle exed rake kpis:starters
 
     courses = Content.all.distinct("course_id")
       puts "\n\n*********************************************************************"
@@ -67,7 +67,7 @@ namespace :kpis do
     #USAGE
     #SINATRA_ENV=development rake kpis:ppu
     #or
-    #SINATRA_ENV=development bundle exed rake kpis:startersgimp
+    #SINATRA_ENV=development bundle exed rake kpis:ppu
 
     courses = Content.all.distinct("course_id")
       puts "\n\n*********************************************************************"
