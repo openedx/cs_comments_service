@@ -62,4 +62,39 @@ namespace :kpis do
 
     end
   end
+  
+  task :ppu => :environment do
+    #USAGE
+    #SINATRA_ENV=development rake kpis:ppu
+    #or
+    #SINATRA_ENV=development bundle exed rake kpis:startersgimp
+
+    courses = Content.all.distinct("course_id")
+      puts "\n\n*********************************************************************"
+      puts "Average threads per contributing user per course on edX (#{Date.today})      "
+      puts "*********************************************************************\n\n"
+    
+    courses.each do |c|
+      #first, get all the users who have contributed
+      contributors = Content.prolific_metric({"course_id" => c})
+      total_users = contributors.count
+      
+      #now, get the threads
+      
+      total_threads = Content.where("_type" => "CommentThread","course_id" => c).count
+        
+      ratio = total_threads.to_f / total_users.to_f
+      
+      #now output
+      puts c
+      puts "*********************"
+      puts "Total Threads: #{total_threads}"
+      puts "Total Users: #{total_users}"
+      puts "Average Thread/User: #{ratio}"
+      puts "\n"            
+
+    end
+  end
+  
+  
 end
