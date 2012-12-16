@@ -30,18 +30,19 @@ class CommentThread < Content
   mapping do
     indexes :title, type: :string, analyzer: :snowball, boost: 5.0, stored: true, term_vector: :with_positions_offsets
     indexes :body, type: :string, analyzer: :snowball, stored: true, term_vector: :with_positions_offsets
+    indexes :author_name, type: :string, as: 'author.username'
     indexes :tags_in_text, type: :string, as: 'tags_array', index: :analyzed
-    indexes :tags_array, type: :string, as: 'tags_array', index: :not_analyzed, included_in_all: false
-    indexes :created_at, type: :date, included_in_all: false
-    indexes :updated_at, type: :date, included_in_all: false
-    indexes :last_activity_at, type: :date, included_in_all: false
+    indexes :tags_array, type: :string, as: 'tags_array', index: :not_analyzed, include_in_all: false
+    indexes :created_at, type: :date, include_in_all: false
+    indexes :updated_at, type: :date, include_in_all: false
+    indexes :last_activity_at, type: :date, include_in_all: false
 
-    indexes :comment_count, type: :integer, included_in_all: false
-    indexes :votes_point, type: :integer, as: 'votes_point', included_in_all: false
+    indexes :comment_count, type: :integer, include_in_all: false
+    indexes :votes_point, type: :integer, as: 'votes_point', include_in_all: false
 
-    indexes :course_id, type: :string, index: :not_analyzed, incldued_in_all: false
-    indexes :commentable_id, type: :string, index: :not_analyzed, incldued_in_all: false
-    indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, incldued_in_all: false
+    indexes :course_id, type: :string, index: :not_analyzed, include_in_all: false
+    indexes :commentable_id, type: :string, index: :not_analyzed, include_in_all: false
+    indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, include_in_all: false
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
