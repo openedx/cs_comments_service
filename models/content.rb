@@ -36,4 +36,43 @@ class Content
     contributors
 
   end
+  
+  def self.summary what
+    #take a hash of criteria (where) and return a hash of hashes
+    #of total users, votes, comments, endorsements, 
+    
+    answer = {}
+    vote_count = 0
+    thread_count = 0
+    comment_count = 0
+    contributors = []
+    content = self.where(what)
+    
+    content.each do |c|
+      contributors << c.author_id
+      contributors << c["votes"]["up"]
+      contributors << c["votes"]["down"]
+      votes += c.votes["count"]
+      if c._type == "ContentThread"
+        thread_count += 1
+      elsif c._type == "Comment"
+        comment_count += 1
+      end
+    end
+
+    #uniquify contributors
+    contributors = contributors.uniq
+    
+    #assemble the answer and ship
+    
+    answer["vote_count"] = vote_count
+    answer["thread_count"] = vote_count
+    answer["comment_count"] = vote_count
+    answer["contributor_count"] = contributor_count
+    
+    answer
+  end
+  
+  
+  
 end

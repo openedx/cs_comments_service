@@ -11,7 +11,7 @@ namespace :kpis do
     #USAGE
     #SINATRA_ENV=development rake kpis:prolific
     #or
-    #SINATRA_ENV=development bundle exed rake kpis:prolific
+    #SINATRA_ENV=development bundle exec rake kpis:prolific
 
     courses = Content.all.distinct("course_id")
     puts "\n\n*********************************************************************"
@@ -38,7 +38,7 @@ namespace :kpis do
     #USAGE
     #SINATRA_ENV=development rake kpis:starters
     #or
-    #SINATRA_ENV=development bundle exed rake kpis:starters
+    #SINATRA_ENV=development bundle exec rake kpis:starters
 
     courses = Content.all.distinct("course_id")
     puts "\n\n*********************************************************************"
@@ -64,7 +64,7 @@ namespace :kpis do
     #USAGE
     #SINATRA_ENV=development rake kpis:ppu
     #or
-    #SINATRA_ENV=development bundle exed rake kpis:ppu
+    #SINATRA_ENV=development bundle exec rake kpis:ppu
 
     courses = Content.all.distinct("course_id")
     puts "\n\n*********************************************************************"
@@ -94,33 +94,30 @@ namespace :kpis do
 
     task :epu => :environment do
       #USAGE
-      #SINATRA_ENV=development rake kpis:ppu
+      #SINATRA_ENV=development rake kpis:epu
       #or
-      #SINATRA_ENV=development bundle exed rake kpis:ppu
+      #SINATRA_ENV=development bundle exec rake kpis:epu
 
       courses = Content.all.distinct("course_id")
       puts "\n\n**************************************************************************************************************************************"
-      puts "Average contributions (votes, comments, endorsements, or threads or follows) per contributing user per course on edX (#{Date.today})      "
+      puts "Average contributions (votes, threads, or comments) per contributing user per course on edX (#{Date.today})      "
       puts "******************************************************************************************************************************************\n\n"
 
       courses.each do |c|
         #first, get all the users who have contributed
-        contributors = Content.prolific_metric({"course_id" => c})
-        total_users = contributors.count
-
-        #now, get the threads
-
-        total_threads = Content.where("_type" => "CommentThread","course_id" => c).count
-
-        ratio = total_threads.to_f / total_users.to_f
-
-        #now output
-        puts c
-        puts "*********************"
-        puts "Total Threads: #{total_threads}"
-        puts "Total Users: #{total_users}"
-        puts "Average Thread/User: #{ratio}"
-        puts "\n"
+        summary = Content.summary({"course_id" => c})
+        total_users = summary["contributor_count"]
+        total_activity = summary['thread_count']
+        total_activity += summary['comment_count']
+        total_activity += summary['vote_count']
+        ratio = total_activity.to_f / total_users.to_f
+        
+        puts "Total Threads: #{summary['thread_count']}"
+        puts "Total Comments: #{summary['comment_count']}"
+        puts "Total Votes: #{summary['vote_count']}"
+        puts "--------------------------------------------------------"
+        puts "Total Engagements: #{total_activity}"
+        puts "Average Engagement Per Engaging User: #{ratio}"
 
       end
     end
