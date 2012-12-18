@@ -52,7 +52,7 @@ class Content
       contributors << c.author_id
       contributors << c["votes"]["up"]
       contributors << c["votes"]["down"]
-      votes += c.votes["count"]
+      votes += c["votes"]["count"]
       if c._type == "ContentThread"
         thread_count += 1
       elsif c._type == "Comment"
