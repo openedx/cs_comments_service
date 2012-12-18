@@ -53,7 +53,7 @@ class Content
       contributors << c["votes"]["up"]
       contributors << c["votes"]["down"]
       vote_count += c["votes"]["count"]
-      if c._type == "ContentThread"
+      if c._type == "CommentThread"
         thread_count += 1
       elsif c._type == "Comment"
         comment_count += 1
@@ -66,9 +66,9 @@ class Content
     #assemble the answer and ship
     
     answer["vote_count"] = vote_count
-    answer["thread_count"] = vote_count
-    answer["comment_count"] = vote_count
-    answer["contributor_count"] = contributor_count
+    answer["thread_count"] = thread_count
+    answer["comment_count"] = comment_count
+    answer["contributor_count"] = contributors.count
     
     answer
   end

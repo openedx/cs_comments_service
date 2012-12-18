@@ -91,35 +91,38 @@ namespace :kpis do
       puts "\n"
 
     end
+  end
 
-    task :epu => :environment do
-      #USAGE
-      #SINATRA_ENV=development rake kpis:epu
-      #or
-      #SINATRA_ENV=development bundle exec rake kpis:epu
+  task :epu => :environment do
+    #USAGE
+    #SINATRA_ENV=development rake kpis:epu
+    #or
+    #SINATRA_ENV=development bundle exec rake kpis:epu
 
-      courses = Content.all.distinct("course_id")
-      puts "\n\n**************************************************************************************************************************************"
-      puts "Average contributions (votes, threads, or comments) per contributing user per course on edX (#{Date.today})      "
-      puts "******************************************************************************************************************************************\n\n"
+    courses = Content.all.distinct("course_id")
+    puts "\n\n*****************************************************************************************************************"
+    puts "Average contributions (votes, threads, or comments) per contributing user per course on edX (#{Date.today})      "
+    puts "*********************************************************************************************************************\n\n"
 
-      courses.each do |c|
-        #first, get all the users who have contributed
-        summary = Content.summary({"course_id" => c})
-        total_users = summary["contributor_count"]
-        total_activity = summary['thread_count']
-        total_activity += summary['comment_count']
-        total_activity += summary['vote_count']
-        ratio = total_activity.to_f / total_users.to_f
-        
-        puts "Total Threads: #{summary['thread_count']}"
-        puts "Total Comments: #{summary['comment_count']}"
-        puts "Total Votes: #{summary['vote_count']}"
-        puts "--------------------------------------------------------"
-        puts "Total Engagements: #{total_activity}"
-        puts "Average Engagement Per Engaging User: #{ratio}"
+    courses.each do |c|
+      #first, get all the users who have contributed
+      summary = Content.summary({"course_id" => c})
+      total_users = summary["contributor_count"]
+      total_activity = summary['thread_count']
+      total_activity += summary['comment_count']
+      total_activity += summary['vote_count']
+      ratio = total_activity.to_f / total_users.to_f
+     
+      
+      puts c
+      puts "*********************"
+      puts "Total Threads: #{summary['thread_count']}"
+      puts "Total Comments: #{summary['comment_count']}"
+      puts "Total Votes: #{summary['vote_count']}\n\n"
+      puts "Total Users: #{summary['contributor_count']}"
+      puts "Total Engagements: #{total_activity}\n\n"
+      puts "Average Engagement Per Engaging User: #{ratio}\n\n\n  "
 
-      end
     end
   end
 
