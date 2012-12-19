@@ -151,6 +151,7 @@ namespace :kpis do
       if threads.count > 0
         puts "Orphan Ratio: #{ratio}"
       end
+      puts "\n\n\n"
     end
   end
 end
