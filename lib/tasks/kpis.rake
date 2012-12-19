@@ -135,7 +135,7 @@ namespace :kpis do
     courses = Content.all.distinct("course_id")
     puts "\n\n****************************************************"
     puts "thread reply rate per course on edX (#{Date.today})      "
-    puts "********************************************************\n\n"
+    puts "****************************************************\n\n"
 
     courses.each do |c|
       #first, get all the users who have contributed
