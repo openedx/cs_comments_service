@@ -112,8 +112,8 @@ namespace :kpis do
       total_activity += summary['comment_count']
       total_activity += summary['vote_count']
       ratio = total_activity.to_f / total_users.to_f
-     
-      
+
+
       puts c
       puts "*********************"
       puts "Total Threads: #{summary['thread_count']}"
@@ -124,7 +124,33 @@ namespace :kpis do
       puts "Average Engagement Per Engaging User: #{ratio}\n\n\n  "
 
     end
+
+    task :orphans => :environment do
+      #USAGE
+      #SINATRA_ENV=development rake kpis:oprhans
+      #or
+      #SINATRA_ENV=development bundle exec rake kpis:orphans
+
+      courses = Content.all.distinct("course_id")
+      puts "\n\n****************************************************"
+      puts "thread reply rate per course on edX (#{Date.today})      "
+      puts "********************************************************\n\n"
+
+      courses.each do |c|
+        #first, get all the users who have contributed
+        threads = Content.where({"course_id" => c, "_type" => "CommentThread"})
+        orphans = Content.where({"course_id" => c, "_type" => "CommentThread", "comment_count" => 0})
+
+        ratio = oprhans.count.to_f / threads.to_f
+
+        puts c
+        puts "*********************"
+        puts "Total Threads: #{threads.count}"
+        puts "Total Orphaned Threads: #{orphans.count}"
+        if threads.count > 0
+          puts "Orphan Ratio: #{ratio}"
+        end
+      end
+    end
   end
-
-
 end
