@@ -142,7 +142,7 @@ namespace :kpis do
       threads = Content.where({"course_id" => c, "_type" => "CommentThread"})
       orphans = Content.where({"course_id" => c, "_type" => "CommentThread", "comment_count" => 0})
 
-      ratio = orphans.count.to_f / threads.to_f
+      ratio = orphans.count.to_f / threads.count.to_f
 
       puts c
       puts "*********************"
