@@ -149,7 +149,7 @@ namespace :kpis do
       puts "Total Threads: #{threads.count}"
       puts "Total Orphaned Threads: #{orphans.count}"
       if threads.count > 0
-        puts "Orphan Ratio: #{(ratio*1000).round/10}%"
+        puts "Orphan Ratio: #{(ratio*1000).round.to_f/10.0}%"
       end
       puts "\n\n\n"
     end
