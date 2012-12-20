@@ -11,7 +11,7 @@ class Content
   end
 
   def self.prolific_metric what
-    #take a hash of criteria (where) and return a hash of hashes
+    #take a hash of criteria (what) and return a hash of hashes
     #course => user => count
 
     count = 10
@@ -38,7 +38,7 @@ class Content
   end
   
   def self.summary what
-    #take a hash of criteria (where) and return a hash of hashes
+    #take a hash of criteria (what) and return a hash of hashes
     #of total users, votes, comments, endorsements, 
     
     answer = {}
