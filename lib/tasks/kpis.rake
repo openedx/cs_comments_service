@@ -19,7 +19,7 @@ namespace :kpis do
     puts "*********************************************************************\n\n"
 
     courses.each do |c|
-      contributors = Content.prolific_metric({"course_id" => c})
+      contributors = Content.prolific_metric({"course_id" => c}, 10)
       #now output
       puts c
       puts "*********************"
@@ -46,7 +46,7 @@ namespace :kpis do
     puts "*********************************************************************\n\n"
 
     courses.each do |c|
-      contributors = Content.prolific_metric({"course_id" => c, "_type" => "CommentThread"})
+      contributors = Content.prolific_metric({"course_id" => c, "_type" => "CommentThread"}, 10)
       #now output
       puts c
       puts "*********************"
@@ -73,7 +73,7 @@ namespace :kpis do
 
     courses.each do |c|
       #first, get all the users who have contributed
-      contributors = Content.prolific_metric({"course_id" => c})
+      contributors = Content.prolific_metric({"course_id" => c}, 10)
       total_users = contributors.count
 
       #now, get the threads

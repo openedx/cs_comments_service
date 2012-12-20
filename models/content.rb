@@ -10,11 +10,9 @@ class Content
     end
   end
 
-  def self.prolific_metric what
+  def self.prolific_metric what, count
     #take a hash of criteria (what) and return a hash of hashes
     #course => user => count
-
-    count = 10
 
     contributors = {}
 
