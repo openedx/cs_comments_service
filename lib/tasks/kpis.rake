@@ -128,7 +128,7 @@ namespace :kpis do
 
   task :orphans => :environment do
     #USAGE
-    #SINATRA_ENV=development rake kpis:oprhans
+    #SINATRA_ENV=development rake kpis:orphans
     #or
     #SINATRA_ENV=development bundle exec rake kpis:orphans
 
