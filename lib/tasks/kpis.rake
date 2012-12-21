@@ -3,6 +3,7 @@ roots = {}
 roots['development'] = "http://localhost:8000"
 roots['test'] = "http://localhost:8000"
 roots['production'] = "http://edx.org"
+roots['staging'] = "http://stage.edx.org"
 ROOT = roots[ENV['SINATRA_ENV']]
 
 namespace :kpis do
