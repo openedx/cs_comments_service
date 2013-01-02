@@ -62,7 +62,7 @@ describe "app" do
         changed_thread = CommentThread.find(thread.id)
         changed_thread.body.should == "new body"
         changed_thread.title.should == "new title"
-        changed_thread.commentable_id.should == "new commentable_id"
+        changed_thread.commentable_id.should == "new_commentable_id"
       end
       it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
