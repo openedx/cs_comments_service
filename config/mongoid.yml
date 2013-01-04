@@ -30,6 +30,32 @@ production:
         safe: true
         consistency: strong
 
+edgeprod:
+  sessions:
+    default:
+      hosts:
+        - sayid.member1.mongohq.com:10001
+      username: <%= ENV['MONGOHQ_USER'] %>
+      password: <%= ENV['MONGOHQ_PASS'] %>
+      database: app10640640
+      options:
+        skip_version_check: true
+        safe: true
+        consistency: strong
+
+edgestage:
+  sessions:
+    default:
+      hosts:
+        - vincent.mongohq.com:10001
+      username: <%= ENV['MONGOHQ_USER'] %>
+      password: <%= ENV['MONGOHQ_PASS'] %>
+      database: app10640673
+      options:
+        skip_version_check: true
+        safe: true
+        consistency: strong
+
 staging:
   sessions:
     default:
