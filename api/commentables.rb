@@ -4,13 +4,19 @@ delete "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
 end
 
 get "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
-
-  handle_threads_query(commentable.comment_threads)
-  
+  if params["group_id"]
+    threads = CommentThread.any_of(
+    {:commentable_id => commentable_id, :group_id => params[:group_id]}, 
+    {:commentable_id => commentable_id, :group_id.exists => false}, 
+    )
+  else
+    threads = commentable.comment_threads
+  end
+    handle_threads_query(threads)    
 end
 
 post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
-  thread = CommentThread.new(params.slice(*%w[title body course_id]).merge(commentable_id: commentable_id))
+  thread = CommentThread.new(params.slice(*%w[title body course_id group_id]).merge(commentable_id: commentable_id))
   thread.anonymous = bool_anonymous || false
   thread.anonymous_to_peers = bool_anonymous_to_peers || false
   thread.tags = params["tags"] || ""

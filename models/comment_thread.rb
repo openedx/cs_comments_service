@@ -21,6 +21,7 @@ class CommentThread < Content
   field :closed, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
+  field :group_id, type: Integer
 
   index({author_id: 1, course_id: 1})
 
@@ -107,14 +108,27 @@ class CommentThread < Content
     search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
     search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+    
+    if params["group_id"]
+      search.filter :or, [
+        {:not => {:exists => {:field => :group_id}}},
+          {:term => {:group_id => params["group_id"]}}
+
+        ]
+    end
+    
+    
     search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
 
     search.size per_page
     search.from per_page * (page - 1)
+    
+    results = search.results
+    
     if CommentService.config[:cache_enabled]
-      Sinatra::Application.cache.set(memcached_key, search.results, CommentService.config[:cache_timeout][:threads_search].to_i)
+      Sinatra::Application.cache.set(memcached_key, results, CommentService.config[:cache_timeout][:threads_search].to_i)
     end
-    search.results
+    results
   end
 
   def activity_since(from_time=nil)

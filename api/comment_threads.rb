@@ -1,5 +1,15 @@
 get "#{APIPREFIX}/threads" do # retrieve threads by course
-  handle_threads_query(CommentThread.where(course_id: params["course_id"]))
+  #if a group id is sent, then process the set of threads with that group id or with no group id
+  if params["group_id"]
+    threads = CommentThread.any_of(
+    {:course_id => params["course_id"],:group_id => params[:group_id]}, 
+    {:course_id => params["course_id"],:group_id.exists => false}, 
+    )
+  else
+    threads = CommentThread.where(course_id: params["course_id"])
+    #else process them all
+  end
+    handle_threads_query(threads)    
 end
 
 get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
@@ -14,7 +24,8 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
 end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
-  thread.update_attributes(params.slice(*%w[title body closed commentable_id]))
+  thread.update_attributes(params.slice(*%w[title body closed commentable_id group_id]))
+
   if params["tags"]
     thread.tags = params["tags"]
     thread.save
