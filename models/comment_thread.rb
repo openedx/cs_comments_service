@@ -40,9 +40,10 @@ class CommentThread < Content
     indexes :comment_count, type: :integer, included_in_all: false
     indexes :votes_point, type: :integer, as: 'votes_point', included_in_all: false
 
-    indexes :course_id, type: :string, index: :not_analyzed, incldued_in_all: false
-    indexes :commentable_id, type: :string, index: :not_analyzed, incldued_in_all: false
-    indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, incldued_in_all: false
+    indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
+    indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
+    indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
+    indexes :group_id, type: :integer, as: 'group_id', index: :not_analyzed, included_in_all: false
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
@@ -110,13 +111,14 @@ class CommentThread < Content
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
     
     if params["group_id"]
+      
       search.filter :or, [
         {:not => {:exists => {:field => :group_id}}},
           {:term => {:group_id => params["group_id"]}}
 
         ]
+        puts "\n\n\n\n\n*****************-> #{search.filters}"
     end
-    
     
     search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
 
