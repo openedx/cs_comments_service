@@ -117,7 +117,6 @@ class CommentThread < Content
           {:term => {:group_id => params["group_id"]}}
 
         ]
-        puts "\n\n\n\n\n*****************-> #{search.filters}"
     end
     
     search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
