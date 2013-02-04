@@ -175,6 +175,7 @@ class CommentThread < Content
                             "votes" => votes.slice(*%w[count up_count down_count point]),
                             "tags" => tags_array,
                             "type" => "thread",
+                            "group_id" => group_id,
                             "endorsed" => endorsed?)
 
     if params[:recursive]
