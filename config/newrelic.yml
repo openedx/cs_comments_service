@@ -258,3 +258,14 @@ loadtest:
   <<: *default_settings
   monitor_mode: true
   app_name: <%= ENV["NEW_RELIC_APP_NAME"] %> (Load Test)
+
+edgestage:
+  <<: *default_settings
+  monitor_mode: true
+  app_name: <%= ENV["NEW_RELIC_APP_NAME"] %> (Edge Stage)
+
+edgeprod:
+  <<: *default_settings
+  monitor_mode: true
+  app_name: <%= ENV["NEW_RELIC_APP_NAME"] %> (Edge Prod)
+
