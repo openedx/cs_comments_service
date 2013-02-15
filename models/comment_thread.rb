@@ -44,6 +44,8 @@ class CommentThread < Content
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
     indexes :group_id, type: :integer, as: 'group_id', index: :not_analyzed, included_in_all: false
+    indexes :id,         :index    => :not_analyzed
+    indexes :thread_id, :analyzer => :keyword, :as => "_id"
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
@@ -109,23 +111,62 @@ class CommentThread < Content
     search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
     search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
-    
+
     if params["group_id"]
-      
+
       search.filter :or, [
         {:not => {:exists => {:field => :group_id}}},
-          {:term => {:group_id => params["group_id"]}}
+        {:term => {:group_id => params["group_id"]}}
 
-        ]
+      ]
     end
-    
+
     search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
 
     search.size per_page
     search.from per_page * (page - 1)
-    
+
     results = search.results
     
+    #if this is a search query, then also search the comments and harvest the matching comments
+    if params["text"]
+      
+      #temp
+      
+      params = {}
+      params["text"] = "test"
+      #end temp
+      
+      search = Tire::Search::Search.new 'comments'
+      search.query {|query| query.text :_all, params["text"]} if params["text"]
+      search.size per_page
+      search.from per_page * (page - 1)
+      c_results = search.results
+
+      comment_ids = c_results.collect{|c| c.id}.uniq
+      
+      comments = Comment.where(:id.in => comment_ids)
+      
+      thread_ids = comments.collect{|c| c.comment_thread_id}
+      
+      #now run one more search to harvest the threads and filter by group
+      search = Tire::Search::Search.new 'comment_threads'
+      search.filter(:term, :thread_id => thread_ids)
+
+      if params["group_id"]
+
+        search.filter :or, [
+          {:not => {:exists => {:field => :group_id}}},
+          {:term => {:group_id => params["group_id"]}}
+
+        ]
+      end
+
+      results += search.results
+
+    end
+
+
     if CommentService.config[:cache_enabled]
       Sinatra::Application.cache.set(memcached_key, results, CommentService.config[:cache_timeout][:threads_search].to_i)
     end
@@ -170,13 +211,13 @@ class CommentThread < Content
 
   def to_hash(params={})
     doc = as_document.slice(*%w[title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
-                     .merge("id" => _id, "user_id" => author.id,
-                            "username" => author.username,
-                            "votes" => votes.slice(*%w[count up_count down_count point]),
-                            "tags" => tags_array,
-                            "type" => "thread",
-                            "group_id" => group_id,
-                            "endorsed" => endorsed?)
+    .merge("id" => _id, "user_id" => author.id,
+    "username" => author.username,
+    "votes" => votes.slice(*%w[count up_count down_count point]),
+    "tags" => tags_array,
+    "type" => "thread",
+    "group_id" => group_id,
+    "endorsed" => endorsed?)
 
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
@@ -198,8 +239,8 @@ class CommentThread < Content
       #   unread count
       if last_read_time
         unread_count = self.comments.where(
-            :updated_at => {:$gte => last_read_time},
-            :author_id => {:$ne => params[:user_id]},
+        :updated_at => {:$gte => last_read_time},
+        :author_id => {:$ne => params[:user_id]},
         ).count
         read = last_read_time >= self.updated_at
       else
@@ -213,8 +254,8 @@ class CommentThread < Content
     end
 
     doc = doc.merge("unread_comments_count" => unread_count)
-             .merge("read" => read)
-             .merge("comments_count" => comments_count)
+    .merge("read" => read)
+    .merge("comments_count" => comments_count)
 
     doc
 
@@ -224,7 +265,7 @@ class CommentThread < Content
     !!(tag =~ RE_TAG)
   end
 
-private
+  private
 
   RE_HEADCHAR = /[a-z0-9]/
   RE_ENDONLYCHAR = /\+/

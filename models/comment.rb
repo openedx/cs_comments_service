@@ -17,6 +17,15 @@ class Comment < Content
   field :at_position_list, type: Array, default: []
 
   index({author_id: 1, course_id: 1})
+  
+  
+  include Tire::Model::Search
+  include Tire::Model::Callbacks
+
+  mapping do
+    indexes :body, type: :string, analyzer: :snowball, stored: true, term_vector: :with_positions_offsets
+  end
+  
 
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: "User", index: true

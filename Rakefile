@@ -227,6 +227,11 @@ namespace :db do
     Tire.index('comment_threads').delete
     CommentThread.create_elasticsearch_index
     Tire.index('comment_threads') { import CommentThread.all }
+    
+    Tire.index('comments').delete
+    Comment.create_elasticsearch_index
+    Tire.index('comments') { import Comment.all }
+    
   end
 
   task :add_anonymous_to_peers => :environment do
