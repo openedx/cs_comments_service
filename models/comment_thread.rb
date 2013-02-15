@@ -104,6 +104,19 @@ class CommentThread < Content
         return results
       end
     end
+    
+    #KChugh - Unfortunately, there's no algorithmically nice way to handle pagination with
+    #stitching together Comments and CommentThreads, because there is no determinstic relationship
+    #between the ordinality of comments and threads. 
+    #the best solution is to find all of the thread ids for matching comment hits, and union them
+    #with the comment thread query, however, Tire does not support ORing a query key with a term filter
+    
+    #so the 3rd best solution is to run two Tire searches (3 actually, one to query the comments, one to query the threads based on
+    #thread ids and the original thread search) and merge the results, uniqifying the results in the process.
+      
+    #so first, find the comment threads associated with comments that hit the query
+    
+    
     search = Tire::Search::Search.new 'comment_threads'
     search.query {|query| query.text :_all, params["text"]} if params["text"]
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
@@ -117,20 +130,33 @@ class CommentThread < Content
       search.filter :or, [
         {:not => {:exists => {:field => :group_id}}},
         {:term => {:group_id => params["group_id"]}}
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
       ]
     end
 
     search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
 
+<<<<<<< Updated upstream
     search.size per_page
     search.from per_page * (page - 1)
+=======
+    #again, b/c there is no relationship in ordinality, we cannot paginate if it's a text query
+    
+    if not params["text"]
+      search.size per_page
+      search.from per_page * (page - 1)
+    end
+>>>>>>> Stashed changes
 
     results = search.results
     
     #if this is a search query, then also search the comments and harvest the matching comments
     if params["text"]
       
+<<<<<<< Updated upstream
       #temp
       
       params = {}
@@ -141,17 +167,46 @@ class CommentThread < Content
       search.query {|query| query.text :_all, params["text"]} if params["text"]
       search.size per_page
       search.from per_page * (page - 1)
+=======
+      search = Tire::Search::Search.new 'comments'
+      search.query {|query| query.text :_all, params["text"]} if params["text"]
+      search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
+      search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
+      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+      
+      #unforutnately, we cannot paginate here, b/c we don't know how the ordinality is totally
+      #unrelated to that of threads
+      
+>>>>>>> Stashed changes
       c_results = search.results
 
       comment_ids = c_results.collect{|c| c.id}.uniq
       
       comments = Comment.where(:id.in => comment_ids)
       
+<<<<<<< Updated upstream
       thread_ids = comments.collect{|c| c.comment_thread_id}
       
       #now run one more search to harvest the threads and filter by group
       search = Tire::Search::Search.new 'comment_threads'
       search.filter(:term, :thread_id => thread_ids)
+=======
+      thread_ids = comments.collect{|c| c.comment_thread_id}.uniq
+      original_thread_ids = results.collect{|r| r.id}
+      
+      #now add the original search thread ids
+      thread_ids += original_thread_ids
+      
+      thread_ids = thread_ids.uniq
+      
+      #now run one more search to harvest the threads and filter by group
+      search = Tire::Search::Search.new 'comment_threads'
+      search.filter(:terms, :thread_id => thread_ids)
+      search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
+      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+      search.size per_page
+      search.from per_page * (page - 1)
+>>>>>>> Stashed changes
 
       if params["group_id"]
 
@@ -162,7 +217,13 @@ class CommentThread < Content
         ]
       end
 
+<<<<<<< Updated upstream
       results += search.results
+=======
+      search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order 
+      
+      results = search.results
+>>>>>>> Stashed changes
 
     end
 
