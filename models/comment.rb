@@ -24,10 +24,7 @@ class Comment < Content
 
   mapping do
     indexes :body, type: :string, analyzer: :snowball, stored: true, term_vector: :with_positions_offsets
-<<<<<<< Updated upstream
-=======
     indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
->>>>>>> Stashed changes
   end
   
 
