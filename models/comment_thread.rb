@@ -96,6 +96,7 @@ class CommentThread < Content
     
     page = [1, options[:page] || 1].max
     per_page = options[:per_page] || 20
+    per_page = 2
     sort_key = options[:sort_key]
     sort_order = options[:sort_order]
     if CommentService.config[:cache_enabled]
@@ -127,7 +128,6 @@ class CommentThread < Content
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
 
     if params["group_id"]
-
       search.filter :or, [
         {:not => {:exists => {:field => :group_id}}},
         {:term => {:group_id => params["group_id"]}}
