@@ -5,3 +5,4 @@ elasticsearch_server: <%= ENV['SEARCH_SERVER'] || 'http://localhost:9200' %>
 cache_timeout:
   threads_search: 10
   threads_query: 10
+vote_juice_factor: 10 #when a faculty votes (the request has juice) add this vote count to content's vote count

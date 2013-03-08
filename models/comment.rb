@@ -15,6 +15,7 @@ class Comment < Content
   field :anonymous, type: Boolean, default: false
   field :anonymous_to_peers, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
+  field :pinned, type: Boolean
 
   index({author_id: 1, course_id: 1})
 

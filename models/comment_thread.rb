@@ -22,6 +22,7 @@ class CommentThread < Content
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
   field :group_id, type: Integer
+  field :pinned, type: Boolean
 
   index({author_id: 1, course_id: 1})
 

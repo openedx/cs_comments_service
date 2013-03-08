@@ -111,7 +111,7 @@ helpers do
     else
       page = (params["page"] || DEFAULT_PAGE).to_i
       per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
-      comment_threads = comment_threads.order_by("#{sort_key} #{sort_order}") if sort_key && sort_order
+      comment_threads = comment_threads.order_by("pinned DESC, #{sort_key} #{sort_order}") if sort_key && sort_order
       num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
       page = [num_pages, [1, page].max].min
       paged_comment_threads = comment_threads.page(page).per(per_page)
