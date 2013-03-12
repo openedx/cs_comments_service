@@ -43,6 +43,22 @@ helpers do
     obj.reload.to_hash.to_json
   end
 
+  def pin(obj)
+    raise ArgumentError, "User id is required" unless user
+    obj.pinned = true
+    obj.save
+    obj.reload.to_hash.to_json
+  end
+  
+  def unpin(obj)
+    raise ArgumentError, "User id is required" unless user
+    obj.pinned = nil
+    obj.save
+    obj.reload.to_hash.to_json
+  end  
+  
+  
+  
   def value_to_boolean(value)
     !!(value.to_s =~ /^true$/i)
   end
