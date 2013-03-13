@@ -46,7 +46,6 @@ helpers do
   def pin(obj)
     raise ArgumentError, "User id is required" unless user
     obj.pinned = true
-    puts "\n\n\n\n\n\n******************HELLOE"
     obj.save
     obj.reload.to_hash.to_json
   end
@@ -128,7 +127,6 @@ helpers do
     else
       page = (params["page"] || DEFAULT_PAGE).to_i
       per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
-      #comment_threads = comment_threads.order_by("pinned DESC, #{sort_key} #{sort_order}") if sort_key && sort_order
       #KChugh turns out we don't need to go through all the extra work on the back end because the client is resorting anyway
       comment_threads = comment_threads.order_by("#{sort_key} #{sort_order}") if sort_key && sort_order
       num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
