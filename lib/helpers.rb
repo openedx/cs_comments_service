@@ -108,7 +108,7 @@ helpers do
     end
 
     sort_key_mapper = {
-      "date" => [:created_at],
+      "date" => :created_at,
       "activity" => :last_activity_at,
       "votes" => :"votes.point",
       "comments" => :comment_count,
