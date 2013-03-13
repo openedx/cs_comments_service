@@ -45,6 +45,7 @@ class CommentThread < Content
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
     indexes :group_id, type: :integer, as: 'group_id', index: :not_analyzed, included_in_all: false
+    #indexes :pinned, type: :boolean, as: 'pinned', index: :not_analyzed, included_in_all: false
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
@@ -177,6 +178,7 @@ class CommentThread < Content
                             "tags" => tags_array,
                             "type" => "thread",
                             "group_id" => group_id,
+                            "pinned" => pinned?,
                             "endorsed" => endorsed?)
 
     if params[:recursive]

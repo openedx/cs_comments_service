@@ -107,7 +107,7 @@ helpers do
     end
 
     sort_key_mapper = {
-      "date" => :created_at,
+      "date" => [:created_at],
       "activity" => :last_activity_at,
       "votes" => :"votes.point",
       "comments" => :comment_count,
@@ -127,7 +127,9 @@ helpers do
     else
       page = (params["page"] || DEFAULT_PAGE).to_i
       per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
-      comment_threads = comment_threads.order_by("pinned DESC, #{sort_key} #{sort_order}") if sort_key && sort_order
+      #comment_threads = comment_threads.order_by("pinned DESC, #{sort_key} #{sort_order}") if sort_key && sort_order
+      #KChugh turns out we don't need to go through all the extra work on the back end because the client is resorting anyway
+      comment_threads = comment_threads.order_by("#{sort_key} #{sort_order}") if sort_key && sort_order
       num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
       page = [num_pages, [1, page].max].min
       paged_comment_threads = comment_threads.page(page).per(per_page)

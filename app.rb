@@ -45,7 +45,7 @@ APIPREFIX = CommentService::API_PREFIX
 DEFAULT_PAGE = 1
 DEFAULT_PER_PAGE = 20
 
-if RACK_ENV.to_s != "test" # disable api_key auth in test environment
+if RACK_ENV.to_s != "development" # disable api_key auth in test environment
   before do
     error 401 unless params[:api_key] == CommentService.config[:api_key]
   end
@@ -60,6 +60,7 @@ require './api/comment_threads'
 require './api/comments'
 require './api/users'
 require './api/votes'
+require './api/pins'
 require './api/notifications_and_subscriptions'
 
 if RACK_ENV.to_s == "development"
