@@ -46,6 +46,7 @@ helpers do
   def pin(obj)
     raise ArgumentError, "User id is required" unless user
     obj.pinned = true
+    puts "\n\n\n\n\n\n******************HELLOE"
     obj.save
     obj.reload.to_hash.to_json
   end
