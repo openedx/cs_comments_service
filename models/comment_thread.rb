@@ -177,6 +177,7 @@ class CommentThread < Content
                             "tags" => tags_array,
                             "type" => "thread",
                             "group_id" => group_id,
+                            "pinned" => pinned,
                             "endorsed" => endorsed?)
 
     if params[:recursive]
