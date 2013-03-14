@@ -43,6 +43,22 @@ helpers do
     obj.reload.to_hash.to_json
   end
 
+  def pin(obj)
+    raise ArgumentError, "User id is required" unless user
+    obj.pinned = true
+    obj.save
+    obj.reload.to_hash.to_json
+  end
+  
+  def unpin(obj)
+    raise ArgumentError, "User id is required" unless user
+    obj.pinned = nil
+    obj.save
+    obj.reload.to_hash.to_json
+  end  
+  
+  
+  
   def value_to_boolean(value)
     !!(value.to_s =~ /^true$/i)
   end
@@ -111,6 +127,7 @@ helpers do
     else
       page = (params["page"] || DEFAULT_PAGE).to_i
       per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
+      #KChugh turns out we don't need to go through all the extra work on the back end because the client is resorting anyway
       comment_threads = comment_threads.order_by("#{sort_key} #{sort_order}") if sort_key && sort_order
       num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
       page = [num_pages, [1, page].max].min
