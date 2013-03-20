@@ -128,7 +128,8 @@ helpers do
       page = (params["page"] || DEFAULT_PAGE).to_i
       per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
       #KChugh turns out we don't need to go through all the extra work on the back end because the client is resorting anyway
-      comment_threads = comment_threads.order_by("#{sort_key} #{sort_order}") if sort_key && sort_order
+      #KChugh boy was I wrong, we need to sort for pagination
+      comment_threads = comment_threads.order_by("pinned DESC,#{sort_key} #{sort_order}") if sort_key && sort_order
       num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
       page = [num_pages, [1, page].max].min
       paged_comment_threads = comment_threads.page(page).per(per_page)
