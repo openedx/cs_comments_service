@@ -18,7 +18,7 @@ module CommentService
   API_PREFIX = "/api/#{API_VERSION}"
 end
 
-if ["staging", "production", "loadtest"].include? environment
+if ["staging", "production", "loadtest", "edgestage","edgeprod"].include? environment
   require 'newrelic_rpm'
 end
 
@@ -61,6 +61,7 @@ require './api/comments'
 require './api/users'
 require './api/votes'
 require './api/flags'
+require './api/pins'
 require './api/notifications_and_subscriptions'
 
 if RACK_ENV.to_s == "development"

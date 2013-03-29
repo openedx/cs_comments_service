@@ -21,6 +21,8 @@ class CommentThread < Content
   field :closed, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
+  field :group_id, type: Integer
+  field :pinned, type: Boolean
 
   index({author_id: 1, course_id: 1})
 
@@ -39,9 +41,11 @@ class CommentThread < Content
     indexes :comment_count, type: :integer, included_in_all: false
     indexes :votes_point, type: :integer, as: 'votes_point', included_in_all: false
 
-    indexes :course_id, type: :string, index: :not_analyzed, incldued_in_all: false
-    indexes :commentable_id, type: :string, index: :not_analyzed, incldued_in_all: false
-    indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, incldued_in_all: false
+    indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
+    indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
+    indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
+    indexes :group_id, type: :integer, as: 'group_id', index: :not_analyzed, included_in_all: false
+    #indexes :pinned, type: :boolean, as: 'pinned', index: :not_analyzed, included_in_all: false
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
@@ -107,14 +111,27 @@ class CommentThread < Content
     search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
     search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+    
+    if params["group_id"]
+      
+      search.filter :or, [
+        {:not => {:exists => {:field => :group_id}}},
+          {:term => {:group_id => params["group_id"]}}
+
+        ]
+    end
+    
     search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
 
     search.size per_page
     search.from per_page * (page - 1)
+    
+    results = search.results
+    
     if CommentService.config[:cache_enabled]
-      Sinatra::Application.cache.set(memcached_key, search.results, CommentService.config[:cache_timeout][:threads_search].to_i)
+      Sinatra::Application.cache.set(memcached_key, results, CommentService.config[:cache_timeout][:threads_search].to_i)
     end
-    search.results
+    results
   end
 
   def activity_since(from_time=nil)
@@ -161,6 +178,8 @@ class CommentThread < Content
                             "abuse_flaggers" => abuse_flaggers,
                             "tags" => tags_array,
                             "type" => "thread",
+                            "group_id" => group_id,
+                            "pinned" => pinned?,
                             "endorsed" => endorsed?)
 
     if params[:recursive]
