@@ -13,4 +13,3 @@ end
 put "#{APIPREFIX}/comments/:comment_id/abuse_unflags" do |thread_id|
   un_flag_as_abuse comment
 end
-

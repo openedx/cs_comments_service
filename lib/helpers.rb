@@ -46,7 +46,14 @@ helpers do
   
   def un_flag_as_abuse(obj)
     raise ArgumentError, "User id is required" unless user
-    obj.abuse_flaggers.delete user.id
+    if params["moderator"]
+      obj.historical_abuse_flaggers += obj.abuse_flaggers
+      obj.historical_abuse_flaggers = obj.historical_abuse_flaggers.uniq
+      obj.abuse_flaggers.clear
+    else
+      obj.abuse_flaggers.delete user.id
+    end
+    
     obj.save
     obj.reload.to_hash.to_json
   end
@@ -107,68 +114,79 @@ helpers do
   end
 
   def handle_threads_query(comment_threads)
-    if params[:flagged]
-      #get flagged threads and threads containing flagged responses
-      comment_threads = comment_threads.where(:course_id=>params[:course_id]).where(:abuse_flaggers)    
+    
       
-    else
-      if params[:course_id]
-        comment_threads = comment_threads.where(:course_id=>params[:course_id])
+    if params[:course_id]
+      comment_threads = comment_threads.where(:course_id=>params[:course_id])
+      
+      if params[:flagged]
+        #get flagged threads and threads containing flagged responses
+        comment_ids = Comment.where(:course_id=>params[:course_id]).
+            where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
+            collect{|c| c.comment_thread_id}.uniq
+          
+        thread_ids = comment_threads.where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
+            collect{|c| c.id}
+          
+        comment_ids += thread_ids
+        
+        comment_threads = comment_threads.where(:id.in => comment_ids)
+        
       end
-      if CommentService.config[:cache_enabled]
-        query_params = params.slice(*%w[course_id commentable_id sort_key sort_order page per_page user_id])
-        memcached_key = "threads_query_#{query_params.hash}"
-        cached_results = Sinatra::Application.cache.get(memcached_key)
-        if cached_results
-          return {
-            collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive, user_id: params["user_id"])},
-            num_pages: cached_results[:num_pages],
-            page: cached_results[:page],
-          }.to_json
-        end
-      end
-
-      sort_key_mapper = {
-        "date" => :created_at,
-        "activity" => :last_activity_at,
-        "votes" => :"votes.point",
-        "comments" => :comment_count,
-      }
-
-      sort_order_mapper = {
-        "desc" => :desc,
-        "asc" => :asc,
-      }
-
-      sort_key = sort_key_mapper[params["sort_key"]]
-      sort_order = sort_order_mapper[params["sort_order"]]
-      sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
-
-      if not sort_keyword_valid
-        {}.to_json
-      else
-        page = (params["page"] || DEFAULT_PAGE).to_i
-        per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
-        #KChugh turns out we don't need to go through all the extra work on the back end because the client is resorting anyway
-        #KChugh boy was I wrong, we need to sort for pagination
-        comment_threads = comment_threads.order_by("pinned DESC,#{sort_key} #{sort_order}") if sort_key && sort_order
-        num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
-        page = [num_pages, [1, page].max].min
-        paged_comment_threads = comment_threads.page(page).per(per_page)
-        if CommentService.config[:cache_enabled]
-          cached_results = {
-            collection_ids: paged_comment_threads.map(&:id),
-            num_pages: num_pages,
-            page: page,
-          }
-          Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
-        end
-        {
-          collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive, user_id: params["user_id"])},
-          num_pages: num_pages,
-          page: page,
+    end
+    if CommentService.config[:cache_enabled]
+      query_params = params.slice(*%w[course_id commentable_id sort_key sort_order page per_page user_id])
+      memcached_key = "threads_query_#{query_params.hash}"
+      cached_results = Sinatra::Application.cache.get(memcached_key)
+      if cached_results
+        return {
+          collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive, user_id: params["user_id"])},
+          num_pages: cached_results[:num_pages],
+          page: cached_results[:page],
         }.to_json
       end
+    end
+
+    sort_key_mapper = {
+      "date" => :created_at,
+      "activity" => :last_activity_at,
+      "votes" => :"votes.point",
+      "comments" => :comment_count,
+    }
+
+    sort_order_mapper = {
+      "desc" => :desc,
+      "asc" => :asc,
+    }
+
+    sort_key = sort_key_mapper[params["sort_key"]]
+    sort_order = sort_order_mapper[params["sort_order"]]
+    sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
+
+    if not sort_keyword_valid
+      {}.to_json
+    else
+      page = (params["page"] || DEFAULT_PAGE).to_i
+      per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
+      #KChugh turns out we don't need to go through all the extra work on the back end because the client is resorting anyway
+      #KChugh boy was I wrong, we need to sort for pagination
+      comment_threads = comment_threads.order_by("pinned DESC,#{sort_key} #{sort_order}") if sort_key && sort_order
+      num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
+      page = [num_pages, [1, page].max].min
+      paged_comment_threads = comment_threads.page(page).per(per_page)
+      if CommentService.config[:cache_enabled]
+        cached_results = {
+          collection_ids: paged_comment_threads.map(&:id),
+          num_pages: num_pages,
+          page: page,
+        }
+        Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
+      end
+      {
+        collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive, user_id: params["user_id"])},
+        num_pages: num_pages,
+        page: page,
+      }.to_json
     end
   end
 

@@ -8,6 +8,14 @@ def create_thread_flag(thread_id, user_id)
   create_flag("/api/v1/threads/" + thread_id + "/abuse_flags", user_id)
 end
 
+def remove_thread_flag(thread_id, user_id)
+  remove_flag("/api/v1/threads/" + thread_id + "/abuse_unflags", user_id)
+end
+
+def remove_comment_flag(thread_id, user_id)
+  remove_flag("/api/v1/threads/" + comment_id + "/abuse_unflags", user_id)
+end
+
 def create_flag(put_command, user_id)
    if user_id.nil?
     put put_command
@@ -45,7 +53,7 @@ describe "app" do
       #end
     end
     describe "flag a thread as abusive" do
-      it "create or update the abuse_flags on the thread" do
+      it "create or update the abuse_flags on the comment" do
         comment = Comment.first
         thread = comment.comment_thread
         prev_abuse_flaggers = thread.abuse_flaggers
@@ -62,6 +70,33 @@ describe "app" do
       end
       it "returns 400 when user_id is not provided" do
         create_thread_flag("#{Comment.first.comment_thread.id}", nil)
+        last_response.status.should == 400
+      end
+      #Would like to test the output of to_hash, but not sure how to deal with a Moped::BSON::Document object
+      #it "has a correct hash" do
+      #  create_thread_flag("#{Comment.first.comment_thread.id}", User.first.id)
+      #  Comment.first.comment_thread.to_hash
+      #end
+    end
+    describe "unflag a comment as abusive" do
+      it "removes the user from the existing abuse_flaggers" do
+        comment = Comment.first
+        thread = comment.comment_thread
+        prev_abuse_flaggers = thread.abuse_flaggers
+        create_thread_flag("#{thread.id}", User.first.id)
+        prev_abuse_flaggers.should include User.first.id 
+        remove_thread_flag("#{thread.id}", User.first.id)
+
+        comment = Comment.find(comment.id)
+        comment.comment_thread.abuse_flaggers.length.should == prev_abuse_flaggers.length + 1
+        prev_abuse_flaggers.should_not include? User.first.id
+      end
+      it "returns 400 when the thread does not exist" do
+        remove_thread_flag("does_not_exist", User.first.id)
+        last_response.status.should == 400
+      end
+      it "returns 400 when user_id is not provided" do
+        remove_thread_flag("#{Comment.first.comment_thread.id}", nil)
         last_response.status.should == 400
       end
       #Would like to test the output of to_hash, but not sure how to deal with a Moped::BSON::Document object
