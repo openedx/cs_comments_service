@@ -46,7 +46,7 @@ helpers do
   
   def un_flag_as_abuse(obj)
     raise ArgumentError, "User id is required" unless user
-    if params["moderator"]
+    if params["all"]
       obj.historical_abuse_flaggers += obj.abuse_flaggers
       obj.historical_abuse_flaggers = obj.historical_abuse_flaggers.uniq
       obj.abuse_flaggers.clear
@@ -122,11 +122,11 @@ helpers do
       if params[:flagged]
         #get flagged threads and threads containing flagged responses
         comment_ids = Comment.where(:course_id=>params[:course_id]).
-            where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
-            collect{|c| c.comment_thread_id}.uniq
+          where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
+          collect{|c| c.comment_thread_id}.uniq
           
         thread_ids = comment_threads.where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
-            collect{|c| c.id}
+          collect{|c| c.id}
           
         comment_ids += thread_ids
         
@@ -182,6 +182,22 @@ helpers do
         }
         Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
       end
+      
+      #now we have to walk through the flagged threads and comments and add the user to the
+      #abuse flaggers so that the flag appears for them.
+      #this will allow moderators to see all flagged posts
+      comment_threads.each do |t|
+        if t.abuse_flaggers and t.abuse_flaggers.count > 0
+          t.abuse_flaggers << params["user_id"]
+        end
+        t.comments.each do |c|
+          if c.abuse_flaggers and c.abuse_flaggers.count > 0
+            c.abuse_flaggers << params["user_id"]
+          end
+        end
+      end
+      
+      
       {
         collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive, user_id: params["user_id"])},
         num_pages: num_pages,
