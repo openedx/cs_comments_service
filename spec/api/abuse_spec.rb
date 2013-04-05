@@ -12,11 +12,19 @@ def remove_thread_flag(thread_id, user_id)
   remove_flag("/api/v1/threads/" + thread_id + "/abuse_unflags", user_id)
 end
 
-def remove_comment_flag(thread_id, user_id)
-  remove_flag("/api/v1/threads/" + comment_id + "/abuse_unflags", user_id)
+def remove_comment_flag(comment_id, user_id)
+  remove_flag("/api/v1/comments/" + comment_id + "/abuse_unflags", user_id)
 end
 
 def create_flag(put_command, user_id)
+   if user_id.nil?
+    put put_command
+  else
+    put put_command, user_id: user_id
+  end
+end
+
+def remove_flag(put_command, user_id)
    if user_id.nil?
     put put_command
   else
@@ -81,15 +89,18 @@ describe "app" do
     describe "unflag a comment as abusive" do
       it "removes the user from the existing abuse_flaggers" do
         comment = Comment.first
-        thread = comment.comment_thread
-        prev_abuse_flaggers = thread.abuse_flaggers
-        create_thread_flag("#{thread.id}", User.first.id)
+        create_comment_flag("#{comment.id}", User.first.id)
+        
+        comment = Comment.first
+        prev_abuse_flaggers = comment.abuse_flaggers
+        
         prev_abuse_flaggers.should include User.first.id 
-        remove_thread_flag("#{thread.id}", User.first.id)
+        
+        remove_comment_flag("#{comment.id}", User.first.id)
 
         comment = Comment.find(comment.id)
-        comment.comment_thread.abuse_flaggers.length.should == prev_abuse_flaggers.length + 1
-        prev_abuse_flaggers.should_not include? User.first.id
+        comment.abuse_flaggers.length.should == prev_abuse_flaggers.length - 1 
+        comment.abuse_flaggers.to_a.should_not include User.first.id
       end
       it "returns 400 when the thread does not exist" do
         remove_thread_flag("does_not_exist", User.first.id)
