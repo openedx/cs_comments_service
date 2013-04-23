@@ -1,23 +1,23 @@
 require 'spec_helper'
 
 def create_comment_flag(comment_id, user_id)
-  create_flag("/api/v1/comments/" + comment_id + "/abuse_flags", user_id)
+  create_flag("/api/v1/comments/" + comment_id + "/abuse_flag", user_id)
 end
 
 def create_thread_flag(thread_id, user_id)
-  create_flag("/api/v1/threads/" + thread_id + "/abuse_flags", user_id)
+  create_flag("/api/v1/threads/" + thread_id + "/abuse_flag", user_id)
 end
 
 def remove_thread_flag(thread_id, user_id)
-  remove_flag("/api/v1/threads/" + thread_id + "/abuse_unflags", user_id)
+  remove_flag("/api/v1/threads/" + thread_id + "/abuse_unflag", user_id)
 end
 
 def remove_comment_flag(comment_id, user_id)
-  remove_flag("/api/v1/comments/" + comment_id + "/abuse_unflags", user_id)
+  remove_flag("/api/v1/comments/" + comment_id + "/abuse_unflag", user_id)
 end
 
 def create_flag(put_command, user_id)
-   if user_id.nil?
+  if user_id.nil?
     put put_command
   else
     put put_command, user_id: user_id
@@ -25,7 +25,7 @@ def create_flag(put_command, user_id)
 end
 
 def remove_flag(put_command, user_id)
-   if user_id.nil?
+  if user_id.nil?
     put put_command
   else
     put put_command, user_id: user_id
@@ -101,6 +101,36 @@ describe "app" do
         comment = Comment.find(comment.id)
         comment.abuse_flaggers.length.should == prev_abuse_flaggers.length - 1 
         comment.abuse_flaggers.to_a.should_not include User.first.id
+      end
+      it "returns 400 when the thread does not exist" do
+        remove_comment_flag("does_not_exist", User.first.id)
+        last_response.status.should == 400
+      end
+      it "returns 400 when user_id is not provided" do
+        remove_comment_flag("#{Comment.first.comment_thread.id}", nil)
+        last_response.status.should == 400
+      end
+      #Would like to test the output of to_hash, but not sure how to deal with a Moped::BSON::Document object
+      #it "has a correct hash" do
+      #  create_thread_flag("#{Comment.first.comment_thread.id}", User.first.id)
+      #  Comment.first.comment_thread.to_hash
+      #end
+    end
+    describe "unflag a thread as abusive" do
+      it "removes the user from the existing abuse_flaggers" do
+        thread = CommentThread.first
+        create_thread_flag("#{thread.id}", User.first.id)
+        
+        thread = CommentThread.first
+        prev_abuse_flaggers = thread.abuse_flaggers
+        
+        prev_abuse_flaggers.should include User.first.id 
+        
+        remove_thread_flag("#{thread.id}", User.first.id)
+
+        thread = CommentThread.find(thread.id)
+        thread.abuse_flaggers.length.should == prev_abuse_flaggers.length - 1 
+        thread.abuse_flaggers.to_a.should_not include User.first.id
       end
       it "returns 400 when the thread does not exist" do
         remove_thread_flag("does_not_exist", User.first.id)
