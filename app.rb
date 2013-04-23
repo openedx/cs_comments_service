@@ -60,6 +60,7 @@ require './api/comment_threads'
 require './api/comments'
 require './api/users'
 require './api/votes'
+require './api/flags'
 require './api/pins'
 require './api/notifications_and_subscriptions'
 

@@ -60,10 +60,20 @@ class Comment < Content
                  .merge("thread_id" => comment_thread.id)
                  .merge("commentable_id" => comment_thread.commentable_id)
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
+                 .merge("abuse_flaggers" => abuse_flaggers)
                  .merge("type" => "comment")
     end
   end
-
+  
+  def commentable_id
+    #we need this to have a universal access point for the flag rake task
+    if self.comment_thread_id
+      t = CommentThread.find self.comment_thread_id
+      if t
+        t.commentable_id
+      end
+    end
+  end
 private
 
   def set_thread_last_activity_at

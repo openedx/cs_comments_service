@@ -7,7 +7,7 @@ helpers do
     raise ArgumentError, "User id is required" unless @user || params[:user_id]
     @user ||= User.find_by(external_id: params[:user_id])
   end
-
+  
   def thread
     @thread ||= CommentThread.find(params[:thread_id])
   end
@@ -37,11 +37,33 @@ helpers do
     obj.reload.to_hash.to_json
   end
 
+  def flag_as_abuse(obj)
+    raise ArgumentError, "User id is required" unless user
+    obj.abuse_flaggers << user.id unless obj.abuse_flaggers.include? user.id
+    obj.save
+    obj.reload.to_hash.to_json
+  end
+  
+  def un_flag_as_abuse(obj)
+    raise ArgumentError, "User id is required" unless user
+    if params["all"]
+      obj.historical_abuse_flaggers += obj.abuse_flaggers
+      obj.historical_abuse_flaggers = obj.historical_abuse_flaggers.uniq
+      obj.abuse_flaggers.clear
+    else
+      obj.abuse_flaggers.delete user.id
+    end
+    
+    obj.save
+    obj.reload.to_hash.to_json
+  end
+
   def undo_vote_for(obj)
     raise ArgumentError, "must provide user id" unless user
     user.unvote(obj)
     obj.reload.to_hash.to_json
   end
+  
 
   def pin(obj)
     raise ArgumentError, "User id is required" unless user
@@ -92,7 +114,26 @@ helpers do
   end
 
   def handle_threads_query(comment_threads)
-    comment_threads = comment_threads.where(:course_id=>params[:course_id])
+    
+      
+    if params[:course_id]
+      comment_threads = comment_threads.where(:course_id=>params[:course_id])
+      
+      if params[:flagged]
+        #get flagged threads and threads containing flagged responses
+        comment_ids = Comment.where(:course_id=>params[:course_id]).
+          where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
+          collect{|c| c.comment_thread_id}.uniq
+          
+        thread_ids = comment_threads.where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
+          collect{|c| c.id}
+          
+        comment_ids += thread_ids
+        
+        comment_threads = comment_threads.where(:id.in => comment_ids)
+        
+      end
+    end
     if CommentService.config[:cache_enabled]
       query_params = params.slice(*%w[course_id commentable_id sort_key sort_order page per_page user_id])
       memcached_key = "threads_query_#{query_params.hash}"
@@ -141,6 +182,22 @@ helpers do
         }
         Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
       end
+      
+      #now we have to walk through the flagged threads and comments and add the user to the
+      #abuse flaggers so that the flag appears for them.
+      #this will allow moderators to see all flagged posts
+      comment_threads.each do |t|
+        if t.abuse_flaggers and t.abuse_flaggers.count > 0
+          t.abuse_flaggers << params["user_id"]
+        end
+        t.comments.each do |c|
+          if c.abuse_flaggers and c.abuse_flaggers.count > 0
+            c.abuse_flaggers << params["user_id"]
+          end
+        end
+      end
+      
+      
       {
         collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive, user_id: params["user_id"])},
         num_pages: num_pages,
@@ -153,8 +210,8 @@ helpers do
     contents.map do |content|
       content['children'] = author_contents_only(content['children'], author_id)
       if content['children'].length > 0 or \
-       (content['user_id'] == author_id and not content['anonymous'] and not content['anonymous_to_peers'])
-          content
+          (content['user_id'] == author_id and not content['anonymous'] and not content['anonymous_to_peers'])
+        content
       else
         nil
       end

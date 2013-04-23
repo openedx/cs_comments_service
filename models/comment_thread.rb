@@ -175,6 +175,7 @@ class CommentThread < Content
                      .merge("id" => _id, "user_id" => author.id,
                             "username" => author.username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),
+                            "abuse_flaggers" => abuse_flaggers,
                             "tags" => tags_array,
                             "type" => "thread",
                             "group_id" => group_id,
@@ -227,6 +228,11 @@ class CommentThread < Content
     !!(tag =~ RE_TAG)
   end
 
+  def comment_thread_id
+    #so that we can use the comment thread id as a common attribute for flagging
+    self.id
+  end  
+  
 private
 
   RE_HEADCHAR = /[a-z0-9]/
@@ -255,4 +261,5 @@ private
   def destroy_subscriptions
     subscriptions.delete_all
   end
+  
 end
