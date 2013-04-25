@@ -186,16 +186,16 @@ helpers do
       #now we have to walk through the flagged threads and comments and add the user to the
       #abuse flaggers so that the flag appears for them.
       #this will allow moderators to see all flagged posts
-      comment_threads.each do |t|
-        if t.abuse_flaggers and t.abuse_flaggers.count > 0
-          t.abuse_flaggers << params["user_id"]
-        end
-        t.comments.each do |c|
-          if c.abuse_flaggers and c.abuse_flaggers.count > 0
-            c.abuse_flaggers << params["user_id"]
-          end
-        end
-      end
+      #comment_threads.each do |t|
+      #  if t.abuse_flaggers and t.abuse_flaggers.count > 0
+      #    t.abuse_flaggers << params["user_id"]
+      #  end
+      #  t.comments.each do |c|
+      #    if c.abuse_flaggers and c.abuse_flaggers.count > 0
+      #      c.abuse_flaggers << params["user_id"]
+      #    end
+      #  end
+      #end
       
       
       {
