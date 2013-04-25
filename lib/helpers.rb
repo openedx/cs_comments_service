@@ -183,21 +183,6 @@ helpers do
         Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
       end
       
-      #now we have to walk through the flagged threads and comments and add the user to the
-      #abuse flaggers so that the flag appears for them.
-      #this will allow moderators to see all flagged posts
-      #comment_threads.each do |t|
-      #  if t.abuse_flaggers and t.abuse_flaggers.count > 0
-      #    t.abuse_flaggers << params["user_id"]
-      #  end
-      #  t.comments.each do |c|
-      #    if c.abuse_flaggers and c.abuse_flaggers.count > 0
-      #      c.abuse_flaggers << params["user_id"]
-      #    end
-      #  end
-      #end
-      
-      
       {
         collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive, user_id: params["user_id"])},
         num_pages: num_pages,
