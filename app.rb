@@ -36,10 +36,11 @@ Mongoid.logger.level = Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
-Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
 
-Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
-Mongoid.instantiate_observers
+# Comment out observers until notifications are actually set up properly.
+#Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
+#Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
+#Mongoid.instantiate_observers
 
 APIPREFIX = CommentService::API_PREFIX
 DEFAULT_PAGE = 1
