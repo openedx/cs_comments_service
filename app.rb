@@ -51,8 +51,12 @@ if RACK_ENV.to_s != "test" # disable api_key auth in test environment
   end
 end
 
-# these files must be required in order
+# Enable the identity map. The middleware ensures that the identity map is
+# cleared for every request.
+Mongoid.identity_map_enabled = true
+use Rack::Mongoid::Middleware::IdentityMap
 
+# these files must be required in order
 require './api/search'
 require './api/commentables'
 require './api/tags'
