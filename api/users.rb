@@ -31,7 +31,13 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
 
   paged_active_contents = active_contents.page(page).per(per_page)
   paged_thread_ids = paged_active_contents.map(&get_thread_id).uniq
-  paged_active_threads = CommentThread.find(paged_thread_ids)
+
+  # Find all the threads by id, and then put them in the order found earlier.
+  # Necessary because CommentThread.find does return results in the same
+  # order as the provided ids.
+  paged_active_threads = CommentThread.find(paged_thread_ids).sort_by do |t| 
+    paged_thread_ids.index(t.id)
+  end
 
   # Fetch all the usernames in bulk to save on queries. Since we're using the
   # identity map, the users won't need to be fetched again later.
@@ -45,7 +51,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
     num_pages: num_pages,
     page: page,
   }.to_json
-  
+
 end
 
 put "#{APIPREFIX}/users/:user_id" do |user_id|
