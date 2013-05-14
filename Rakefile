@@ -133,8 +133,8 @@ namespace :db do
 
   task :generate_comments, [:commentable_id, :num_threads, :num_top_comments, :num_subcomments] => :environment do |t, args|
     args.with_defaults(:num_threads => THREADS_PER_COMMENTABLE,
-                       :num_top_comments=>TOP_COMMENTS_PER_THREAD,
-                       :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
+      :num_top_comments=>TOP_COMMENTS_PER_THREAD,
+      :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
     generate_comments_for(args[:commentable_id], args[:num_threads], args[:num_top_comments], args[:num_subcomments])
 
   end
@@ -152,11 +152,11 @@ namespace :db do
     coll = db.collection("contents")
     args[:num].to_i.times do
       doc = {"_type" => "CommentThread", "anonymous" => [true, false].sample, "at_position_list" => [],
-          "tags_array" => [],
-          "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
-          "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
-          "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
-          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+        "tags_array" => [],
+        "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
+        "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
+        "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
+        "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
       coll.insert(doc)
     end
     binding.pry
@@ -233,11 +233,11 @@ namespace :db do
     count = CommentThread.count
     puts "Starting reindex at #{Time.now}"
     while counter < count
-    Tire.index('comment_threads') { import CommentThread.limit(CommentService.config["reindex_batch_size"].to_i).skip(counter) }
-    puts "indexed #{counter}/#{count} threads."
-    counter += CommentService.config["reindex_batch_size"].to_i
+      Tire.index('comment_threads') { import CommentThread.limit(CommentService.config["reindex_batch_size"].to_i).skip(counter) }
+      puts "indexed #{counter}/#{count} threads."
+      counter += CommentService.config["reindex_batch_size"].to_i
     end
-     puts "index complete at #{Time.now}, #{count} total"
+    puts "index complete at #{Time.now}, #{count} total"
   end
 
   task :add_anonymous_to_peers => :environment do
