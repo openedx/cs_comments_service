@@ -224,9 +224,21 @@ namespace :db do
   end
 
   task :reindex_search => :environment do
+    Mongoid.identity_map_enabled = false
     Tire.index('comment_threads').delete
     CommentThread.create_elasticsearch_index
-    Tire.index('comment_threads') { import CommentThread.all }
+    threads = CommentThread.all
+    
+    #batch this to not break ES
+    counter = 0
+    count = CommentThread.count
+    puts "Starting reindex at #{Time.now}"
+    while counter < count
+    Tire.index('comment_threads') { import CommentThread.limit(CommentService.config["reindex_batch_size"].to_i).skip(counter) }
+    puts "indexed #{counter}/#{count} threads."
+    counter += CommentService.config["reindex_batch_size"].to_i
+    end
+     puts "index complete at #{Time.now}, #{count} total"
   end
 
   task :add_anonymous_to_peers => :environment do
