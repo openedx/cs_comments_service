@@ -20,6 +20,7 @@ end
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
+  config.before(:each) { Mongoid::IdentityMap.clear }
 end
 
 Mongoid.configure do |config|
