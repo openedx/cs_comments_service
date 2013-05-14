@@ -227,7 +227,6 @@ namespace :db do
     Mongoid.identity_map_enabled = false
     Tire.index('comment_threads').delete
     CommentThread.create_elasticsearch_index
-    threads = CommentThread.all
     
     #batch this to not break ES
     counter = 0
