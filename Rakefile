@@ -133,8 +133,8 @@ namespace :db do
 
   task :generate_comments, [:commentable_id, :num_threads, :num_top_comments, :num_subcomments] => :environment do |t, args|
     args.with_defaults(:num_threads => THREADS_PER_COMMENTABLE,
-                       :num_top_comments=>TOP_COMMENTS_PER_THREAD,
-                       :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
+      :num_top_comments=>TOP_COMMENTS_PER_THREAD,
+      :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
     generate_comments_for(args[:commentable_id], args[:num_threads], args[:num_top_comments], args[:num_subcomments])
 
   end
@@ -152,11 +152,11 @@ namespace :db do
     coll = db.collection("contents")
     args[:num].to_i.times do
       doc = {"_type" => "CommentThread", "anonymous" => [true, false].sample, "at_position_list" => [],
-          "tags_array" => [],
-          "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
-          "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
-          "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
-          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+        "tags_array" => [],
+        "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
+        "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
+        "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
+        "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
       coll.insert(doc)
     end
     binding.pry
@@ -224,9 +224,40 @@ namespace :db do
   end
 
   task :reindex_search => :environment do
-    Tire.index('comment_threads').delete
-    CommentThread.create_elasticsearch_index
-    Tire.index('comment_threads') { import CommentThread.all }
+    Mongoid.identity_map_enabled = false
+    
+    klass = CommentThread
+    ENV['CLASS'] = klass.name
+    ENV['INDEX'] = new_index = klass.tire.index.name << '_' << Time.now.strftime('%Y%m%d%H%M%S')
+
+    Rake::Task["tire:import"].invoke
+
+    puts '[IMPORT] about to swap index'
+    if a = Tire::Alias.find(klass.tire.index.name)
+      puts "[IMPORT] aliases found: #{Tire::Alias.find(klass.tire.index.name).indices.to_ary.join(',')}. deleting."
+      old_indices = Tire::Alias.find(klass.tire.index.name).indices
+      old_indices.each do |index|
+        a.indices.delete index
+      end
+
+      a.indices.add new_index
+      a.save
+
+      old_indices.each do |index|
+        puts "[IMPORT] deleting index: #{index}"
+        i = Tire::Index.new(index)
+        i.delete if i.exists?
+      end
+    else
+      puts "[IMPORT] no aliases found. deleting index. creating new one and setting up alias."
+      klass.tire.index.delete
+      a = Tire::Alias.new
+      a.name(klass.tire.index.name)
+      a.index(new_index)
+      a.save
+    end
+
+    puts "[IMPORT] done. Index: '#{new_index}' created."
   end
 
   task :add_anonymous_to_peers => :environment do
