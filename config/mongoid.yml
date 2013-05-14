@@ -12,19 +12,14 @@ test:
       hosts:
         - localhost:27017
 
-#production:
-#  sessions:
-#    default:
-#      uri: <%= ENV['MONGOHQ_URL'] %>
-
 production:
   sessions:
     default:
       hosts:
-        - hurley.member0.mongohq.com:10000
+        - <%= ENV['MONGOHQ_HOST'] + ':' + ENV['MONGOHQ_PORT'] %>
       username: <%= ENV['MONGOHQ_USER'] %>
       password: <%= ENV['MONGOHQ_PASS'] %>
-      database: app6929933
+      database: <%= ENV['MONGOHQ_DB'] %>
       options:
         skip_version_check: true
         safe: true
