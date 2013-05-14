@@ -29,6 +29,7 @@ CommentService.config = YAML.load(application_yaml).with_indifferent_access
 
 Tire.configure do
   url CommentService.config[:elasticsearch_server]
+  logger 'elasticsearch.log', :level => 'debug'
 end
 
 Mongoid.load!("config/mongoid.yml", environment)

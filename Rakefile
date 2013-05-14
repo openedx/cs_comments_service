@@ -225,19 +225,39 @@ namespace :db do
 
   task :reindex_search => :environment do
     Mongoid.identity_map_enabled = false
-    Tire.index('comment_threads').delete
-    CommentThread.create_elasticsearch_index
     
-    #batch this to not break ES
-    counter = 0
-    count = CommentThread.count
-    puts "Starting reindex at #{Time.now}"
-    while counter < count
-      Tire.index('comment_threads') { import CommentThread.limit(CommentService.config["reindex_batch_size"].to_i).skip(counter) }
-      puts "indexed #{counter}/#{count} threads."
-      counter += CommentService.config["reindex_batch_size"].to_i
+    klass = CommentThread
+    ENV['CLASS'] = klass.name
+    ENV['INDEX'] = new_index = klass.tire.index.name << '_' << Time.now.strftime('%Y%m%d%H%M%S')
+
+    Rake::Task["tire:import"].invoke
+
+    puts '[IMPORT] about to swap index'
+    if a = Tire::Alias.find(klass.tire.index.name)
+      puts "[IMPORT] aliases found: #{Tire::Alias.find(klass.tire.index.name).indices.to_ary.join(',')}. deleting."
+      old_indices = Tire::Alias.find(klass.tire.index.name).indices
+      old_indices.each do |index|
+        a.indices.delete index
+      end
+
+      a.indices.add new_index
+      a.save
+
+      old_indices.each do |index|
+        puts "[IMPORT] deleting index: #{index}"
+        i = Tire::Index.new(index)
+        i.delete if i.exists?
+      end
+    else
+      puts "[IMPORT] no aliases found. deleting index. creating new one and setting up alias."
+      klass.tire.index.delete
+      a = Tire::Alias.new
+      a.name(klass.tire.index.name)
+      a.index(new_index)
+      a.save
     end
-    puts "index complete at #{Time.now}, #{count} total"
+
+    puts "[IMPORT] done. Index: '#{new_index}' created."
   end
 
   task :add_anonymous_to_peers => :environment do
