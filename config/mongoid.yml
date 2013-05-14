@@ -16,10 +16,10 @@ production:
   sessions:
     default:
       hosts:
-        - <%= ENV['MONGOHQ_HOST'] + ':' + ENV['MONGOHQ_PORT'] %>
-      username: <%= ENV['MONGOHQ_USER'] %>
-      password: <%= ENV['MONGOHQ_PASS'] %>
-      database: <%= ENV['MONGOHQ_DB'] %>
+        - <%= ENV['MONGO_HOST'] + ':' + ENV['MONGO_PORT'] %>
+      username: <%= ENV['MONGO_USER'] %>
+      password: <%= ENV['MONGO_PASS'] %>
+      database: <%= ENV['MONGO_DB'] %>
       options:
         skip_version_check: true
         safe: true
@@ -30,8 +30,8 @@ edgeprod:
     default:
       hosts:
         - sayid.member1.mongohq.com:10001
-      username: <%= ENV['MONGOHQ_USER'] %>
-      password: <%= ENV['MONGOHQ_PASS'] %>
+      username: <%= ENV['MONGO_USER'] %>
+      password: <%= ENV['MONGO_PASS'] %>
       database: app10640640
       options:
         skip_version_check: true
@@ -43,8 +43,8 @@ edgestage:
     default:
       hosts:
         - vincent.mongohq.com:10001
-      username: <%= ENV['MONGOHQ_USER'] %>
-      password: <%= ENV['MONGOHQ_PASS'] %>
+      username: <%= ENV['MONGO_USER'] %>
+      password: <%= ENV['MONGO_PASS'] %>
       database: app10640673
       options:
         skip_version_check: true
@@ -54,7 +54,7 @@ edgestage:
 staging:
   sessions:
     default:
-      uri: <%= ENV['MONGOHQ_URL'] %>
+      uri: <%= ENV['MONGO_URL'] %>
 
 loadtest:
   sessions:
@@ -62,8 +62,8 @@ loadtest:
       hosts:
         - sayid.member0.mongohq.com:10007
         - sayid.member1.mongohq.com:10007
-      username: <%= ENV['MONGOHQ_USER'] %>
-      password: <%= ENV['MONGOHQ_PASS'] %>
+      username: <%= ENV['MONGO_USER'] %>
+      password: <%= ENV['MONGO_PASS'] %>
       database: app7276251
       options:
         skip_version_check: true
