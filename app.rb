@@ -36,10 +36,11 @@ Mongoid.logger.level = Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
-Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
 
-Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
-Mongoid.instantiate_observers
+# Comment out observers until notifications are actually set up properly.
+#Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
+#Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
+#Mongoid.instantiate_observers
 
 APIPREFIX = CommentService::API_PREFIX
 DEFAULT_PAGE = 1
@@ -51,8 +52,12 @@ if RACK_ENV.to_s != "test" # disable api_key auth in test environment
   end
 end
 
-# these files must be required in order
+# Enable the identity map. The middleware ensures that the identity map is
+# cleared for every request.
+Mongoid.identity_map_enabled = true
+use Rack::Mongoid::Middleware::IdentityMap
 
+# these files must be required in order
 require './api/search'
 require './api/commentables'
 require './api/tags'
