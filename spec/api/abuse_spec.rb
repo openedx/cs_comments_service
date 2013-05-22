@@ -38,11 +38,14 @@ describe "app" do
     describe "flag a comment as abusive" do
       it "create or update the abuse_flags on the comment" do
         comment = Comment.first
-        prev_abuse_flaggers = comment.abuse_flaggers
+        
+        # We get the count rather than just keeping the array, because the array
+        # will update as the Comment updates since the IdentityMap is enabled.
+        prev_abuse_flaggers_count = comment.abuse_flaggers.length
         create_comment_flag("#{comment.id}", User.first.id)
 
         comment = Comment.find(comment.id)
-        comment.abuse_flaggers.length.should == prev_abuse_flaggers.length + 1
+        comment.abuse_flaggers.count.should == prev_abuse_flaggers_count + 1
         # verify that the thread doesn't automatically get flagged
         comment.comment_thread.abuse_flaggers.length.should == 0
       end
@@ -64,11 +67,11 @@ describe "app" do
       it "create or update the abuse_flags on the comment" do
         comment = Comment.first
         thread = comment.comment_thread
-        prev_abuse_flaggers = thread.abuse_flaggers
+        prev_abuse_flaggers_count = thread.abuse_flaggers.count
         create_thread_flag("#{thread.id}", User.first.id)
 
         comment = Comment.find(comment.id)
-        comment.comment_thread.abuse_flaggers.length.should == prev_abuse_flaggers.length + 1
+        comment.comment_thread.abuse_flaggers.count.should == prev_abuse_flaggers_count + 1
         # verify that the comment doesn't automatically get flagged
         comment.abuse_flaggers.length.should == 0
       end
@@ -92,14 +95,15 @@ describe "app" do
         create_comment_flag("#{comment.id}", User.first.id)
         
         comment = Comment.first
-        prev_abuse_flaggers = comment.abuse_flaggers
+        prev_abuse_flaggers       = comment.abuse_flaggers
+        prev_abuse_flaggers_count = prev_abuse_flaggers.count
         
         prev_abuse_flaggers.should include User.first.id 
         
         remove_comment_flag("#{comment.id}", User.first.id)
 
         comment = Comment.find(comment.id)
-        comment.abuse_flaggers.length.should == prev_abuse_flaggers.length - 1 
+        comment.abuse_flaggers.count.should == prev_abuse_flaggers_count - 1 
         comment.abuse_flaggers.to_a.should_not include User.first.id
       end
       it "returns 400 when the thread does not exist" do
@@ -123,13 +127,14 @@ describe "app" do
         
         thread = CommentThread.first
         prev_abuse_flaggers = thread.abuse_flaggers
+        prev_abuse_flaggers_count = prev_abuse_flaggers.count
         
         prev_abuse_flaggers.should include User.first.id 
         
         remove_thread_flag("#{thread.id}", User.first.id)
 
         thread = CommentThread.find(thread.id)
-        thread.abuse_flaggers.length.should == prev_abuse_flaggers.length - 1 
+        thread.abuse_flaggers.count.should == prev_abuse_flaggers_count - 1 
         thread.abuse_flaggers.to_a.should_not include User.first.id
       end
       it "returns 400 when the thread does not exist" do
