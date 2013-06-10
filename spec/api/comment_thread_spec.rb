@@ -16,6 +16,28 @@ describe "app" do
         thread.commentable_id.should == response_thread["commentable_id"]
         response_thread["children"].should be_nil
       end
+
+      # This is a test to ensure that the username is included even if the
+      # thread's author is the one looking at the comment. This is because of a
+      # regression in which we used User.only(:id, :read_states). This worked
+      # before we included the identity map, but afterwards, the user was
+      # missing the username and was not refetched.
+      it "includes the username even if the thread is being marked as read for the thread author" do
+        thread = CommentThread.first
+        expected_username = thread.author.username
+
+        # We need to clear the IdentityMap after getting the expected data to
+        # ensure that this spec fails when it should. If we don't do this, then
+        # in the cases where the User is fetched without its username, the spec
+        # won't fail because the User will already be in the identity map. 
+        Mongoid::IdentityMap.clear
+
+        get "/api/v1/threads/#{thread.id}", {:user_id => thread.author_id, :mark_as_read => true}
+        last_response.should be_ok
+        response_thread = parse last_response.body
+        response_thread["username"].should == expected_username
+      end
+
       it "get information of a single comment thread with its comments" do
         thread = CommentThread.first
         get "/api/v1/threads/#{thread.id}", recursive: true
@@ -29,6 +51,7 @@ describe "app" do
         response_thread["children"].length.should == thread.root_comments.length
         response_thread["children"].index{|c| c["body"] == thread.root_comments.first.body}.should_not be_nil
       end
+
       it "returns 400 when the thread does not exist" do
         get "/api/v1/threads/does_not_exist"
         last_response.status.should == 400
@@ -62,7 +85,7 @@ describe "app" do
         changed_thread = CommentThread.find(thread.id)
         changed_thread.body.should == "new body"
         changed_thread.title.should == "new title"
-        changed_thread.commentable_id.should == "new commentable_id"
+        changed_thread.commentable_id.should == "new_commentable_id"
       end
       it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"

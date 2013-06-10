@@ -22,6 +22,7 @@ class CommentThread < Content
   field :at_position_list, type: Array, default: []
   field :last_activity_at, type: Time
   field :group_id, type: Integer
+  field :pinned, type: Boolean
 
   index({author_id: 1, course_id: 1})
 
@@ -237,6 +238,7 @@ class CommentThread < Content
 
   def to_hash(params={})
     doc = as_document.slice(*%w[title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
+<<<<<<< HEAD
     .merge("id" => _id, "user_id" => author.id,
     "username" => author.username,
     "votes" => votes.slice(*%w[count up_count down_count point]),
@@ -244,6 +246,17 @@ class CommentThread < Content
     "type" => "thread",
     "group_id" => group_id,
     "endorsed" => endorsed?)
+=======
+                     .merge("id" => _id, "user_id" => author_id,
+                            "username" => author.username,
+                            "votes" => votes.slice(*%w[count up_count down_count point]),
+                            "abuse_flaggers" => abuse_flaggers,
+                            "tags" => tags_array,
+                            "type" => "thread",
+                            "group_id" => group_id,
+                            "pinned" => pinned?,
+                            "endorsed" => endorsed?)
+>>>>>>> master
 
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
@@ -291,7 +304,16 @@ class CommentThread < Content
     !!(tag =~ RE_TAG)
   end
 
+<<<<<<< HEAD
   private
+=======
+  def comment_thread_id
+    #so that we can use the comment thread id as a common attribute for flagging
+    self.id
+  end  
+  
+private
+>>>>>>> master
 
   RE_HEADCHAR = /[a-z0-9]/
   RE_ENDONLYCHAR = /\+/
@@ -319,4 +341,5 @@ class CommentThread < Content
   def destroy_subscriptions
     subscriptions.delete_all
   end
+  
 end
