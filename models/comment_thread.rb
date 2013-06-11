@@ -118,8 +118,7 @@ class CommentThread < Content
     #thread ids and the original thread search) and merge the results, uniqifying the results in the process.
       
     #so first, find the comment threads associated with comments that hit the query
-    
-    
+        
     search = Tire::Search::Search.new 'comment_threads'
     search.query {|query| query.text :_all, params["text"]} if params["text"]
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
@@ -145,6 +144,9 @@ class CommentThread < Content
     end
 
     results = search.results
+
+puts "PHASE I RESULTS: #{results.collect{|r| r['id']}}"
+
     
     #if this is a search query, then also search the comments and harvest the matching comments
     if params["text"]
