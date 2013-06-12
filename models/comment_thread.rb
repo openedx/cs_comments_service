@@ -97,7 +97,6 @@ class CommentThread < Content
     
     page = [1, options[:page] || 1].max
     per_page = options[:per_page] || 20
-    per_page = 2
     sort_key = options[:sort_key]
     sort_order = options[:sort_order]
     if CommentService.config[:cache_enabled]
@@ -144,9 +143,6 @@ class CommentThread < Content
     end
 
     results = search.results
-
-puts "PHASE I RESULTS: #{results.collect{|r| r['id']}}"
-
     
     #if this is a search query, then also search the comments and harvest the matching comments
     if params["text"]
