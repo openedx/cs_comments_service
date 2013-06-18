@@ -1,9 +1,18 @@
-development:
+development2:
   sessions:
     default:
       database: cs_comments_service_development
       hosts:
         - localhost:27017
+
+development:
+  sessions:
+    default:
+      database: comments-prod-clone
+      hosts:
+        - charlotte.mongohq.com:10035
+      username: kevinchugh@edx.org
+      password: charlie123
 
 test:
   sessions:

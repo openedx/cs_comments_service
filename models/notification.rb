@@ -126,4 +126,34 @@ puts "i"
 
   end
 
+  def self.random_subscription_useful
+    #find a subscription, and find out if it would have been useful to be notified
+    #this is defined as there being new content since the last time the user 
+    #read this thread
+
+    #first, find a random subscription
+    s = Subscription.skip(rand(Subscription.count)).first
+    u = User.find s.subscriber_id
+    t = CommentThread.find s.source_id
+
+    comments = Comment.where(:comment_thread_id => t.id)
+
+    max_date = comments.collect{|c| c.created_at}.max if comments.count > 0
+
+    last_read_time = u.read_states.find_by(course_id: t.course_id).last_read_times[t.id.to_s]
+    if comments.count > 0
+    if last_read_time
+      if last_read_time > max_date
+        true
+      else
+        false
+      end
+    else
+      nil
+    end
+  else
+    false
+  end
+  end
+
 end
