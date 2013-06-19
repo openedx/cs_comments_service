@@ -1,4 +1,4 @@
-class Notification
+  class Notification
   include Mongoid::Document
   include Mongoid::Timestamps
 
@@ -47,6 +47,18 @@ class Notification
     content = content.select {|c| thread_ids.include? c.comment_thread_id.to_s} 
     puts "f"
 
+
+    content_map = {}
+    content.each do |c|
+      if content_map.keys.include? c.comment_thread_id
+        content_map[c.comment_thread_id.to_s] << c
+      else
+        content_map[c.comment_thread_id.to_s] = [c]
+      end
+    end
+
+    puts "k"
+
     #we need to preload the users so we can look at their read states 
     #(there is one read state per thread that a user has read)
 
@@ -57,10 +69,10 @@ class Notification
 
     #make a user_id => User map for easy access
 
-    user_map = {}
-    users.each do |u|
-      user_map[u._id.to_s] = u
-    end
+    #user_map = {}
+    #users.each do |u|
+    #  user_map[u._id.to_s] = u
+    #end
 
     #unfortunately, we need a thread map also, because we need to get the course_id 
     #because it's the key for each users read state (each user has one read state)
@@ -72,42 +84,47 @@ class Notification
       thread_map[t._id.to_s] = t
     end
 
-puts "i"
+    puts "i"
 
     #now we have everything we need, so walk the subscribers, and if the user's read state last read on is less 
     #than the content created_at timestamp, add it to the notiications
 
     answer = {}
 
-    content.each do |c|
+    #content.each do |c|
 
-      if not answer.keys.include? c.comment_thread_id.to_s
-        answer[c.comment_thread_id.to_s] = {}
-      end
+      #if not answer.keys.include? c.comment_thread_id.to_s
+      #  answer[c.comment_thread_id.to_s] = {}
+      #end
 
       subscriptions.each do |s|
+        if content_map[s.source_id]
+          content_map[s.source_id].each do |c|
 
         #if the user has a read state for this subscription (which they should because the subscription exists)
-        user = user_map[s.subscriber_id]
-        begin
-          read_state = user.read_states.find_by(course_id: thread_map[s.source_id].course_id)
-        rescue
-          read_sate = nil
-        end
+        #user = user_map[s.subscriber_id]
+        #begin
+        #  read_state = user.read_states.find_by(course_id: thread_map[s.source_id].course_id)
+        #rescue
+        #  read_sate = nil
+        #end
 
         #if the read state is good and the content is newer than the last time this thread was
         #read by the user
-        if read_state and 
-          read_state.last_read_times and 
-          read_state.last_read_times[s.source_id] and 
-          read_state.last_read_times[s.source_id] < c.updated_at and
-          c.abuse_flaggers.empty? #only send notifications for non flagged content
+        #if read_state and 
+        #  read_state.last_read_times and 
+        #  read_state.last_read_times[s.source_id] and 
+        #  read_state.last_read_times[s.source_id] < c.updated_at and
+        if  c.abuse_flaggers.empty? #only send notifications for non flagged content
           #note, there is an edge case here where if a comment is flagged as abuse, but
           #later cleared, a user may never get a notification for it, depending on timing
 
             #then add it to the results
 
-            puts "adding notification"
+            if not answer[c.comment_thread_id.to_s]
+              answer[c.comment_thread_id.to_s] = {}
+            end
+
 
             #but first check to see if an entry exists for this user
             if not answer[c.comment_thread_id.to_s][s.subscriber_id]
@@ -118,11 +135,13 @@ puts "i"
             answer[c.comment_thread_id.to_s][s.subscriber_id]  << [c._type, c.body, c.updated_at]
 
         end
-
       end
+        end
+
+      #end
     end
 
-  answer
+  answer.to_json
 
   end
 
@@ -142,18 +161,19 @@ puts "i"
 
     last_read_time = u.read_states.find_by(course_id: t.course_id).last_read_times[t.id.to_s]
     if comments.count > 0
-    if last_read_time
-      if last_read_time > max_date
-        true
+      if last_read_time
+        if last_read_time > max_date
+          true
+        else
+          false
+        end
       else
-        false
+        true 
+        #if no read state this means the user never read the thread
       end
     else
-      nil
+      false
     end
-  else
-    false
-  end
   end
 
 end
