@@ -89,4 +89,12 @@ class Content
      Content.where(:created_at.gte => (from_when)).where(:created_at.lte => (to_when))
   end
 
+  def self.by_date_range_and_thread_ids from_when, to_when, thread_ids
+     #return all content between from_when and to_when
+     Content.where(:created_at.gte => (from_when)).where(:created_at.lte => (to_when)).
+       where(:comment_thread_id.in => thread_ids)
+  end
+
+
+
 end

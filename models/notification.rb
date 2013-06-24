@@ -16,113 +16,78 @@ class Notification
     as_document.slice(*%w[notification_type info actor_id target_id]).merge("id" => _id)
   end
 
-  def self.by_date_range 
-    #start_date_time, end_date_time
-    #given a date range, find all of the notifiable content
-    #key by thread id
 
-    #first, find the content in the range
-    puts "a"
+  def self.get_notification_email_bodies start_date_time, end_date_time, user_ids
+  end
 
-    start_date_time = Time.now - 100.days
-    end_date_time = Time.now - 99.days
 
-    content = Content.by_date_range start_date_time, end_date_time
-    puts "b"
-    thread_ids = content.collect{|t| t.comment_thread_id}.uniq
+  def self.test_results
+    start_time = Time.now - 100.days
+    end_time = Time.now - 99.days
 
-    puts "c"
-    
-    #now, find all of the subscriptions to that content
+    #find some content in the range
+
+    content = Content.by_date_range start_time, end_time
+    thread_ids = content.collect{|c| c.comment_thread_id}.uniq
     subscriptions = Subscription.where(:source_id.in => thread_ids)
-    puts "d"
+    user_ids = subscriptions.sample(10).collect{|s| s.subscriber_id}
 
-    #now remove content for which there are no subscriptons
+    test_results = self.by_date_range start_time, end_time, user_ids
+  end
 
-    thread_ids = subscriptions.collect{|s| s.source_id}.uniq
-    puts "e"
+  def self.by_date_range start_date_time, end_date_time, user_ids  
+    #given a date range and a user, find all of the notifiable content
+    #key by thread id, and return notification messages for each user
 
-    #now remove content where thread_id is not in thread_ids
+    
 
-    content = content.select {|c| thread_ids.include? c.comment_thread_id.to_s} 
-    puts "f"
+    #first, find the subscriptions for the users
+    subscriptions = Subscription.where(:subscriber_id.in => user_ids)
 
-    #we need to preload the users so we can look at their read states 
-    #(there is one read state per thread that a user has read)
+    #get the thhread ids
+    thread_ids = subscriptions.collect{|t| t.source_id}.uniq
 
-    user_ids = subscriptions.collect{|s| s.subscriber_id}.uniq
-    puts "g"
-    users = User.where(:_id.in => user_ids)
-    puts "h"
+    #find all the comments
+    comments = Comment.by_date_range_and_thread_ids start_date_time, end_date_time, thread_ids
 
-    #make a user_id => User map for easy access
+    #and get the threads too, b/c we'll need them for the title
 
-    user_map = {}
-    users.each do |u|
-      user_map[u._id.to_s] = u
-    end
-
-    #unfortunately, we need a thread map also, because we need to get the course_id 
-    #because it's the key for each users read state (each user has one read state)
-    #per course
-
-    thread_map = {}
     threads = CommentThread.where(:_id.in => thread_ids)
-    threads.each do |t|
-      thread_map[t._id.to_s] = t
+
+    #now build a thread to users subscription map
+    subscriptions_map = {}
+    subscriptions.each do |s|
+      if not subscriptions_map.keys.include? s.source_id.to_s
+        subscriptions_map[s.source_id.to_s] = []
+      end
+      subscriptions_map[s.source_id] << s.subscriber_id
     end
 
-puts "i"
+    #notification map will be user => course => thread => [comment bodies]
 
-    #now we have everything we need, so walk the subscribers, and if the user's read state last read on is less 
-    #than the content created_at timestamp, add it to the notiications
+    notification_map = {}
 
-    answer = {}
-
-    content.each do |c|
-
-      if not answer.keys.include? c.comment_thread_id.to_s
-        answer[c.comment_thread_id.to_s] = {}
-      end
-
-      subscriptions.each do |s|
-
-        #if the user has a read state for this subscription (which they should because the subscription exists)
-        user = user_map[s.subscriber_id]
-        begin
-          read_state = user.read_states.find_by(course_id: thread_map[s.source_id].course_id)
-        rescue
-          read_sate = nil
+    comments.each do |c|
+      user_ids = subscriptions_map[c.comment_thread_id.to_s]
+      user_ids.each do |u|
+        if not notification_map.keys.include? u
+          notification_map[u] = {}
         end
 
-        #if the read state is good and the content is newer than the last time this thread was
-        #read by the user
-        if read_state and 
-          read_state.last_read_times and 
-          read_state.last_read_times[s.source_id] and 
-          read_state.last_read_times[s.source_id] < c.updated_at and
-          c.abuse_flaggers.empty? #only send notifications for non flagged content
-          #note, there is an edge case here where if a comment is flagged as abuse, but
-          #later cleared, a user may never get a notification for it, depending on timing
-
-            #then add it to the results
-
-            puts "adding notification"
-
-            #but first check to see if an entry exists for this user
-            if not answer[c.comment_thread_id.to_s][s.subscriber_id]
-              answer[c.comment_thread_id.to_s][s.subscriber_id] = [] 
-            end
-
-            #now add the notification to the user's notification array
-            answer[c.comment_thread_id.to_s][s.subscriber_id]  << [c._type, c.body, c.updated_at]
-
+        if not notification_map[u].keys.include? c.course_id
+          notification_map[u][c.course_id] = {}
         end
+
+        if not notification_map[u][c.course_id].include? c.comment_thread_id.to_s
+          notification_map[u][c.course_id][c.comment_thread_id.to_s] = []
+        end
+
+         notification_map[u][c.course_id][c.comment_thread_id.to_s] << c.body.truncate(CommentService.config["email_digest_comment_length"])
 
       end
     end
 
-  answer
+    notification_map
 
   end
 
