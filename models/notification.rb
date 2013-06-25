@@ -1,4 +1,4 @@
-class Notification
+  class Notification
   include Mongoid::Document
   include Mongoid::Timestamps
 
@@ -31,15 +31,15 @@ class Notification
     thread_ids = content.collect{|c| c.comment_thread_id}.uniq
     subscriptions = Subscription.where(:source_id.in => thread_ids)
     user_ids = subscriptions.sample(10).collect{|s| s.subscriber_id}
-
+    puts "*** starting test ***"
     test_results = self.by_date_range start_time, end_time, user_ids
+    puts "*** test ended ***"
+    test_results
   end
 
   def self.by_date_range start_date_time, end_date_time, user_ids  
     #given a date range and a user, find all of the notifiable content
     #key by thread id, and return notification messages for each user
-
-    
 
     #first, find the subscriptions for the users
     subscriptions = Subscription.where(:subscriber_id.in => user_ids)
@@ -84,6 +84,7 @@ class Notification
 
          notification_map[u][c.course_id][c.comment_thread_id.to_s] << c.body.truncate(CommentService.config["email_digest_comment_length"])
 
+
       end
     end
 
@@ -107,18 +108,19 @@ class Notification
 
     last_read_time = u.read_states.find_by(course_id: t.course_id).last_read_times[t.id.to_s]
     if comments.count > 0
-    if last_read_time
-      if last_read_time > max_date
-        true
+      if last_read_time
+        if last_read_time > max_date
+          true
+        else
+          false
+        end
       else
-        false
+        true 
+        #if no read state this means the user never read the thread
       end
     else
-      nil
+      false
     end
-  else
-    false
-  end
   end
 
 end
