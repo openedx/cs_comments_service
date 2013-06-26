@@ -66,6 +66,7 @@ require './api/comments'
 require './api/users'
 require './api/votes'
 require './api/flags'
+require './api/notifications'
 require './api/pins'
 require './api/notifications_and_subscriptions'
 
