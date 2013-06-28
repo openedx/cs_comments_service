@@ -107,6 +107,11 @@ class CommentThread < Content
       end
     end
     
+
+#GET /api/v1/search/threads?user_id=1&recursive=False&sort_key=date&│[2013-06-28 10:16:46,104][INFO ][plugins                  ] [Glamor] loaded [], sites []                  
+#text=response&sort_order=desc&course_id=HarvardX%2FHLS1xD%2FCopyright&per_page=20&api_key=PUT_YOUR_API_KE│T1GYWxzZSZzb3J0X2tleT1kYXRlJnRleHQ9cmVzcG9uc2Umc29ydF9vcmRlcj1kZXNjJmNvdXJzZV9pZA==: initialized          
+#Y_HERE&page=1
+
     #KChugh - Unfortunately, there's no algorithmically nice way to handle pagination with
     #stitching together Comments and CommentThreads, because there is no determinstic relationship
     #between the ordinality of comments and threads. 
