@@ -5,15 +5,6 @@ development:
      hosts:
        - localhost:27017
 
-nothing:
-  sessions:
-    default:
-      database: comments-prod-clone
-      hosts:
-        - charlotte.mongohq.com:10035
-      username: kevinchugh@edx.org
-      password: mitxisnowedx
-
 test:
   sessions:
     default:
