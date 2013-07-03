@@ -62,8 +62,8 @@ namespace :deep_search do
       RestClient.get "#{PREFIX}/threads", params: query_params
     end
     end_time = Time.now
-    puts "Ending test at #{start_time}"
-    puts "Total Time: #{(end_time = start_time) * 1.days}"
+    puts "Ending test at #{end_time}"
+    puts "Total Time: #{(end_time - start_time).to_f} seconds"
 
   end
   
