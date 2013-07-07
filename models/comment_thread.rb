@@ -46,10 +46,13 @@ class CommentThread < Content
     indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
     indexes :group_id, type: :integer, as: 'group_id', index: :not_analyzed, included_in_all: false
     #indexes :pinned, type: :boolean, as: 'pinned', index: :not_analyzed, included_in_all: false
+    indexes :comments do
+      indexes :body, analyzer: 'snowball'
+    end
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
-  has_many :comments, dependent: :destroy#, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
+  has_many :comments, dependent: :destroy #, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
   has_many :activities, autosave: true
 
   attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed

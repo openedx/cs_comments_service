@@ -20,6 +20,7 @@ class Comment < Content
 
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: "User", index: true
+  after_save :update_thread_index
 
   attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed
 
@@ -101,6 +102,12 @@ private
 
   def set_thread_last_activity_at
     self.comment_thread.update_attributes!(last_activity_at: Time.now.utc)
+  end
+
+  def update_thread_index
+    #after each save of a comment, update it's thread's search index
+    #t = self.comment_thread
+    tire.update_index
   end
 
 end
