@@ -22,6 +22,10 @@ if ["staging", "production", "loadtest", "edgestage","edgeprod"].include? enviro
   require 'newrelic_rpm'
 end
 
+if ["loadtest"].include? environment
+  GC::Profiler.enable
+end
+
 set :cache, Dalli::Client.new
 
 application_yaml = ERB.new(File.read("config/application.yml")).result()
