@@ -22,7 +22,7 @@ if ["staging", "production", "loadtest", "edgestage","edgeprod"].include? enviro
   require 'newrelic_rpm'
 end
 
-if ["loadtest"].include? environment
+if ENV["ENABLE_GC_PROFILER"]
   GC::Profiler.enable
 end
 
