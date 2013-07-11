@@ -65,11 +65,11 @@ loadtest:
   sessions:
     default:
       hosts:
-        - sayid.member0.mongohq.com:10007
-        - sayid.member1.mongohq.com:10007
+        - sayid.member0.mongohq.com:10002
+        - sayid.member1.mongohq.com:10002
       username: <%= ENV['MONGOHQ_USER'] %>
       password: <%= ENV['MONGOHQ_PASS'] %>
-      database: app7276251
+      database: app16669863
       options:
         skip_version_check: true
         safe: true
