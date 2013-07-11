@@ -155,6 +155,7 @@ class CommentThread < Content
       search = Tire::Search::Search.new 'comments'
       search.query {|query| query.text :_all, params["text"]} if params["text"]
       search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+      search.size CommentService.config["max_deep_search_comment_count"].to_i
       
       #unforutnately, we cannot paginate here, b/c we don't know how the ordinality is totally
       #unrelated to that of threads
@@ -162,10 +163,15 @@ class CommentThread < Content
       c_results = search.results
       
       comment_ids = c_results.collect{|c| c.id}.uniq
-      
       comments = Comment.where(:id.in => comment_ids)
-      
       thread_ids = comments.collect{|c| c.comment_thread_id}
+
+      #thread_ids = c_results.collect{|c| c.comment_thread_id}
+      #as soon as we can add comment thread id to the ES index, via Tire updgrade, we'll 
+      #use ES instead of mongo to collect the thread ids
+     
+      #use the elasticsearch index instead to avoid DB hit
+      
       original_thread_ids = results.collect{|r| r.id}
       
       #now add the original search thread ids
