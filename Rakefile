@@ -225,10 +225,11 @@ namespace :db do
 
   task :reindex_search => :environment do
 
-    Mongoid.identity_map_enabled = false
+    #Mongoid.identity_map_enabled = false
 
-    klasses = [Comment]
-    klasses.each do |klass|
+    #klasses = [CommentThread,Comment]
+    #klasses.each do |klass|
+      klass = CommentThread
       ENV['CLASS'] = klass.name
       ENV['INDEX'] = new_index = klass.tire.index.name << '_' << Time.now.strftime('%Y%m%d%H%M%S')
 
@@ -260,7 +261,7 @@ namespace :db do
       end
 
       puts "[IMPORT] done. Index: '#{new_index}' created."
-    end
+    #end
   end
 
   task :add_anonymous_to_peers => :environment do
