@@ -217,8 +217,7 @@ helpers do
     comments = Comment.by_date_range_and_thread_ids start_date_time, end_date_time, thread_ids
 
     #and get the threads too, b/c we'll need them for the title
-
-    threads = CommentThread.where(:_id.in => thread_ids)
+    thread_map = Hash[CommentThread.where(:_id.in => thread_ids).all.map { |t| [t.id, t] }]
 
     #now build a thread to users subscription map
     subscriptions_map = {}
@@ -245,11 +244,18 @@ helpers do
         end
 
         if not notification_map[u][c.course_id].include? c.comment_thread_id.to_s
-          notification_map[u][c.course_id][c.comment_thread_id.to_s] = []
+          t = notification_map[u][c.course_id][c.comment_thread_id.to_s] = {}
+          t["content"] = []
+          t["title"] = thread_map[c.comment_thread_id].title
+        else
+          t = notification_map[u][c.course_id][c.comment_thread_id.to_s]
         end
 
-         notification_map[u][c.course_id][c.comment_thread_id.to_s] << c.body.truncate(CommentService.config["email_digest_comment_length"])
-
+        content_obj = {}
+        content_obj["body"] = c.body.truncate(CommentService.config["email_digest_comment_length"])
+        content_obj["username"] = c.author_with_anonymity(:username, "(anonymous)")
+        content_obj["updated_at"] = c.updated_at
+        t["content"] << content_obj
 
       end
     end
