@@ -1,9 +1,9 @@
 development:
   sessions:
-    default:
-      database: cs_comments_service_development
-      hosts:
-        - localhost:27017
+   default:
+     database: cs_comments_service_development
+     hosts:
+       - localhost:27017
 
 test:
   sessions:
