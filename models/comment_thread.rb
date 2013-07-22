@@ -45,8 +45,7 @@ class CommentThread < Content
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
     indexes :group_id, type: :integer, as: 'group_id', index: :not_analyzed, included_in_all: false
-    indexes :id,         :index    => :not_analyzed
-    indexes :thread_id, :analyzer => :keyword, :as => "_id"
+    #indexes :pinned, type: :boolean, as: 'pinned', index: :not_analyzed, included_in_all: false
   end
 
   belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
@@ -94,7 +93,6 @@ class CommentThread < Content
   end
 
   def self.perform_search(params, options={})
-    
     page = [1, options[:page] || 1].max
     per_page = options[:per_page] || 20
     sort_key = options[:sort_key]
@@ -106,23 +104,6 @@ class CommentThread < Content
         return results
       end
     end
-    
-
-#GET /api/v1/search/threads?user_id=1&recursive=False&sort_key=date&│[2013-06-28 10:16:46,104][INFO ][plugins                  ] [Glamor] loaded [], sites []                  
-#text=response&sort_order=desc&course_id=HarvardX%2FHLS1xD%2FCopyright&per_page=20&api_key=PUT_YOUR_API_KE│T1GYWxzZSZzb3J0X2tleT1kYXRlJnRleHQ9cmVzcG9uc2Umc29ydF9vcmRlcj1kZXNjJmNvdXJzZV9pZA==: initialized          
-#Y_HERE&page=1
-
-    #KChugh - Unfortunately, there's no algorithmically nice way to handle pagination with
-    #stitching together Comments and CommentThreads, because there is no determinstic relationship
-    #between the ordinality of comments and threads. 
-    #the best solution is to find all of the thread ids for matching comment hits, and union them
-    #with the comment thread query, however, Tire does not support ORing a query key with a term filter
-    
-    #so the 3rd best solution is to run two Tire searches (3 actually, one to query the comments, one to query the threads based on
-    #thread ids and the original thread search) and merge the results, uniqifying the results in the process.
-      
-    #so first, find the comment threads associated with comments that hit the query
-        
     search = Tire::Search::Search.new 'comment_threads'
     search.query {|query| query.text :_all, params["text"]} if params["text"]
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
@@ -130,79 +111,23 @@ class CommentThread < Content
     search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
     search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
-
+    
     if params["group_id"]
+      
       search.filter :or, [
         {:not => {:exists => {:field => :group_id}}},
-        {:term => {:group_id => params["group_id"]}}
-      ]
-    end
-
-    search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
-
-    #again, b/c there is no relationship in ordinality, we cannot paginate if it's a text query
-    
-    if not params["text"]
-      search.size per_page
-      search.from per_page * (page - 1)
-    end
-
-    results = search.results
-    
-    #if this is a search query, then also search the comments and harvest the matching comments
-    if params["text"]
-
-      search = Tire::Search::Search.new 'comments'
-      search.query {|query| query.text :_all, params["text"]} if params["text"]
-      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
-      search.size CommentService.config["max_deep_search_comment_count"].to_i
-      
-      #unforutnately, we cannot paginate here, b/c we don't know how the ordinality is totally
-      #unrelated to that of threads
-      
-      c_results = search.results
-      
-      comment_ids = c_results.collect{|c| c.id}.uniq
-      comments = Comment.where(:id.in => comment_ids)
-      thread_ids = comments.collect{|c| c.comment_thread_id}
-
-      #thread_ids = c_results.collect{|c| c.comment_thread_id}
-      #as soon as we can add comment thread id to the ES index, via Tire updgrade, we'll 
-      #use ES instead of mongo to collect the thread ids
-     
-      #use the elasticsearch index instead to avoid DB hit
-      
-      original_thread_ids = results.collect{|r| r.id}
-      
-      #now add the original search thread ids
-      thread_ids += original_thread_ids
-      
-      thread_ids = thread_ids.uniq
-      
-      #now run one more search to harvest the threads and filter by group
-      search = Tire::Search::Search.new 'comment_threads'
-      search.filter(:terms, :thread_id => thread_ids)
-      search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
-      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
-
-      search.size per_page
-      search.from per_page * (page - 1)
-
-      if params["group_id"]
-
-        search.filter :or, [
-          {:not => {:exists => {:field => :group_id}}},
           {:term => {:group_id => params["group_id"]}}
 
         ]
-      end
-
-      search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order 
-      results = search.results
-
     end
+    
+    search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
 
-
+    search.size per_page
+    search.from per_page * (page - 1)
+    
+    results = search.results
+    
     if CommentService.config[:cache_enabled]
       Sinatra::Application.cache.set(memcached_key, results, CommentService.config[:cache_timeout][:threads_search].to_i)
     end
@@ -256,6 +181,7 @@ class CommentThread < Content
                             "group_id" => group_id,
                             "pinned" => pinned?,
                             "endorsed" => endorsed?)
+
     if params[:recursive]
       doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
     end
@@ -276,8 +202,8 @@ class CommentThread < Content
       #   unread count
       if last_read_time
         unread_count = self.comments.where(
-        :updated_at => {:$gte => last_read_time},
-        :author_id => {:$ne => params[:user_id]},
+            :updated_at => {:$gte => last_read_time},
+            :author_id => {:$ne => params[:user_id]},
         ).count
         read = last_read_time >= self.updated_at
       else
@@ -291,8 +217,8 @@ class CommentThread < Content
     end
 
     doc = doc.merge("unread_comments_count" => unread_count)
-    .merge("read" => read)
-    .merge("comments_count" => comments_count)
+             .merge("read" => read)
+             .merge("comments_count" => comments_count)
 
     doc
 
@@ -302,12 +228,13 @@ class CommentThread < Content
     !!(tag =~ RE_TAG)
   end
 
-  private
   def comment_thread_id
     #so that we can use the comment thread id as a common attribute for flagging
     self.id
   end  
   
+private
+
   RE_HEADCHAR = /[a-z0-9]/
   RE_ENDONLYCHAR = /\+/
   RE_ENDCHAR = /[a-z0-9\#]/
