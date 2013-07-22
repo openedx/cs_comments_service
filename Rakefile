@@ -222,14 +222,17 @@ namespace :db do
     puts "Time elapsed #{(end_time - beginning_time)*1000} milliseconds"
 
   end
-
+      
   task :reindex_search => :environment do
+      rebuild_index(CommentThread)
+  end
 
-    #Mongoid.identity_map_enabled = false
+  task :reindex_comments => :environment do
+      rebuild_index(Comment)
+  end
 
-    #klasses = [CommentThread,Comment]
-    #klasses.each do |klass|
-      klass = CommentThread
+  def rebuild_index(klass)
+
       ENV['CLASS'] = klass.name
       ENV['INDEX'] = new_index = klass.tire.index.name << '_' << Time.now.strftime('%Y%m%d%H%M%S')
 
@@ -261,7 +264,7 @@ namespace :db do
       end
 
       puts "[IMPORT] done. Index: '#{new_index}' created."
-    #end
+ 
   end
 
   task :add_anonymous_to_peers => :environment do
