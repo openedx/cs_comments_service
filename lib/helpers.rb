@@ -247,6 +247,7 @@ helpers do
           t = notification_map[u][c.course_id][c.comment_thread_id.to_s] = {}
           t["content"] = []
           t["title"] = thread_map[c.comment_thread_id].title
+          t["commentable_id"] = thread_map[c.comment_thread_id].commentable_id
         else
           t = notification_map[u][c.course_id][c.comment_thread_id.to_s]
         end
@@ -254,6 +255,7 @@ helpers do
         content_obj = {}
         content_obj["username"] = c.author_with_anonymity(:username, "(anonymous)")
         content_obj["updated_at"] = c.updated_at
+        content_obj["body"] = c.body
         t["content"] << content_obj
 
       end
