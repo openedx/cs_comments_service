@@ -3,7 +3,7 @@ require 'spec_helper'
 describe "app" do
   describe "notifications" do
     before(:each) { init_without_subscriptions }
-    describe "GET /api/v1/notifications" do
+    describe "POST /api/v1/notifications" do
       it "returns notifications by class and user" do
         start_time = Time.now
         user = User.first
@@ -22,7 +22,7 @@ describe "app" do
 
         end_time = Time.now
 
-        get "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: subscription.subscriber_id
+        post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: subscription.subscriber_id
         last_response.should be_ok
         last_response.body.to_s.include?(dummy).should == true
       end

@@ -252,7 +252,6 @@ helpers do
         end
 
         content_obj = {}
-        content_obj["body"] = c.body.truncate(CommentService.config["email_digest_comment_length"])
         content_obj["username"] = c.author_with_anonymity(:username, "(anonymous)")
         content_obj["updated_at"] = c.updated_at
         t["content"] << content_obj
