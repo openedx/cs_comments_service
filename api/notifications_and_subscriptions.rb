@@ -13,3 +13,5 @@ end
 delete "#{APIPREFIX}/users/:user_id/subscriptions" do |user_id|
   user.unsubscribe(source).to_hash.to_json
 end
+
+

@@ -203,4 +203,66 @@ helpers do
     end.compact
   end
 
+  def notifications_by_date_range_and_user_ids start_date_time, end_date_time, user_ids  
+    #given a date range and a user, find all of the notifiable content
+    #key by thread id, and return notification messages for each user
+
+    #first, find the subscriptions for the users
+    subscriptions = Subscription.where(:subscriber_id.in => user_ids)
+
+    #get the thhread ids
+    thread_ids = subscriptions.collect{|t| t.source_id}.uniq
+
+    #find all the comments
+    comments = Comment.by_date_range_and_thread_ids start_date_time, end_date_time, thread_ids
+
+    #and get the threads too, b/c we'll need them for the title
+    thread_map = Hash[CommentThread.where(:_id.in => thread_ids).all.map { |t| [t.id, t] }]
+
+    #now build a thread to users subscription map
+    subscriptions_map = {}
+    subscriptions.each do |s|
+      if not subscriptions_map.keys.include? s.source_id.to_s
+        subscriptions_map[s.source_id.to_s] = []
+      end
+      subscriptions_map[s.source_id] << s.subscriber_id
+    end
+
+    #notification map will be user => course => thread => [comment bodies]
+
+    notification_map = {}
+
+    comments.each do |c|
+      user_ids = subscriptions_map[c.comment_thread_id.to_s]
+      user_ids.each do |u|
+        if not notification_map.keys.include? u
+          notification_map[u] = {}
+        end
+
+        if not notification_map[u].keys.include? c.course_id
+          notification_map[u][c.course_id] = {}
+        end
+
+        if not notification_map[u][c.course_id].include? c.comment_thread_id.to_s
+          t = notification_map[u][c.course_id][c.comment_thread_id.to_s] = {}
+          t["content"] = []
+          t["title"] = thread_map[c.comment_thread_id].title
+          t["commentable_id"] = thread_map[c.comment_thread_id].commentable_id
+        else
+          t = notification_map[u][c.course_id][c.comment_thread_id.to_s]
+        end
+
+        content_obj = {}
+        content_obj["username"] = c.author_with_anonymity(:username, "(anonymous)")
+        content_obj["updated_at"] = c.updated_at
+        content_obj["body"] = c.body
+        t["content"] << content_obj
+
+      end
+    end
+
+    notification_map.to_json
+
+  end
+
 end

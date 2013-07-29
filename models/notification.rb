@@ -1,4 +1,4 @@
-class Notification
+  class Notification
   include Mongoid::Document
   include Mongoid::Timestamps
 
@@ -15,4 +15,5 @@ class Notification
   def to_hash(params={})
     as_document.slice(*%w[notification_type info actor_id target_id]).merge("id" => _id)
   end
+  
 end
