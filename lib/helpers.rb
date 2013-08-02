@@ -233,31 +233,39 @@ helpers do
     notification_map = {}
 
     comments.each do |c|
-      user_ids = subscriptions_map[c.comment_thread_id.to_s]
-      user_ids.each do |u|
-        if not notification_map.keys.include? u
-          notification_map[u] = {}
+      current_thread = thread_map[c.comment_thread_id]
+
+      #do not include threads or comments who have current or historical abuse flags
+      if current_thread.abuse_flaggers.to_a.empty? and 
+        current_thread.historical_abuse_flaggers.to_a.empty? and 
+        c.abuse_flaggers.to_a.empty? and 
+        c.historical_abuse_flaggers.to_a.empty?
+        
+        user_ids = subscriptions_map[c.comment_thread_id.to_s]
+        user_ids.each do |u|
+          if not notification_map.keys.include? u
+            notification_map[u] = {}
+          end
+
+          if not notification_map[u].keys.include? c.course_id
+            notification_map[u][c.course_id] = {}
+          end
+
+          if not notification_map[u][c.course_id].include? c.comment_thread_id.to_s
+            t = notification_map[u][c.course_id][c.comment_thread_id.to_s] = {}
+            t["content"] = []
+            t["title"] = current_thread.title
+            t["commentable_id"] = current_thread.commentable_id
+          else
+            t = notification_map[u][c.course_id][c.comment_thread_id.to_s]
+          end
+
+          content_obj = {}
+          content_obj["username"] = c.author_with_anonymity(:username, "(anonymous)")
+          content_obj["updated_at"] = c.updated_at
+          content_obj["body"] = c.body
+          t["content"] << content_obj
         end
-
-        if not notification_map[u].keys.include? c.course_id
-          notification_map[u][c.course_id] = {}
-        end
-
-        if not notification_map[u][c.course_id].include? c.comment_thread_id.to_s
-          t = notification_map[u][c.course_id][c.comment_thread_id.to_s] = {}
-          t["content"] = []
-          t["title"] = thread_map[c.comment_thread_id].title
-          t["commentable_id"] = thread_map[c.comment_thread_id].commentable_id
-        else
-          t = notification_map[u][c.course_id][c.comment_thread_id.to_s]
-        end
-
-        content_obj = {}
-        content_obj["username"] = c.author_with_anonymity(:username, "(anonymous)")
-        content_obj["updated_at"] = c.updated_at
-        content_obj["body"] = c.body
-        t["content"] << content_obj
-
       end
     end
 
