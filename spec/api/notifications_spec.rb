@@ -42,11 +42,43 @@ describe "app" do
             end
         end
         #now make sure the threads are a subset of the user's subscriptions
-        puts user.id
         subscriptions = Subscription.where(:subscriber_id => user.id.to_s)
         subscribed_thread_ids = subscriptions.collect{|s| s.source_id}
 
         (subscribed_thread_ids.to_set.superset? thread_ids.to_set).should == true
+
+      end
+
+        it "returns only unflagged threads" do
+        start_time = Date.today - 400.days
+        end_time = Time.now
+        user = User.find Subscription.first.subscriber_id
+        post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
+        last_response.should be_ok
+        payload = JSON.parse last_response.body
+        courses = payload[user.id.to_s]
+        thread_ids = []
+        courses.each do |k,v|
+            v.each do |kk,vv|
+                thread_ids << kk
+            end
+        end
+        #now flag the first thread
+        thread = CommentThread.find thread_ids.first
+        thread.historical_abuse_flaggers << ["1"]
+
+        post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
+        last_response.should be_ok
+        payload = JSON.parse last_response.body
+        courses = payload[user.id.to_s]
+        new_thread_ids = []
+        courses.each do |k,v|
+            v.each do |kk,vv|
+                new_thread_ids << kk
+            end
+        end
+
+        (new_thread_ids.include? thread.id).should == false
 
       end
 
