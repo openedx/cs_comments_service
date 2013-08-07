@@ -6,8 +6,13 @@ describe "app" do
     describe "POST /api/v1/notifications" do
       it "returns notifications by class and user" do
         start_time = Time.now
-        user = User.first
-        thread = CommentThread.first
+        user = User.create(:email => "test@example.com",:external_id => 1,:username => "example")
+        commentable = Commentable.new("question_1")
+        random_string = (0...8).map{ ('a'..'z').to_a[rand(26)] }.join
+        thread = CommentThread.new(title: "Test title", body: "elephant otter", course_id: "1", commentable_id: commentable.id, comments_text_dummy: random_string)
+        thread.author = user
+        thread.save!
+
         subscription = Subscription.create({:subscriber_id => user._id.to_s, :source_id => thread._id.to_s})
 
         dummy = random_string = (0..5).map{ ('a'..'z').to_a[rand(26)] }.join
@@ -31,7 +36,7 @@ describe "app" do
 
         # first make a dummy thread and comment and a subscription
         commentable = Commentable.new("question_1")
-        user = User.first
+        user = User.create(:email => "test@example.com",:external_id => 1,:username => "example")
         random_string = (0...8).map{ ('a'..'z').to_a[rand(26)] }.join
 
         thread = CommentThread.new(title: "Test title", body: "elephant otter", course_id: "1", commentable_id: commentable.id, comments_text_dummy: random_string)
@@ -71,7 +76,8 @@ describe "app" do
         it "returns only unflagged threads" do
         start_time = Date.today - 400.days
         end_time = Time.now
-        user = User.find Subscription.first.subscriber_id
+
+        user = User.create(:email => "test@example.com",:external_id => 1,:username => "example")
 
         sleep 1
 
