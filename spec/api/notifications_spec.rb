@@ -28,6 +28,7 @@ describe "app" do
         end_time = Time.now
 
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: subscription.subscriber_id
+        
         last_response.should be_ok
         last_response.body.to_s.include?(dummy).should == true
       end
@@ -50,12 +51,14 @@ describe "app" do
         comment.comment_thread = thread
         comment.save!
 
-        start_time = Date.today - 400.days
-        end_time = Time.now
+        start_time = Date.today - 100.days
 
         sleep 1
 
+        end_time = Time.now + 5.seconds
+
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
+
         last_response.should be_ok
         payload = JSON.parse last_response.body
         courses = payload[user.id.to_s]
@@ -74,14 +77,17 @@ describe "app" do
       end
 
         it "returns only unflagged threads" do
-        start_time = Date.today - 400.days
-        end_time = Time.now
+        start_time = Date.today - 100.days
+       
 
         user = User.create(:email => "test@example.com",:external_id => 1,:username => "example")
 
         sleep 1
 
+        end_time = Time.now + 5.seconds
+
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
+
         last_response.should be_ok
         payload = JSON.parse last_response.body
         courses = payload[user.id.to_s]
@@ -96,6 +102,8 @@ describe "app" do
         thread.historical_abuse_flaggers << ["1"]
 
         sleep 1
+        
+        end_time = Time.now + 5.seconds
         
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
         last_response.should be_ok
