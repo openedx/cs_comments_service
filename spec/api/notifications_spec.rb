@@ -48,6 +48,8 @@ describe "app" do
         start_time = Date.today - 400.days
         end_time = Time.now
 
+        sleep 1
+
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
         last_response.should be_ok
         payload = JSON.parse last_response.body
@@ -70,6 +72,9 @@ describe "app" do
         start_time = Date.today - 400.days
         end_time = Time.now
         user = User.find Subscription.first.subscriber_id
+
+        sleep 1
+
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
         last_response.should be_ok
         payload = JSON.parse last_response.body
@@ -84,6 +89,8 @@ describe "app" do
         thread = CommentThread.find thread_ids.first
         thread.historical_abuse_flaggers << ["1"]
 
+        sleep 1
+        
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
         last_response.should be_ok
         payload = JSON.parse last_response.body
