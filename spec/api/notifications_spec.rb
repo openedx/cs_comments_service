@@ -28,9 +28,26 @@ describe "app" do
       end
 
       it "returns only threads subscribed to by user" do
+
+        # first make a dummy thread and comment and a subscription
+        commentable = Commentable.new("question_1")
+        user = User.first
+        random_string = (0...8).map{ ('a'..'z').to_a[rand(26)] }.join
+
+        thread = CommentThread.new(title: "Test title", body: "elephant otter", course_id: "1", commentable_id: commentable.id, comments_text_dummy: random_string)
+        thread.author = user
+        thread.save!
+
+        subscription = Subscription.create({:subscriber_id => user._id.to_s, :source_id => thread._id.to_s})
+
+        comment = Comment.new(body: random_string, course_id: "1", commentable_id: commentable.id)
+        comment.author = user
+        comment.comment_thread = thread
+        comment.save!
+
         start_time = Date.today - 400.days
         end_time = Time.now
-        user = User.find Subscription.first.subscriber_id
+
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
         last_response.should be_ok
         payload = JSON.parse last_response.body
