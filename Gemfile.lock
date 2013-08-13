@@ -151,6 +151,10 @@ GEM
       kgio (~> 2.6)
       rack
       raindrops (~> 0.7)
+    will_paginate (3.0.4)
+    will_paginate_mongoid (1.1.0)
+      mongoid (>= 2.4)
+      will_paginate (~> 3.0)
     yajl-ruby (1.1.0)
 
 PLATFORMS
@@ -187,4 +191,5 @@ DEPENDENCIES
   tire-contrib
   unicorn
   voteable_mongo!
+  will_paginate_mongoid
   yajl-ruby

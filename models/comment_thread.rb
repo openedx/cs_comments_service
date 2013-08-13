@@ -124,6 +124,7 @@ class CommentThread < Content
     #so first, find the comment threads associated with comments that hit the query
         
     search = Tire::Search::Search.new 'comment_threads'
+
     search.query {|query| query.text :_all, params["text"]} if params["text"]
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
     search.filter(:bool, :must => params["tags"].split(/,/).map{ |tag| { :term => { :tags_array => tag } } }) if params["tags"]
