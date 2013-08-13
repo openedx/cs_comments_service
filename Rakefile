@@ -225,43 +225,62 @@ namespace :db do
 
   task :reindex_search => :environment do
 
-    #Mongoid.identity_map_enabled = false
+    logger = Logger.new(STDERR)
+    cutoff_dt = DateTime.now
+    klasses = [Comment, CommentThread]
+    Mongoid.identity_map_enabled = false
+    Mongoid.unit_of_work(disable: :all) do
+      klasses.each do |klass|
 
-    #klasses = [CommentThread,Comment]
-    #klasses.each do |klass|
-      klass = CommentThread
-      ENV['CLASS'] = klass.name
-      ENV['INDEX'] = new_index = klass.tire.index.name << '_' << Time.now.strftime('%Y%m%d%H%M%S')
+        ## generate a versioned name for the rebuilt index
+        new_index = klass.tire.index.name << '_' << Time.now.strftime('%Y%m%d%H%M%S')
 
-      Rake::Task["tire:import"].invoke
+        logger.info "[IMPORT] *BEGIN* importing #{klass.name}"
+        # find the number of docs to be indexed
+        tot = klass.where(:updated_at.lte => cutoff_dt).count
+        cnt = 0
+        t = Time.now
+        Tire.index new_index do
+            import klass.where(:updated_at.lte => DateTime.now), {:method => :paginate, :per_page => 200} do |documents|
+                GC.start
+                if cnt % 1000 == 0 then
+                    logger.info "[IMPORT] indexed #{cnt} of #{tot} #{klass.name}s (#{(100 * (cnt/tot.to_f)).round(2)}% complete after #{((Time.now - t) / 60).round(2)} minutes)"
+                end
+                cnt += documents.length
+                documents
+            end
+        end
+        logger.info "[IMPORT] *DONE* imported #{klass.name}: #{cnt} documents in #{((Time.now - t) / 60).round(2)} minutes"
 
-      puts '[IMPORT] about to swap index'
-      if a = Tire::Alias.find(klass.tire.index.name)
-        puts "[IMPORT] aliases found: #{Tire::Alias.find(klass.tire.index.name).indices.to_ary.join(',')}. deleting."
-        old_indices = Tire::Alias.find(klass.tire.index.name).indices
-        old_indices.each do |index|
-          a.indices.delete index
+        logger.info '[IMPORT] about to swap index'
+        if a = Tire::Alias.find(klass.tire.index.name)
+          logger.info "[IMPORT] aliases found: #{Tire::Alias.find(klass.tire.index.name).indices.to_ary.join(',')}. deleting."
+          old_indices = Tire::Alias.find(klass.tire.index.name).indices
+          old_indices.each do |index|
+            a.indices.delete index
+          end
+
+          a.indices.add new_index
+          a.save
+  
+          old_indices.each do |index|
+            logger.info "[IMPORT] deleting index: #{index}"
+            i = Tire::Index.new(index)
+            i.delete if i.exists?
+          end
+        else
+          logger.info "[IMPORT] no aliases found. deleting index. Creating new one for #{klass} and setting up alias."
+          klass.tire.index.delete
+          a = Tire::Alias.new
+          a.name(klass.tire.index.name)
+          a.index(new_index)
+          a.save
         end
 
-        a.indices.add new_index
-        a.save
-
-        old_indices.each do |index|
-          puts "[IMPORT] deleting index: #{index}"
-          i = Tire::Index.new(index)
-          i.delete if i.exists?
-        end
-      else
-        puts "[IMPORT] no aliases found. deleting index. Creating new one for #{klass} and setting up alias."
-        klass.tire.index.delete
-        a = Tire::Alias.new
-        a.name(klass.tire.index.name)
-        a.index(new_index)
-        a.save
+        logger.info "[IMPORT] done. Index: '#{new_index}' created."
+      
       end
-
-      puts "[IMPORT] done. Index: '#{new_index}' created."
-    #end
+    end
   end
 
   task :add_anonymous_to_peers => :environment do
