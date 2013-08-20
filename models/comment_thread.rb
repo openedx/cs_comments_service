@@ -277,8 +277,8 @@ class CommentThread < Content
       #   unread count
       if last_read_time
         unread_count = self.comments.where(
-        :updated_at => {:$gte => last_read_time},
-        :author_id => {:$ne => params[:user_id]},
+            :updated_at => {:$gte => last_read_time},
+            :author_id => {:$ne => params[:user_id]},
         ).count
         read = last_read_time >= self.updated_at
       else
@@ -292,8 +292,8 @@ class CommentThread < Content
     end
 
     doc = doc.merge("unread_comments_count" => unread_count)
-    .merge("read" => read)
-    .merge("comments_count" => comments_count)
+             .merge("read" => read)
+             .merge("comments_count" => comments_count)
 
     doc
 
@@ -303,12 +303,13 @@ class CommentThread < Content
     !!(tag =~ RE_TAG)
   end
 
-  private
   def comment_thread_id
     #so that we can use the comment thread id as a common attribute for flagging
     self.id
   end  
   
+private
+
   RE_HEADCHAR = /[a-z0-9]/
   RE_ENDONLYCHAR = /\+/
   RE_ENDCHAR = /[a-z0-9\#]/

@@ -22,6 +22,10 @@ if ["staging", "production", "loadtest", "edgestage","edgeprod"].include? enviro
   require 'newrelic_rpm'
 end
 
+if ENV["ENABLE_GC_PROFILER"]
+  GC::Profiler.enable
+end
+
 set :cache, Dalli::Client.new
 
 application_yaml = ERB.new(File.read("config/application.yml")).result()
@@ -48,8 +52,6 @@ DEFAULT_PER_PAGE = 20
 
 if RACK_ENV.to_s != "test" # disable api_key auth in test environment
   before do
-    #duct tape to avoid 401 on deep search performance test
-    #error 401 unless params[:api_key] == CommentService.config[:api_key] or true
     error 401 unless params[:api_key] == CommentService.config[:api_key]
   end
 end
@@ -70,6 +72,7 @@ require './api/votes'
 require './api/flags'
 require './api/pins'
 require './api/notifications_and_subscriptions'
+require './api/notifications'
 
 if RACK_ENV.to_s == "development"
   get "#{APIPREFIX}/clean" do

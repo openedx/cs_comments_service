@@ -1,10 +1,9 @@
 development:
   sessions:
-   default:
-     database: cs_comments_service_development
-     hosts:
-       - localhost:27017
-
+    default:
+      database: cs_comments_service_development
+      hosts:
+        - localhost:27017
 test:
   sessions:
     default:
@@ -22,6 +21,7 @@ production:
     default:
       hosts:
         - hurley.member0.mongohq.com:10000
+        - hurley.member1.mongohq.com:10000
       username: <%= ENV['MONGOHQ_USER'] %>
       password: <%= ENV['MONGOHQ_PASS'] %>
       database: app6929933

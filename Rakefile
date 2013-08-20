@@ -133,8 +133,8 @@ namespace :db do
 
   task :generate_comments, [:commentable_id, :num_threads, :num_top_comments, :num_subcomments] => :environment do |t, args|
     args.with_defaults(:num_threads => THREADS_PER_COMMENTABLE,
-     :num_top_comments=>TOP_COMMENTS_PER_THREAD,
-     :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
+                       :num_top_comments=>TOP_COMMENTS_PER_THREAD,
+                       :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
     generate_comments_for(args[:commentable_id], args[:num_threads], args[:num_top_comments], args[:num_subcomments])
 
   end
@@ -152,54 +152,54 @@ namespace :db do
     coll = db.collection("contents")
     args[:num].to_i.times do
       doc = {"_type" => "CommentThread", "anonymous" => [true, false].sample, "at_position_list" => [],
-        "tags_array" => [],
-        "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
-        "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
-        "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
-        "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+          "tags_array" => [],
+          "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
+          "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
+          "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
+          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+      coll.insert(doc)
+    end
+    binding.pry
+    Tire.index('comment_threads').delete
+    CommentThread.create_elasticsearch_index
+    Tire.index('comment_threads') { import CommentThread.all }
+  end
+
+  task :seed_fast => :environment do
+    ADDITIONAL_COMMENTS_PER_THREAD = 20
+
+    config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["sessions"]["default"]
+    connnection = Mongo::Connection.new(config["hosts"][0].split(":")[0], config["hosts"][0].split(":")[1])
+    db = Mongo::Connection.new.db(config["database"])
+    coll = db.collection("contents")
+    Comment.delete_all
+    CommentThread.each do |thread|
+      ADDITIONAL_COMMENTS_PER_THREAD.times do
+        doc = {"_type" => "Comment", "anonymous" => false, "at_position_list" => [],
+          "author_id" => rand(1..10).to_s, "body" => Faker::Lorem.paragraphs.join("\n\n"),
+          "comment_thread_id" => BSON::ObjectId.from_string(thread.id.to_s), "course_id" => COURSE_ID,
+          "created_at" => Time.now,
+          "endorsed" => [true, false].sample, "parent_ids" => [], "updated_at" => Time.now,
+          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
         coll.insert(doc)
       end
-      binding.pry
-      Tire.index('comment_threads').delete
-      CommentThread.create_elasticsearch_index
-      Tire.index('comment_threads') { import CommentThread.all }
     end
+  end
 
-    task :seed_fast => :environment do
-      ADDITIONAL_COMMENTS_PER_THREAD = 20
+  task :seed => :environment do
 
-      config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["sessions"]["default"]
-      connnection = Mongo::Connection.new(config["hosts"][0].split(":")[0], config["hosts"][0].split(":")[1])
-      db = Mongo::Connection.new.db(config["database"])
-      coll = db.collection("contents")
-      Comment.delete_all
-      CommentThread.each do |thread|
-        ADDITIONAL_COMMENTS_PER_THREAD.times do
-          doc = {"_type" => "Comment", "anonymous" => false, "at_position_list" => [],
-            "author_id" => rand(1..10).to_s, "body" => Faker::Lorem.paragraphs.join("\n\n"),
-            "comment_thread_id" => BSON::ObjectId.from_string(thread.id.to_s), "course_id" => COURSE_ID,
-            "created_at" => Time.now,
-            "endorsed" => [true, false].sample, "parent_ids" => [], "updated_at" => Time.now,
-            "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
-            coll.insert(doc)
-          end
-        end
-      end
+    Comment.delete_all
+    CommentThread.delete_all
+    CommentThread.recalculate_all_context_tag_weights!
+    User.delete_all
+    Notification.delete_all
+    Subscription.delete_all
+    Tire.index 'comment_threads' do delete end
+    CommentThread.create_elasticsearch_index
 
-      task :seed => :environment do
+    beginning_time = Time.now
 
-        Comment.delete_all
-        CommentThread.delete_all
-        CommentThread.recalculate_all_context_tag_weights!
-        User.delete_all
-        Notification.delete_all
-        Subscription.delete_all
-        Tire.index 'comment_threads' do delete end
-          CommentThread.create_elasticsearch_index
-
-          beginning_time = Time.now
-
-          users = (1..10).map {|id| create_test_user(id)}
+    users = (1..10).map {|id| create_test_user(id)}
     # 3.times do
     #   other_user = users[1..9].sample
     #   users.first.subscribe(other_user)
@@ -224,7 +224,6 @@ namespace :db do
   end
 
   task :reindex_search => :environment do
-
     logger = Logger.new(STDERR)
     cutoff_dt = DateTime.now
     klasses = [Comment, CommentThread]
