@@ -256,11 +256,14 @@ namespace :db do
 
   def move_alias_to(name, index)
     # if there was a previous index, switch over the alias to point to the new index
-    LOG.info "moving alias \"#{name}\" to index #{index.name}" 
     alias_ = Tire::Alias.find name
     if alias_ then
+      # does the alias already point to this index?
+      if alias_.indices.include? index.name then
+        return false
+      end
       # remove the alias from wherever it points to now
-      LOG.info "found old index alias(es): #{alias_.indices.to_ary.join(',')}"
+      LOG.info "alias already exists (will move): #{alias_.indices.to_ary.join(',')}"
       alias_.indices.each do |old_index_name|
         alias_.indices.delete old_index_name unless old_index_name == name
       end
@@ -272,7 +275,8 @@ namespace :db do
     # point the alias at our new index
     alias_.indices.add index.name
     alias_.save
-    LOG.info "alias successfully moved."
+    LOG.info "alias \"#{name}\" now points to index #{index.name}."
+    true
   end
 
   def do_reindex (classname, force_rebuild=false)
@@ -327,15 +331,17 @@ namespace :db do
         LOG.info "done copying!"
       end
 
-      # move the alias
-      move_alias_to(klass.tire.index.name, new_index)
+      # move the alias if necessary
+      did_alias_move = move_alias_to(klass.tire.index.name, new_index)
       t2 = Time.now
 
-      #  Reimport any source documents that got updated between t1 and t2,
-      #  while the alias still pointed to the old index
-      LOG.info "importing any documents that changed between #{t1} and #{t2}" 
-      cursor = klass.where(:updated_at.gte => t1, :updated_at.lte => t2)
-      import_from_cursor(cursor, new_index, 200)
+      if did_alias_move then
+        #  Reimport any source documents that got updated between t1 and t2,
+        #  while the alias still pointed to the old index
+        LOG.info "importing any documents that changed between #{t1} and #{t2}" 
+        cursor = klass.where(:updated_at.gte => t1, :updated_at.lte => t2)
+        import_from_cursor(cursor, new_index, 200)
+      end
     end
 
   end
