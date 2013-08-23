@@ -17,6 +17,18 @@ class Comment < Content
   field :at_position_list, type: Array, default: []
 
   index({author_id: 1, course_id: 1})
+  
+  
+  include Tire::Model::Search
+  include Tire::Model::Callbacks
+
+  mapping do
+    indexes :body, type: :string, analyzer: :snowball, stored: true, term_vector: :with_positions_offsets
+    indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
+    #indexes :comment_thread_id, type: :string, stored: true, index: :not_analyzed, included_in_all: false
+    #current prod tire doesn't support indexing BSON ids, will reimplement when we upgrade
+  end
+  
 
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: "User", index: true
@@ -77,11 +89,11 @@ class Comment < Content
       as_document.slice(*%w[body course_id endorsed anonymous anonymous_to_peers created_at updated_at at_position_list])
                  .merge("id" => _id)
                  .merge("user_id" => author_id)
-                 .merge("username" => author.username)
+                 .merge("username" => author.nil? ? "na" : author.username) # avoid crashing to_hash on orphaned comments
                  .merge("depth" => depth)
-                 .merge("closed" => comment_thread.closed)
+                 .merge("closed" => comment_thread.nil? ? false : comment_thread.closed) # ditto
                  .merge("thread_id" => comment_thread_id)
-                 .merge("commentable_id" => comment_thread.commentable_id)
+                 .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id) # ditto
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                  .merge("abuse_flaggers" => abuse_flaggers)
                  .merge("type" => "comment")
