@@ -17,7 +17,7 @@ gem 'yajl-ruby'
 gem 'ampex'
 
 gem 'mongo'
-gem 'moped'
+gem 'moped', "1.2.1"
 gem 'mongoid', "~> 3.0"
 gem 'bson_ext'
 
