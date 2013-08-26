@@ -32,7 +32,7 @@ gem 'mongoid_magic_counter_cache', :git => 'https://github.com/dementrock/mongoi
 gem 'kaminari', :require => 'kaminari/sinatra', :git => 'https://github.com/dementrock/kaminari.git'
 
 gem 'faker'
-
+gem 'will_paginate_mongoid'
 gem 'rdiscount'
 gem 'nokogiri'
 
