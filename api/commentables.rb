@@ -26,6 +26,7 @@ post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   end
   
   thread.author = user
+  filter_blocked_content thread
   thread.save
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json

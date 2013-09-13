@@ -13,7 +13,10 @@ environment = env_arg || ENV["SINATRA_ENV"] || "development"
 
 RACK_ENV = environment
 module CommentService
-  class << self; attr_accessor :config; end
+  class << self
+    attr_accessor :config
+    attr_accessor :blocked_hashes
+  end
   API_VERSION = 'v1'
   API_PREFIX = "/api/#{API_VERSION}"
 end
@@ -92,3 +95,6 @@ end
 error ArgumentError do
   error 400, [env['sinatra.error'].message].to_json
 end
+
+CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).each.map {|d| d["hash"]}
+
