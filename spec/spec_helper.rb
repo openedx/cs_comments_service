@@ -41,6 +41,7 @@ end
 def init_without_subscriptions
 
   [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
+  Content.mongo_session[:blocked_hash].drop
   Tire.index 'comment_threads' do delete end
   CommentThread.create_elasticsearch_index
   
@@ -104,6 +105,10 @@ def init_without_subscriptions
     user.vote(c, :up) # make the first user always vote up for convenience
     users.each {|user| user.vote(c, [:up, :down].sample)}
   end
+
+  Content.mongo_session[:blocked_hash].insert(hash: Digest::MD5.hexdigest("blocked post"))
+  # reload the global holding the blocked hashes
+  CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).each.map {|d| d["hash"]}
 
 end
 

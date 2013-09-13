@@ -91,6 +91,13 @@ describe "app" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
         last_response.status.should == 400
       end
+      it "returns 503 if the post body has been blocked" do
+        thread = CommentThread.first
+        put "/api/v1/threads/#{thread.id}", body: "BLOCKED POST", title: "new title", commentable_id: "new_commentable_id"
+        last_response.status.should == 503
+        put "/api/v1/threads/#{thread.id}", body: "blocked,   post...", title: "new title", commentable_id: "new_commentable_id"
+        last_response.status.should == 503
+      end
       it "updates tag of comment thread" do
         thread = CommentThread.first
         put "/api/v1/threads/#{thread.id}", tags: "haha, hoho, huhu"
@@ -144,6 +151,10 @@ describe "app" do
         last_response.status.should == 400
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "    \n      \n  ")
         last_response.status.should == 400
+      end
+      it "returns 503 when the post body has been blocked" do
+        post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "BLOCKED POST")
+        last_response.status.should == 503
       end
     end
     describe "DELETE /api/v1/threads/:thread_id" do
