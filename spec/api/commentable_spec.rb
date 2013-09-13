@@ -94,6 +94,10 @@ describe "app" do
         post '/api/v1/question_1/threads', default_params.merge(body: "     \n    \n")
         last_response.status.should == 400
       end
+      it "returns 503 when the post content is blocked" do
+        post '/api/v1/question_1/threads', default_params.merge(body: "BLOCKED POST")
+        last_response.status.should == 503
+      end
       it "create a new comment thread with tag" do
         post '/api/v1/question_1/threads', default_params.merge(tags: "a, b, c")
         last_response.should be_ok

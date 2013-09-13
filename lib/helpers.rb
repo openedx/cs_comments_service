@@ -273,4 +273,18 @@ helpers do
 
   end
 
+  def filter_blocked_content c
+    begin
+      normalized_body = c.body.strip.downcase.gsub(/[^a-z ]/, '').gsub(/\s+/, ' ')
+      hash = Digest::MD5.hexdigest(normalized_body)
+    rescue
+      # body was nil, or the hash function failed somehow - never mind
+      return
+    end  
+    if CommentService.blocked_hashes.include? hash then
+      logger.warn "blocked content with body hash [#{hash}]"
+      error 503
+    end
+  end
+
 end

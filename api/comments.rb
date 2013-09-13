@@ -4,6 +4,7 @@ end
 
 put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   comment.update_attributes(params.slice(*%w[body endorsed]))
+  filter_blocked_content comment
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
   else
@@ -17,6 +18,7 @@ post "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   sub_comment.anonymous_to_peers = bool_anonymous_to_peers || false
   sub_comment.author = user
   sub_comment.comment_thread = comment.comment_thread
+  filter_blocked_content sub_comment
   sub_comment.save
   if sub_comment.errors.any?
     error 400, sub_comment.errors.full_messages.to_json

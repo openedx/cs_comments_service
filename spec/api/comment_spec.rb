@@ -46,6 +46,11 @@ describe "app" do
         put "/api/v1/comments/does_not_exist", body: "new body", endorsed: true
         last_response.status.should == 400
       end
+      it "returns 503 when the post hash is blocked" do
+        comment = Comment.first
+        put "/api/v1/comments/#{comment.id}", body: "BLOCKED POST", endorsed: true
+        last_response.status.should == 503
+      end
     end
     describe "POST /api/v1/comments/:comment_id" do
       it "create a sub comment to the comment" do
@@ -62,6 +67,12 @@ describe "app" do
       it "returns 400 when the comment does not exist" do
         post "/api/v1/comments/does_not_exist", body: "new comment", course_id: "1", user_id: User.first.id
         last_response.status.should == 400
+      end
+      it "returns 503 when the post hash is blocked" do
+        comment = Comment.first.to_hash(recursive: true)
+        user = User.first
+        post "/api/v1/comments/#{comment["id"]}", body: "BLOCKED POST", course_id: "1", user_id: User.first.id
+        last_response.status.should == 503
       end
     end
     describe "DELETE /api/v1/comments/:comment_id" do
