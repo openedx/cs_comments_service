@@ -17,8 +17,16 @@ class Comment < Content
   field :at_position_list, type: Array, default: []
 
   index({author_id: 1, course_id: 1})
-  
-  
+
+  field :sk, type: String, default: nil
+  before_save :set_sk  
+  def set_sk()
+    # this attribute is explicitly write-once
+    if self.sk.nil?
+      self.sk = (self.parent_ids << self.id).join("-") 
+    end
+  end
+
   include Tire::Model::Search
   include Tire::Model::Callbacks
 
@@ -77,19 +85,14 @@ class Comment < Content
       end
     end
     if params[:recursive]
+      # TODO: remove and reuse the new hierarchical sort keys if possible
       subtree_hash = subtree(sort: sort_by_parent_and_time)
-
-      # Flatten out the subtree and fetch all users in bulk; makes getting the
-      # usernames faster. Should probably denormalize usernames.
-      flattened_subtree = Comment.flatten_subtree(subtree_hash)
-      User.only(:username).find(flattened_subtree.map{|x| x.author_id})
-
       self.class.hash_tree(subtree_hash).first
     else
       as_document.slice(*%w[body course_id endorsed anonymous anonymous_to_peers created_at updated_at at_position_list])
                  .merge("id" => _id)
                  .merge("user_id" => author_id)
-                 .merge("username" => author.nil? ? "na" : author.username) # avoid crashing to_hash on orphaned comments
+                 .merge("username" => author_username) 
                  .merge("depth" => depth)
                  .merge("closed" => comment_thread.nil? ? false : comment_thread.closed) # ditto
                  .merge("thread_id" => comment_thread_id)

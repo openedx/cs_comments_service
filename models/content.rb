@@ -5,7 +5,14 @@ class Content
   field :visible, type: Boolean, default: true
   field :abuse_flaggers, type: Array, default: []
   field :historical_abuse_flaggers, type: Array, default: [] #preserve abuse flaggers after a moderator unflags
+  field :author_username, type: String, default: nil
   
+  before_save :set_username
+  def set_username
+    # avoid having to look this attribute up later, since it does not change
+    self.author_username = author.username
+  end
+
   def author_with_anonymity(attr=nil, attr_when_anonymous=nil)
     if not attr
       (anonymous || anonymous_to_peers) ? nil : author
