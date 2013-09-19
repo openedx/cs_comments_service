@@ -31,10 +31,10 @@ db.contents.find({"_type":"Comment","sk":{$exists:false}}).forEach(function (doc
         if (typeof(doc.parent_ids)==="undefined") {
             sort_ids = [];
         } else {
-            sort_ids = doc.parent_ids;
+            sort_ids = doc.parent_ids.slice(0);
         }
         sort_ids.push(doc._id);
-        doc.sk = sort_ids.join("-");
+        doc.sk = sort_ids.map(function (oid) {return oid.str}).join("-");
         db.contents.save(doc);
     }
     cnt += 1;

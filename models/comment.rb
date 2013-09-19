@@ -23,7 +23,7 @@ class Comment < Content
   def set_sk()
     # this attribute is explicitly write-once
     if self.sk.nil?
-      self.sk = (self.parent_ids << self.id).join("-") 
+      self.sk = (self.parent_ids.dup << self.id).join("-") 
     end
   end
 
