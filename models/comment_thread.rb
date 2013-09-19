@@ -258,10 +258,40 @@ class CommentThread < Content
                             "pinned" => pinned?,
                             "endorsed" => endorsed?)
     if params[:recursive]
-      doc = doc.merge("children" => root_comments.map{|c| c.to_hash(recursive: true)})
+      doc = doc.merge("children" => [])
+      rs = Comment.where(comment_thread_id: self.id).order_by({"sk"=> 1})
+      ancestry = [doc]
+      comments_count = 0
+      # weave the fetched comments into a single hierarchical doc
+      rs.each do | comment |
+        h = comment.to_hash.merge("children" => [])
+        parent_id = comment.parent_id || self.id
+        found_parent = false
+        while ancestry.length > 0 do
+          if parent_id == ancestry.last["id"] then
+            # found the children collection to which this comment belongs
+            ancestry.last["children"] << h
+            ancestry << h
+            found_parent = true
+            comments_count += 1
+            break
+          else
+            # try again with one level back in the ancestry til we find the parent
+            ancestry.pop
+            next
+          end
+        end 
+        if not found_parent
+          # if we arrive here, it means a parent_id somewhere in the result set
+          # is pointing to an invalid place.
+          msg = "recursion ended: thread_id=#{self.id} comment_id=#{comment.id} parent_ids=#{comment.parent_ids} sk=#{comment.sk}"
+          logger.warn msg 
+          ancestry = [doc]
+        end
+      end 
+    else
+      comments_count = comments.count
     end
-
-    comments_count = comments.count
 
     if params[:user_id]
       user = User.find_or_create_by(external_id: params[:user_id])
