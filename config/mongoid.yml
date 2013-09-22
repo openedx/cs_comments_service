@@ -30,6 +30,21 @@ production:
         safe: true
         consistency: strong
 
+# configuration meant to be nearly the same as prod/stage, but to get
+# all it's configuration from the environment.
+parameterized:
+  sessions:
+    default:
+      hosts:
+        - <%= ENV['MONGO_HOST'] + ':' + ENV['MONGO_PORT'] %>
+      username: <%= ENV['MONGO_USER'] %>
+      password: <%= ENV['MONGO_PASS'] %>
+      database: <%= ENV['MONGO_DB'] %>
+      options:
+        skip_version_check: true
+        safe: true
+        consistency: strong
+
 edgeprod:
   sessions:
     default:
