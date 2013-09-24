@@ -73,6 +73,7 @@ loadtest:
       options:
         skip_version_check: true
         safe: true
+        consistency: strong
 
 defaults: &defaults
   use_utc: false
