@@ -74,8 +74,9 @@ loadtest:
         skip_version_check: true
         safe: true
         consistency: strong
-        max_retries: 50
-
+        max_retries: 1
+        retry_interval: 1
+ 
 defaults: &defaults
   use_utc: false
   use_activesupport_time_zone: true
