@@ -74,7 +74,7 @@ loadtest:
         skip_version_check: true
         safe: true
         consistency: strong
-        max_retries: 1
+        max_retries: 50
         retry_interval: 0
 
 defaults: &defaults
