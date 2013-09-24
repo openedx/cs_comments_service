@@ -75,7 +75,6 @@ loadtest:
         safe: true
         consistency: strong
         max_retries: 50
-        retry_interval: 0
 
 defaults: &defaults
   use_utc: false
