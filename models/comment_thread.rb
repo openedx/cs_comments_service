@@ -25,6 +25,7 @@ class CommentThread < Content
   field :pinned, type: Boolean
 
   index({author_id: 1, course_id: 1})
+  index({_type: 1, course_id: 1, pinned: -1, created_at: -1})
 
   include Tire::Model::Search
   include Tire::Model::Callbacks
@@ -99,13 +100,6 @@ class CommentThread < Content
     per_page = options[:per_page] || 20
     sort_key = options[:sort_key]
     sort_order = options[:sort_order]
-    if CommentService.config[:cache_enabled]
-      memcached_key = "threads_search_#{params.merge(options).hash}"
-      results = Sinatra::Application.cache.get(memcached_key)
-      if results
-        return results
-      end
-    end
     
 
 #GET /api/v1/search/threads?user_id=1&recursive=False&sort_key=date&│[2013-06-28 10:16:46,104][INFO ][plugins                  ] [Glamor] loaded [], sites []                  
@@ -203,10 +197,6 @@ class CommentThread < Content
 
     end
 
-
-    if CommentService.config[:cache_enabled]
-      Sinatra::Application.cache.set(memcached_key, results, CommentService.config[:cache_timeout][:threads_search].to_i)
-    end
     results
   end
 
@@ -270,100 +260,20 @@ class CommentThread < Content
     #    from orig doc
     #  pinned
     #    from orig doc
-    #  endorsed
-    #    if any comment within the thread is endorsed, see above (endorsed?) 
-    #  children (if recursive=true)
-    #    will do a separate query for all the children
-    #  unread_comments_count
-    #    assuming this is being called on behalf of a specific user U, this counts the
-    #    number of comments in this thread not authored by U AND whose updated_at
-    #    is greater than (U[last_read_dates][this._id] or 0)
     #  comments_count
     #    count across all comments
-    #  read
-    #    currently this checks doc.updated_at (which is kept up to date by callbacks) 
-    #    iow, any comment or the thread itself have been updated since i last read 
 
-    doc = as_document.slice(*%w[title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
+    as_document.slice(*%w[title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
                      .merge("id" => _id, "user_id" => author_id,
-                            "username" => author.username,
+                            "username" => author_username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),
                             "abuse_flaggers" => abuse_flaggers,
                             "tags" => tags_array,
                             "type" => "thread",
                             "group_id" => group_id,
                             "pinned" => pinned?,
-                            "endorsed" => endorsed?)
-    if params[:recursive]
-      doc = doc.merge("children" => [])
-      rs = Comment.where(comment_thread_id: self.id).order_by({"sk"=> 1})
-      ancestry = [doc]
-      comments_count = 0
-      # weave the fetched comments into a single hierarchical doc
-      rs.each do | comment |
-        h = comment.to_hash.merge("children" => [])
-        parent_id = comment.parent_id || self.id
-        found_parent = false
-        while ancestry.length > 0 do
-          if parent_id == ancestry.last["id"] then
-            # found the children collection to which this comment belongs
-            ancestry.last["children"] << h
-            ancestry << h
-            found_parent = true
-            comments_count += 1
-            break
-          else
-            # try again with one level back in the ancestry til we find the parent
-            ancestry.pop
-            next
-          end
-        end 
-        if not found_parent
-          # if we arrive here, it means a parent_id somewhere in the result set
-          # is pointing to an invalid place.
-          msg = "recursion ended: thread_id=#{self.id} comment_id=#{comment.id} parent_ids=#{comment.parent_ids} sk=#{comment.sk}"
-          logger.warn msg 
-          ancestry = [doc]
-        end
-      end 
-    else
-      comments_count = comments.count
-    end
-
-    if params[:user_id]
-      user = User.find_or_create_by(external_id: params[:user_id])
-      read_state = user.read_states.where(course_id: self.course_id).first
-      last_read_time = read_state.last_read_times[self.id.to_s] if read_state
-      # comments created by the user are excluded in the count
-      # this is rather like a hack but it avoids the following situation:
-      #   when you reply to a thread and while you are editing,
-      #   other people also replied to the thread. Now if we simply
-      #   update the last_read_time, then the other people's replies
-      #   will not be included in the unread_count; if we leave it
-      #   that way, then your own comment will be included in the
-      #   unread count
-      if last_read_time
-        unread_count = self.comments.where(
-            :updated_at => {:$gte => last_read_time},
-            :author_id => {:$ne => params[:user_id]},
-        ).count
-        read = last_read_time >= self.updated_at
-      else
-        unread_count = self.comments.where(:author_id => {:$ne => params[:user_id]}).count
-        read = false
-      end
-    else
-      # If there's no user, say it's unread and all comments are unread
-      unread_count = comments_count
-      read = false
-    end
-
-    doc = doc.merge("unread_comments_count" => unread_count)
-             .merge("read" => read)
-             .merge("comments_count" => comments_count)
-
-    doc
-
+                            "comments_count" => comment_count)
+    
   end
 
   def self.tag_name_valid?(tag)

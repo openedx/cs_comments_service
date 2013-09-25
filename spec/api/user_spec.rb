@@ -48,26 +48,7 @@ describe "app" do
     end
     describe "GET /api/v1/users/:user_id/active_threads" do
 
-      before(:each) do
-        
-        User.all.delete
-        Content.all.delete
-
-        @users = {}
-        @threads = {}
-        @comments = {}
-        10.times do |i|
-          author = create_test_user(i+100)
-          @users["u#{i+100}"] = author
-          thread = make_thread(author, "t#{i}", "xyz", "pdq")
-          @threads["t#{i}"] = thread
-          5.times do |j|
-            comment = make_comment(author, thread, "t#{i} c#{j}")
-            @comments["t#{i} c#{j}"] = comment
-          end
-        end
-        @natural_order = 10.times.map {|i| "t#{i}"}
-      end
+      before(:each) { setup_10_threads }
 
       def thread_result(user_id, params)
         get "/api/v1/users/#{user_id}/active_threads", params
@@ -89,7 +70,7 @@ describe "app" do
         rs.first["children"].length.should == 5
       end
 
-      it "does not include anonymous threads" do
+      it "does not include anonymous leaves" do
         @comments["t0 c4"].anonymous = true
         @comments["t0 c4"].save!
         rs = thread_result 100, course_id: "xyz"
@@ -98,7 +79,7 @@ describe "app" do
         rs.first["children"].length.should == 4
       end
 
-      it "does not include anonymous-to-peers threads" do
+      it "does not include anonymous-to-peers leaves" do
         @comments["t0 c3"].anonymous_to_peers = true
         @comments["t0 c3"].save!
         rs = thread_result 100, course_id: "xyz"
@@ -163,11 +144,9 @@ describe "app" do
         @actual_comment_count.should == expected_comment_count
       end
     
-      # FIXME note the checks on result["num_pages"] are disabled.
-      # turns out there is a bug in GET "#{APIPREFIX}/users/:user_id/active_threads
-      # and this value is often wrong.  however, since these tests are being
-      # created as a precursor to refactoring, the bug will not be fixed, and the
-      # checks will stay disabled.
+      # TODO: note the checks on result["num_pages"] are disabled.
+      # there is a bug in GET "#{APIPREFIX}/users/:user_id/active_threads
+      # and this value is often wrong.
       context "pagination" do
         def thread_result_page (page, per_page)
           get "/api/v1/users/100/active_threads", course_id: "xyz", page: page, per_page: per_page
@@ -202,13 +181,14 @@ describe "app" do
         it "orders correctly across pages" do
           expected_order = @threads.keys.reverse 
           actual_order = []
-          pp = 3 # per page
-          4.times do |i|
-            n = i + 1
-            result = thread_result_page(n, pp)
-            result["collection"].length.should == [n * pp, 10].min - ((n - 1) * pp)
-            #result["num_pages"].should == 4
-            result["page"].should == n
+          per_page = 3
+          num_pages = (@threads.length + per_page - 1) / per_page
+          num_pages.times do |i|
+            page = i + 1
+            result = thread_result_page(page, per_page)
+            result["collection"].length.should == (page * per_page <= @threads.length ? per_page : @threads.length % per_page)
+            #result["num_pages"].should == num_pages
+            result["page"].should == page
             actual_order += result["collection"].map {|v| v["title"]}
           end
           actual_order.should == expected_order

@@ -55,15 +55,17 @@ describe "app" do
     describe "POST /api/v1/:commentable_id/threads" do
       default_params = {title: "Interesting question", body: "cool", course_id: "1", user_id: "1"}
       it "create a new comment thread for the commentable object" do
+        old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params
         last_response.should be_ok
-        CommentThread.count.should == 4
+        CommentThread.count.should == old_count + 1
         CommentThread.where(title: "Interesting question").first.should_not be_nil
       end
       it "allows anonymous thread" do
+        old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params.merge(anonymous: true)
         last_response.should be_ok
-        CommentThread.count.should == 4
+        CommentThread.count.should == old_count + 1
         c = CommentThread.where(title: "Interesting question").first
         c.should_not be_nil
         c["anonymous"].should be_true
@@ -99,9 +101,10 @@ describe "app" do
         last_response.status.should == 503
       end
       it "create a new comment thread with tag" do
+        old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params.merge(tags: "a, b, c")
         last_response.should be_ok
-        CommentThread.count.should == 4
+        CommentThread.count.should == old_count + 1
         thread = CommentThread.where(title: "Interesting question").first
         thread.tags_array.length.should == 3
         thread.tags_array.should include "a"
@@ -109,9 +112,10 @@ describe "app" do
         thread.tags_array.should include "c"
       end
       it "strip spaces in tags" do
+        old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params.merge(tags: " a, b ,c ")
         last_response.should be_ok
-        CommentThread.count.should == 4
+        CommentThread.count.should == old_count + 1
         thread = CommentThread.where(title: "Interesting question").first
         thread.tags_array.length.should == 3
         thread.tags_array.should include "a"
@@ -119,9 +123,10 @@ describe "app" do
         thread.tags_array.should include "c"
       end
       it "accepts [a-z 0-9 + # - .]words, numbers, dashes, spaces but no underscores in tags" do
+        old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params.merge(tags: "artificial-intelligence, machine-learning, 7-is-a-lucky-number, interesting problem, interesting problems in c++")
         last_response.should be_ok
-        CommentThread.count.should == 4
+        CommentThread.count.should == old_count + 1
         thread = CommentThread.where(title: "Interesting question").first
         thread.tags_array.length.should == 5
       end

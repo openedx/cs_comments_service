@@ -64,12 +64,7 @@ staging:
 loadtest:
   sessions:
     default:
-      hosts:
-        - sayid.member0.mongohq.com:10002
-        - sayid.member1.mongohq.com:10002
-      username: <%= ENV['MONGOHQ_USER'] %>
-      password: <%= ENV['MONGOHQ_PASS'] %>
-      database: app16669863
+      uri: <%= ENV['MONGOHQ_URL'] %>
       options:
         skip_version_check: true
         safe: true
