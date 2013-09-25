@@ -57,13 +57,13 @@ describe "app" do
       it "create a new comment thread for the commentable object" do
         post '/api/v1/question_1/threads', default_params
         last_response.should be_ok
-        CommentThread.count.should == 3
+        CommentThread.count.should == 4
         CommentThread.where(title: "Interesting question").first.should_not be_nil
       end
       it "allows anonymous thread" do
         post '/api/v1/question_1/threads', default_params.merge(anonymous: true)
         last_response.should be_ok
-        CommentThread.count.should == 3
+        CommentThread.count.should == 4
         c = CommentThread.where(title: "Interesting question").first
         c.should_not be_nil
         c["anonymous"].should be_true
@@ -101,7 +101,7 @@ describe "app" do
       it "create a new comment thread with tag" do
         post '/api/v1/question_1/threads', default_params.merge(tags: "a, b, c")
         last_response.should be_ok
-        CommentThread.count.should == 3
+        CommentThread.count.should == 4
         thread = CommentThread.where(title: "Interesting question").first
         thread.tags_array.length.should == 3
         thread.tags_array.should include "a"
@@ -111,7 +111,7 @@ describe "app" do
       it "strip spaces in tags" do
         post '/api/v1/question_1/threads', default_params.merge(tags: " a, b ,c ")
         last_response.should be_ok
-        CommentThread.count.should == 3
+        CommentThread.count.should == 4
         thread = CommentThread.where(title: "Interesting question").first
         thread.tags_array.length.should == 3
         thread.tags_array.should include "a"
@@ -121,7 +121,7 @@ describe "app" do
       it "accepts [a-z 0-9 + # - .]words, numbers, dashes, spaces but no underscores in tags" do
         post '/api/v1/question_1/threads', default_params.merge(tags: "artificial-intelligence, machine-learning, 7-is-a-lucky-number, interesting problem, interesting problems in c++")
         last_response.should be_ok
-        CommentThread.count.should == 3
+        CommentThread.count.should == 4
         thread = CommentThread.where(title: "Interesting question").first
         thread.tags_array.length.should == 5
       end

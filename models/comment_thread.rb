@@ -247,6 +247,43 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
+
+    # to_hash returns the following model for each thread
+    #  title body course_id anonymous anonymous_to_peers commentable_id
+    #  created_at updated_at at_position_list closed
+    #    (all the above direct from the original document)
+    #  id
+    #    from doc._id
+    #  user_id
+    #    from doc.author_id
+    #  username
+    #    from doc.author_username
+    #  votes
+    #    from subdocument votes - {count, up_count, down_count, point}  
+    #  abuse_flaggers
+    #    from original document 
+    #  tags
+    #    from orig doc tags_array
+    #  type
+    #    hardcoded "thread"
+    #  group_id
+    #    from orig doc
+    #  pinned
+    #    from orig doc
+    #  endorsed
+    #    if any comment within the thread is endorsed, see above (endorsed?) 
+    #  children (if recursive=true)
+    #    will do a separate query for all the children
+    #  unread_comments_count
+    #    assuming this is being called on behalf of a specific user U, this counts the
+    #    number of comments in this thread not authored by U AND whose updated_at
+    #    is greater than (U[last_read_dates][this._id] or 0)
+    #  comments_count
+    #    count across all comments
+    #  read
+    #    currently this checks doc.updated_at (which is kept up to date by callbacks) 
+    #    iow, any comment or the thread itself have been updated since i last read 
+
     doc = as_document.slice(*%w[title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
                      .merge("id" => _id, "user_id" => author_id,
                             "username" => author.username,
