@@ -1,4 +1,5 @@
 helpers do
+
   def commentable
     @commentable ||= Commentable.find(params[:commentable_id])
   end
@@ -115,7 +116,6 @@ helpers do
 
   def handle_threads_query(comment_threads)
     
-      
     if params[:course_id]
       comment_threads = comment_threads.where(:course_id=>params[:course_id])
       
@@ -134,18 +134,6 @@ helpers do
         
       end
     end
-    if CommentService.config[:cache_enabled]
-      query_params = params.slice(*%w[course_id commentable_id sort_key sort_order page per_page user_id])
-      memcached_key = "threads_query_#{query_params.hash}"
-      cached_results = Sinatra::Application.cache.get(memcached_key)
-      if cached_results
-        return {
-          collection: cached_results[:collection_ids].map{|id| CommentThread.find(id).to_hash(recursive: bool_recursive, user_id: params["user_id"])},
-          num_pages: cached_results[:num_pages],
-          page: cached_results[:page],
-        }.to_json
-      end
-    end
 
     sort_key_mapper = {
       "date" => :created_at,
@@ -159,8 +147,8 @@ helpers do
       "asc" => :asc,
     }
 
-    sort_key = sort_key_mapper[params["sort_key"]]
-    sort_order = sort_order_mapper[params["sort_order"]]
+    sort_key = sort_key_mapper[params["sort_key"] || "date"]
+    sort_order = sort_order_mapper[params["sort_order"] || "desc"] 
     sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
 
     if not sort_keyword_valid
@@ -168,23 +156,31 @@ helpers do
     else
       page = (params["page"] || DEFAULT_PAGE).to_i
       per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
-      #KChugh turns out we don't need to go through all the extra work on the back end because the client is resorting anyway
-      #KChugh boy was I wrong, we need to sort for pagination
-      comment_threads = comment_threads.order_by("pinned DESC,#{sort_key} #{sort_order}") if sort_key && sort_order
+
+      order_clause = "pinned DESC, #{sort_key} #{sort_order}"
+      if ![:created_at, :last_activity_at].include? sort_key
+        # make sort order predictable when preceding sorts are non-unique
+        order_clause = "#{order_clause}, created_at DESC"
+      end
+      comment_threads = comment_threads.order_by(order_clause)
       num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
       page = [num_pages, [1, page].max].min
-      paged_comment_threads = comment_threads.page(page).per(per_page)
-      if CommentService.config[:cache_enabled]
-        cached_results = {
-          collection_ids: paged_comment_threads.map(&:id),
-          num_pages: num_pages,
-          page: page,
-        }
-        Sinatra::Application.cache.set(memcached_key, cached_results, CommentService.config[:cache_timeout][:threads_query].to_i)
-      end
+      # actual query happens here (by doing to_a)
+      threads = comment_threads.page(page).per(per_page).to_a
       
+      if threads.length == 0
+        collection = []
+      else
+        pres_threads = ThreadPresenter.new(
+          threads,
+          params[:user_id] ? user : nil,
+          params[:course_id] || threads.first.course_id
+        )
+        collection = pres_threads.to_hash_array(bool_recursive)
+      end
+
       {
-        collection: paged_comment_threads.map{|t| t.to_hash(recursive: bool_recursive, user_id: params["user_id"])},
+        collection: collection, 
         num_pages: num_pages,
         page: page,
       }.to_json

@@ -17,6 +17,7 @@ class Comment < Content
   field :at_position_list, type: Array, default: []
 
   index({author_id: 1, course_id: 1})
+  index({_type: 1, comment_thread_id: 1, author_id: 1, updated_at: 1})
 
   field :sk, type: String, default: nil
   before_save :set_sk  

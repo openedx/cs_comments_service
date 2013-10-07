@@ -23,13 +23,18 @@ end
 
 if ["staging", "production", "loadtest", "edgestage","edgeprod"].include? environment
   require 'newrelic_rpm'
+  require 'new_relic/agent/method_tracer'
+  Moped::Session.class_eval do
+      include NewRelic::Agent::MethodTracer
+      add_method_tracer :new
+      add_method_tracer :use
+      add_method_tracer :login
+  end
 end
 
 if ENV["ENABLE_GC_PROFILER"]
   GC::Profiler.enable
 end
-
-set :cache, Dalli::Client.new
 
 application_yaml = ERB.new(File.read("config/application.yml")).result()
 CommentService.config = YAML.load(application_yaml).with_indifferent_access
@@ -43,6 +48,7 @@ Mongoid.logger.level = Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
+Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each {|file| require file}
 
 # Comment out observers until notifications are actually set up properly.
 #Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}

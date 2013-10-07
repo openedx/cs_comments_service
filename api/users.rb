@@ -39,11 +39,8 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
     paged_thread_ids.index(t.id)
   end
 
-  # Fetch all the usernames in bulk to save on queries. Since we're using the
-  # identity map, the users won't need to be fetched again later.
-  User.only(:username).find(paged_active_threads.map{|x| x.author_id})
-
-  collection = paged_active_threads.map{|t| t.to_hash recursive: true}
+  presenter = ThreadPresenter.new(paged_active_threads.to_a, user, params[:course_id])
+  collection = presenter.to_hash_array(true)
   collection = author_contents_only(collection, user_id)
 
   {
