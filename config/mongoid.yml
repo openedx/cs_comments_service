@@ -11,20 +11,10 @@ test:
       hosts:
         - localhost:27017
 
-#production:
-#  sessions:
-#    default:
-#      uri: <%= ENV['MONGOHQ_URL'] %>
-
 production:
   sessions:
     default:
-      hosts:
-        - hurley.member0.mongohq.com:10000
-        - hurley.member1.mongohq.com:10000
-      username: <%= ENV['MONGOHQ_USER'] %>
-      password: <%= ENV['MONGOHQ_PASS'] %>
-      database: app6929933
+      uri: <%= ENV['MONGOHQ_URL'] %>
       options:
         skip_version_check: true
         safe: true
@@ -33,11 +23,7 @@ production:
 edgeprod:
   sessions:
     default:
-      hosts:
-        - sayid.member1.mongohq.com:10001
-      username: <%= ENV['MONGOHQ_USER'] %>
-      password: <%= ENV['MONGOHQ_PASS'] %>
-      database: app10640640
+      uri: <%= ENV['MONGOHQ_URL'] %>
       options:
         skip_version_check: true
         safe: true
@@ -46,11 +32,7 @@ edgeprod:
 edgestage:
   sessions:
     default:
-      hosts:
-        - vincent.mongohq.com:10001
-      username: <%= ENV['MONGOHQ_USER'] %>
-      password: <%= ENV['MONGOHQ_PASS'] %>
-      database: app10640673
+      uri: <%= ENV['MONGOHQ_URL'] %>
       options:
         skip_version_check: true
         safe: true
@@ -71,7 +53,7 @@ loadtest:
         consistency: strong
         max_retries: 1
         retry_interval: 1
- 
+
 defaults: &defaults
   use_utc: false
   use_activesupport_time_zone: true
