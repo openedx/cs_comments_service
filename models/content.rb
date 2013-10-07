@@ -7,6 +7,9 @@ class Content
   field :historical_abuse_flaggers, type: Array, default: [] #preserve abuse flaggers after a moderator unflags
   field :author_username, type: String, default: nil
   
+  index({comment_thread_id: 1, sk: 1}, {sparse: true})
+  index({comment_thread_id: 1, endorsed: 1}, {sparse: true})
+
   before_save :set_username
   def set_username
     # avoid having to look this attribute up later, since it does not change

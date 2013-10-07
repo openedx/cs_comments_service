@@ -20,7 +20,8 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
     user.mark_as_read(thread) if user
   end
 
-  thread.to_hash(recursive: bool_recursive, user_id: params["user_id"]).to_json
+  presenter = ThreadPresenter.new([thread], user || nil, thread.course_id)
+  presenter.to_hash_array(true).first.to_json
 end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
@@ -34,7 +35,8 @@ put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
   else
-    thread.to_hash.to_json
+    presenter = ThreadPresenter.new([thread], nil, thread.course_id)
+    presenter.to_hash_array.first.to_json
   end
 end
 

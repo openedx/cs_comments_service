@@ -48,6 +48,7 @@ group :test do
   gem 'rack-test', :require => "rack/test"
   gem 'guard'
   gem 'guard-unicorn'
+  gem 'simplecov', :require => false
 end
 
 gem 'newrelic_rpm'

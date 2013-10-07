@@ -2,19 +2,312 @@ require 'spec_helper'
 
 describe "app" do
   describe "comment threads" do
-    before(:each) { init_without_subscriptions }
+
+    describe "GET /api/v1/threads" do
+
+      before(:each) { setup_10_threads }
+
+      def thread_result(params)
+        get "/api/v1/threads", params
+        last_response.should be_ok
+        parse(last_response.body)["collection"]
+      end
+
+      context "when filtering by course" do
+        it "returns only threads with matching course id" do
+          [@threads["t1"], @threads["t2"]].each do |t| 
+            t.course_id = "abc"
+            t.save! 
+          end 
+          rs = thread_result course_id: "abc", sort_order: "asc"
+          rs.length.should == 2 
+          rs.each_with_index { |res, i|
+            check_thread_result(nil, @threads["t#{i+1}"], res)
+            res["course_id"].should == "abc"
+          }
+        end
+        it "returns only threads where course id and group id match" do
+          @threads["t1"].course_id = "omg"
+          @threads["t1"].group_id = 100
+          @threads["t1"].save!
+          @threads["t2"].course_id = "omg"
+          @threads["t2"].group_id = 101
+          @threads["t2"].save!
+          rs = thread_result course_id: "omg", group_id: 100
+          rs.length.should == 1
+          check_thread_result(nil, @threads["t1"], rs.first)
+        end
+        it "returns only threads where course id and group id match or group id is nil" do
+          @threads["t1"].course_id = "omg"
+          @threads["t1"].group_id = 100
+          @threads["t1"].save!
+          @threads["t2"].course_id = "omg"
+          @threads["t2"].save!
+          @threads["t3"].group_id = 100
+          @threads["t3"].save!
+          rs = thread_result course_id: "omg", group_id: 100, sort_order: "asc"
+          rs.length.should == 2 
+          rs.each_with_index { |res, i|
+            check_thread_result(nil, @threads["t#{i+1}"], res)
+            res["course_id"].should == "omg"
+          }
+        end
+        it "returns an empty result when no threads match course_id" do
+          rs = thread_result course_id: 99
+          rs.length.should == 0 
+        end
+        it "returns only group-less threads when no threads have matching group id" do
+          @threads["t1"].group_id = 123
+          @threads["t1"].save!
+          rs = thread_result course_id: DFLT_COURSE_ID, group_id: 321
+          rs.each.map {|res| res["group_id"].should be_nil }
+        end
+        context "when filtering flagged posts" do
+          it "returns threads that are flagged" do
+            @threads["t1"].abuse_flaggers = [1]
+            @threads["t1"].save!
+            rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
+            rs.length.should == 1 
+            check_thread_result(nil, @threads["t1"], rs.first)
+          end
+          it "returns threads that have flagged comments" do
+            @comments["t2 c3"].abuse_flaggers = [1]            
+            @comments["t2 c3"].save!
+            rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
+            rs.length.should == 1 
+            check_thread_result(nil, @threads["t2"], rs.first)
+          end
+          it "returns an empty result when no posts were flagged" do
+            rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
+            rs.length.should == 0 
+          end
+        end
+        it "correctly considers read state" do
+          user = create_test_user(123)
+          [@threads["t1"], @threads["t2"]].each do |t| 
+            t.course_id = "abc"
+            t.save! 
+          end 
+          rs = thread_result course_id: "abc", user_id: "123", sort_order: "asc"
+          rs.length.should == 2 
+          rs.each_with_index { |result, i|
+            check_thread_result(user, @threads["t#{i+1}"], result)
+            result["course_id"].should == "abc"
+            result["unread_comments_count"].should == 5
+            result["read"].should == false
+          }
+
+          user.mark_as_read(@threads["t1"])
+          rs = thread_result course_id: "abc", user_id: "123", sort_order: "asc"
+          rs.length.should == 2
+          rs.each_with_index { |result, i|
+            check_thread_result(user, @threads["t#{i+1}"], result)
+          }
+          rs[0]["read"].should == true
+          rs[0]["unread_comments_count"].should == 0
+          rs[1]["read"].should == false
+          rs[1]["unread_comments_count"].should == 5
+
+          @threads["t1"].updated_at += 1 # 1 second later
+          @threads["t1"].save!
+          rs = thread_result course_id: "abc", user_id: "123", sort_order: "asc"
+          rs.length.should == 2
+          rs.each_with_index { |result, i|
+            check_thread_result(user, @threads["t#{i+1}"], result)
+          }
+          rs[0]["read"].should == false # no unread comments, but the thread itself was updated
+          rs[0]["unread_comments_count"].should == 0
+          rs[1]["read"].should == false
+          rs[1]["unread_comments_count"].should == 5
+
+          # author's own posts should not count as unread
+          make_comment(user, @threads["t1"], "my two cents")
+          rs = thread_result course_id: "abc", user_id: "123", sort_order: "asc"
+          rs[0]["unread_comments_count"].should == 0
+
+          # other's posts do, though
+          make_comment(@threads["t1"].author, @threads["t1"], "the last word")
+          rs = thread_result course_id: "abc", user_id: "123", sort_order: "asc"
+          rs[0]["unread_comments_count"].should == 1
+        end
+
+        context "sorting" do
+          def thread_result_order (sort_key, sort_order)
+            results = thread_result course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order
+            results.length.should == 10 
+            results.map {|t| t["title"]}
+          end
+
+          def move_to_end(ary, *vals)
+            vals.each do |val|
+              ary = ary.select {|v| v!=val } << val
+            end
+            ary
+          end
+
+          def move_to_front(ary, *vals)
+            vals.reverse.each do |val|
+              ary = ary.select {|v| v!=val }.insert(0, val)
+            end
+            ary
+          end
+
+          it "sorts using create date / ascending" do
+            actual_order = thread_result_order("date", "asc")
+            expected_order = @default_order.reverse
+            actual_order.should == expected_order
+          end
+          it "sorts using create date / descending" do
+            actual_order = thread_result_order("date", "desc")
+            expected_order = @default_order
+            actual_order.should == expected_order
+          end
+          it "sorts using last activity / descending" do
+            t5c = @threads["t5"].comments.first
+            t5c.update(body: "changed!")
+            t5c.save!
+            actual_order = thread_result_order("activity", "desc")
+            expected_order = move_to_front(@default_order, "t5") 
+            actual_order.should == expected_order
+          end
+          it "sorts using last activity / ascending" do
+            t5c = @threads["t5"].comments.first
+            t5c.update(body: "changed!")
+            t5c.save!
+            actual_order = thread_result_order("activity", "asc")
+            expected_order = move_to_end(@default_order.reverse, "t5") 
+            actual_order.should == expected_order
+          end
+          it "sorts using vote count / descending" do
+            user = User.all.first
+            t5 = @threads["t5"]
+            user.vote(t5, :up)
+            t5.save!
+            actual_order = thread_result_order("votes", "desc")
+            expected_order = move_to_front(@default_order, "t5") 
+            actual_order.should == expected_order
+          end
+          it "sorts using vote count / ascending" do
+            user = User.all.first
+            t5 = @threads["t5"]
+            user.vote(t5, :up)
+            t5.save!
+            actual_order = thread_result_order("votes", "asc")
+            expected_order = move_to_end(@default_order, "t5") 
+            actual_order.should == expected_order
+          end
+          it "sorts using comment count / descending" do
+            make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
+            actual_order = thread_result_order("comments", "desc")
+            expected_order = move_to_front(@default_order, "t5") 
+            actual_order.should == expected_order
+          end
+          it "sorts using comment count / ascending" do
+            make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
+            actual_order = thread_result_order("comments", "asc")
+            expected_order = move_to_end(@default_order, "t5") 
+            actual_order.should == expected_order
+          end
+          it "sorts pinned items first" do
+            make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
+            @threads["t7"].pinned = true
+            @threads["t7"].save!
+
+            actual_order = thread_result_order("comments", "asc")
+            expected_order = move_to_front(move_to_end(@default_order, "t5"), "t7")
+            actual_order.should == expected_order
+
+            actual_order = thread_result_order("comments", "desc")
+            expected_order = move_to_front(move_to_front(@default_order, "t5"), "t7")
+            actual_order.should == expected_order
+
+            @threads["t8"].pinned = true
+            @threads["t8"].save!
+
+            actual_order = thread_result_order("comments", "asc")
+            expected_order = move_to_front(move_to_end(@default_order, "t5"), "t8", "t7")
+            actual_order.should == expected_order
+
+            actual_order = thread_result_order("date", "desc")
+            expected_order = move_to_front(@default_order, "t8", "t7")
+            actual_order.should == expected_order
+
+            actual_order = thread_result_order("date", "asc")
+            expected_order = move_to_front(@default_order.reverse, "t7", "t8")
+            actual_order.should == expected_order
+          end
+          
+          context "pagination" do
+            def thread_result_page (sort_key, sort_order, page, per_page)
+              get "/api/v1/threads", course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order, page: page, per_page: per_page
+              last_response.should be_ok
+              parse(last_response.body)
+            end
+
+            it "returns single page" do
+              result = thread_result_page("date", "desc", 1, 20)
+              result["collection"].length.should == 10
+              result["num_pages"].should == 1
+              result["page"].should == 1
+            end
+            it "returns multiple pages" do
+              result = thread_result_page("date", "desc", 1, 5)
+              result["collection"].length.should == 5
+              result["num_pages"].should == 2
+              result["page"].should == 1
+
+              result = thread_result_page("date", "desc", 2, 5)
+              result["collection"].length.should == 5
+              result["num_pages"].should == 2
+              result["page"].should == 2
+            end
+            it "orders correctly across pages" do
+              make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
+              @threads["t7"].pinned = true
+              @threads["t7"].save!
+              expected_order = move_to_front(move_to_end(@default_order, "t5"), "t7")
+              actual_order = []
+              per_page = 3
+              num_pages = (@threads.length + per_page - 1) / per_page
+              num_pages.times do |i|
+                page = i + 1
+                result = thread_result_page("comments", "asc", page, per_page)
+                result["collection"].length.should == (page * per_page <= @threads.length ? per_page : @threads.length % per_page)
+                result["num_pages"].should == num_pages
+                result["page"].should == page
+                actual_order += result["collection"].map {|v| v["title"]}
+              end
+              actual_order.should == expected_order
+            end
+          end
+        end
+        
+      end
+
+    end
+
     describe "GET /api/v1/threads/:thread_id" do
+
+      before(:each) { init_without_subscriptions }
+      
       it "get information of a single comment thread" do
         thread = CommentThread.first
         get "/api/v1/threads/#{thread.id}"
         last_response.should be_ok
         response_thread = parse last_response.body
-        thread.title.should == response_thread["title"]
-        thread.body.should == response_thread["body"]
-        thread.course_id.should == response_thread["course_id"]
-        thread.votes_point.should == response_thread["votes"]["point"]
-        thread.commentable_id.should == response_thread["commentable_id"]
-        response_thread["children"].should be_nil
+        check_thread_result(nil, thread, response_thread)
+      end
+
+      it "computes endorsed? correctly" do
+        thread = CommentThread.first
+        comment = thread.root_comments[1]
+        comment.endorsed = true
+        comment.save!
+        get "/api/v1/threads/#{thread.id}"
+        last_response.should be_ok
+        response_thread = parse last_response.body
+        response_thread["endorsed"].should == true
+        check_thread_result(nil, thread, response_thread)
       end
 
       # This is a test to ensure that the username is included even if the
@@ -42,14 +335,7 @@ describe "app" do
         thread = CommentThread.first
         get "/api/v1/threads/#{thread.id}", recursive: true
         last_response.should be_ok
-        response_thread = parse last_response.body
-        thread.title.should == response_thread["title"]
-        thread.body.should == response_thread["body"]
-        thread.course_id.should == response_thread["course_id"]
-        thread.votes_point.should == response_thread["votes"]["point"]
-        response_thread["children"].should_not be_nil
-        response_thread["children"].length.should == thread.root_comments.length
-        response_thread["children"].index{|c| c["body"] == thread.root_comments.first.body}.should_not be_nil
+        check_thread_result(nil, thread, parse(last_response.body), true)
       end
 
       it "returns 400 when the thread does not exist" do
@@ -71,6 +357,7 @@ describe "app" do
         get "/api/v1/threads/#{thread.id}"
         last_response.should be_ok
         response_thread = parse last_response.body
+        check_thread_result(nil, thread, response_thread)
         response_thread["tags"].length.should == 3
         response_thread["tags"].should include "taga"
         response_thread["tags"].should include "tagb"
@@ -78,6 +365,9 @@ describe "app" do
       end
     end
     describe "PUT /api/v1/threads/:thread_id" do
+
+      before(:each) { init_without_subscriptions }
+      
       it "update information of comment thread" do
         thread = CommentThread.first
         put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id"
@@ -86,6 +376,7 @@ describe "app" do
         changed_thread.body.should == "new body"
         changed_thread.title.should == "new title"
         changed_thread.commentable_id.should == "new_commentable_id"
+        check_thread_result(nil, changed_thread, parse(last_response.body))
       end
       it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
@@ -116,29 +407,35 @@ describe "app" do
       end
     end
     describe "POST /api/v1/threads/:thread_id/comments" do
+
+      before(:each) { init_without_subscriptions }
+
       let :default_params  do
         {body: "new comment", course_id: "1", user_id: User.first.id}
       end
       it "create a comment to the comment thread" do
-        thread = CommentThread.first.to_hash(recursive: true)
+        thread = CommentThread.first
         user = User.first
-        post "/api/v1/threads/#{thread["id"]}/comments", default_params
+        orig_count = thread.comment_count
+        post "/api/v1/threads/#{thread.id}/comments", default_params
         last_response.should be_ok
-        changed_thread = CommentThread.find(thread["id"]).to_hash(recursive: true)
-        changed_thread["children"].length.should == thread["children"].length + 1
-        comment = changed_thread["children"].select{|c| c["body"] == "new comment"}.first
+        changed_thread = CommentThread.find(thread.id)
+        changed_thread.comment_count.should == orig_count + 1
+        comment = changed_thread.comments.select{|c| c["body"] == "new comment"}.first
         comment.should_not be_nil
-        comment["user_id"].should == user.id
+        comment.author_id.should == user.id
       end
       it "allows anonymous comment" do
-        thread = CommentThread.first.to_hash(recursive: true)
-        post "/api/v1/threads/#{thread["id"]}/comments", default_params.merge(anonymous: true)
+        thread = CommentThread.first
+        user = User.first
+        orig_count = thread.comment_count
+        post "/api/v1/threads/#{thread.id}/comments", default_params.merge(anonymous: true)
         last_response.should be_ok
-        changed_thread = CommentThread.find(thread["id"]).to_hash(recursive: true)
-        changed_thread["children"].length.should == thread["children"].length + 1
-        comment = changed_thread["children"].select{|c| c["body"] == "new comment"}.first
+        changed_thread = CommentThread.find(thread.id)
+        changed_thread.comment_count.should == orig_count + 1
+        comment = changed_thread.comments.select{|c| c["body"] == "new comment"}.first
         comment.should_not be_nil
-        comment["anonymous"].should be_true
+        comment.anonymous.should be_true
       end
       it "returns 400 when the thread does not exist" do
         post "/api/v1/threads/does_not_exist/comments", default_params
