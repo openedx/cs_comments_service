@@ -169,11 +169,14 @@ end
 
 # this method is used to test results produced using the helper function handle_threads_query
 # which is used in multiple areas of the API
-def check_thread_result(user, thread, json_response, check_comments=false)
+def check_thread_result(user, thread, json_response, check_comments=false, is_search=false)
   expected_keys = %w(id title body course_id commentable_id created_at updated_at)
   expected_keys += %w(anonymous anonymous_to_peers at_position_list closed user_id)
   expected_keys += %w(username votes abuse_flaggers tags type group_id pinned)
   expected_keys += %w(comments_count unread_comments_count read endorsed)
+  if is_search
+    expected_keys += %w(highlighted_body highlighted_title)
+  end
   # the "children" key is not always present - depends on the invocation + test use case.
   # exclude it from this check - if check_comments is set, we'll assert against it later
   actual_keys = json_response.keys - ["children"]
