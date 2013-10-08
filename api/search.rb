@@ -37,10 +37,33 @@ get "#{APIPREFIX}/search/threads" do
       results = CommentThread.perform_search(params, options.merge(page: results.total_pages))
     end
 
+    threads = CommentThread.where(id: {"$in" => results.map {|r| r.id} }).to_a
+    if threads.length == 0
+      collection = []
+    else
+      pres_threads = ThreadPresenter.new(
+        threads,
+        params[:user_id] ? user : nil,
+        params[:course_id] || threads.first.course_id
+      )
+      collection = pres_threads.to_hash_array(bool_recursive)
+    end
+
+    # merge highlighted text / highlighted body.  not sure if this is used by the client,
+    # but doing it to preserve the legacy behavior
+    # TODO: move this logic into a presenter object for search results
+    result_map = Hash[results.map { |t| [t.id, t] }]
+    collection.each do |thread_hash|
+      thread_key = thread_hash["id"].to_s
+      highlight = result_map[thread_key].highlight || {}
+      thread_hash["highlighted_body"] = (highlight[:body] || []).first || thread_hash["body"]
+      thread_hash["highlighted_title"] = (highlight[:title] || []).first || thread_hash["title"]
+    end
+
     num_pages = results.total_pages
     page = [num_pages, [1, page].max].min
     {
-      collection: results.map{|t| CommentThread.search_result_to_hash(t, recursive: bool_recursive, user_id: params[:user_id])},
+      collection: collection,
       num_pages: num_pages,
       page: page,
     }.to_json
