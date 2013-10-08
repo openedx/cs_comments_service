@@ -22,7 +22,7 @@ describe "app" do
 				get "/api/v1/search/threads", text: random_string
 				last_response.should be_ok
 				threads = parse(last_response.body)['collection']
-				threads.select{|t| t["id"].to_s == thread.id.to_s}.first.should_not be_nil
+				check_thread_result(nil, thread, threads.select{|t| t["id"] == thread.id.to_s}.first, false, true)
 			end
 
 		end
@@ -56,7 +56,7 @@ describe "app" do
 				get "/api/v1/search/threads", text: random_string
 				last_response.should be_ok
 				threads = parse(last_response.body)['collection']
-				threads.select{|t| t["id"].to_s == thread.id.to_s}.first.should_not be_nil
+				check_thread_result(nil, thread, threads.select{|t| t["id"] == thread.id.to_s}.first, false, true)
 			end
 		end
 	end

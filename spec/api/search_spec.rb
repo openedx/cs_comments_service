@@ -23,27 +23,27 @@ describe "app" do
         last_response.should be_ok
         threads = parse(last_response.body)['collection']
         threads.length.should == 2
-        threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
-        threads.select{|t| t["id"] == thread2.id.to_s}.first.should_not be_nil
+        check_thread_result(nil, thread1, threads.select{|t| t["id"] == thread1.id.to_s}.first, false, true)
+        check_thread_result(nil, thread2, threads.select{|t| t["id"] == thread2.id.to_s}.first, false, true)
 
         get "/api/v1/search/threads", tags: [ai].join(",")
         last_response.should be_ok
         threads = parse(last_response.body)['collection']
         threads.length.should == 2
-        threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
-        threads.select{|t| t["id"] == thread2.id.to_s}.first.should_not be_nil
+        check_thread_result(nil, thread1, threads.select{|t| t["id"] == thread1.id.to_s}.first, false, true)
+        check_thread_result(nil, thread2, threads.select{|t| t["id"] == thread2.id.to_s}.first, false, true)
 
         get "/api/v1/search/threads", tags: [ai, random1].join(",")
         last_response.should be_ok
         threads = parse(last_response.body)['collection']
         threads.length.should == 1
-        threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
+        check_thread_result(nil, thread1, threads.select{|t| t["id"] == thread1.id.to_s}.first, false, true)
 
         get "/api/v1/search/threads", tags: [random1].join(",")
         last_response.should be_ok
         threads = parse(last_response.body)['collection']
         threads.length.should == 1
-        threads.select{|t| t["id"] == thread1.id.to_s}.first.should_not be_nil
+        check_thread_result(nil, thread1, threads.select{|t| t["id"] == thread1.id.to_s}.first, false, true)
 
         get "/api/v1/search/threads", tags: [random1, random2].join(",")
         last_response.should be_ok
