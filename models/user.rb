@@ -23,47 +23,27 @@ class User
   validates_uniqueness_of :username
   validates_uniqueness_of :email
 
-  index external_id: 1
+  index( {external_id: 1}, {unique: true, background: true} )
 
   def subscriptions_as_source
     Subscription.where(source_id: id.to_s, source_type: self.class.to_s)
-  end
-
-  def subscriptions_as_subscriber
-    Subscription.where(subscriber_id: id.to_s)
   end
 
   def subscribed_thread_ids
     Subscription.where(subscriber_id: id.to_s, source_type: "CommentThread").only(:source_id).map(&:source_id)
   end
 
-  def subscribed_commentable_ids
-    subscriptions_as_subscriber.where(source_type: "Commentable").only(:source_id).map(&:source_id)
-  end
-
-  def subscribed_user_ids
-    subscriptions_as_subscriber.where(source_type: "User").only(:source_id).map(&:source_id)
-  end
-
   def subscribed_threads
     CommentThread.where(:id.in => subscribed_thread_ids)
-  end
-
-  def subscribed_commentables
-    Commentable.find(*subscribed_commentable_ids).only(:id).map(&:id)
-  end
-
-  def subscribed_users
-    subscribed_user_ids.map {|id| User.find(id)}
   end
 
   def to_hash(params={})
     hash = as_document.slice(*%w[username external_id])
     if params[:complete]
       hash = hash.merge("subscribed_thread_ids" => subscribed_thread_ids,
-                        "subscribed_commentable_ids" => subscribed_commentable_ids,
-                        "subscribed_user_ids" => subscribed_user_ids,
-                        "follower_ids" => subscriptions_as_source.only(:subscriber_id).map(&:subscriber_id),
+                        "subscribed_commentable_ids" => [], # not used by comment client.  To be removed once removed from comment client.
+                        "subscribed_user_ids" => [], # ditto.
+                        "follower_ids" => [], # ditto.
                         "id" => id,
                         "upvoted_ids" => upvoted_ids,
                         "downvoted_ids" => downvoted_ids,
@@ -81,11 +61,11 @@ class User
   end
 
   def upvoted_ids
-    Comment.up_voted_by(self).map(&:id) + CommentThread.up_voted_by(self).map(&:id)
+    Content.up_voted_by(self).map(&:id)
   end
 
   def downvoted_ids
-    Comment.down_voted_by(self).map(&:id) + CommentThread.down_voted_by(self).map(&:id)
+    Content.down_voted_by(self).map(&:id)
   end
 
   def followers
@@ -115,8 +95,6 @@ class User
   include ::NewRelic::Agent::MethodTracer
   add_method_tracer :to_hash
   add_method_tracer :subscribed_thread_ids
-  add_method_tracer :subscribed_commentable_ids
-  add_method_tracer :subscribed_user_ids
   add_method_tracer :upvoted_ids
   add_method_tracer :downvoted_ids
 
