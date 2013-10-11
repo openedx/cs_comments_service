@@ -24,7 +24,6 @@ class CommentThread < Content
   field :pinned, type: Boolean
 
   index({author_id: 1, course_id: 1})
-  index({_type: 1, course_id: 1, pinned: -1, created_at: -1})
 
   include Tire::Model::Search
   include Tire::Model::Callbacks

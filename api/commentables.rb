@@ -4,13 +4,12 @@ delete "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
 end
 
 get "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
+  threads = Content.where(_type:"CommentThread", commentable_id: commentable_id)
   if params["group_id"]
-    threads = CommentThread.any_of(
-    {:commentable_id => commentable_id, :group_id => params[:group_id]}, 
-    {:commentable_id => commentable_id, :group_id.exists => false}, 
+    threads = threads.any_of(
+      {:group_id => params[:group_id].to_i}, 
+      {:group_id.exists => false}, 
     )
-  else
-    threads = commentable.comment_threads
   end
     handle_threads_query(threads)    
 end
