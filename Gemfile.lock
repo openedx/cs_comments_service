@@ -43,7 +43,7 @@ GIT
     voteable_mongo (0.9.3)
 
 GEM
-  remote: http://rubygems.org/
+  remote: https://rubygems.org/
   specs:
     actionpack (3.2.8)
       activemodel (= 3.2.8)
