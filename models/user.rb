@@ -1,3 +1,5 @@
+require 'new_relic/agent/method_tracer'
+
 class User
   include Mongoid::Document
   include Mongo::Voter
@@ -69,9 +71,11 @@ class User
                        )
     end
     if params[:course_id]
-      hash = hash.merge("threads_count" => CommentThread.where(author_id: id,course_id: params[:course_id], anonymous: false, anonymous_to_peers: false).count,
-                        "comments_count" => Comment.where(author_id: id, course_id: params[:course_id], anonymous: false, anonymous_to_peers: false).count
-                       )
+      self.class.trace_execution_scoped(['Custom/User.to_hash/count_comments_and_threads']) do
+        hash = hash.merge("threads_count" => CommentThread.where(author_id: id,course_id: params[:course_id], anonymous: false, anonymous_to_peers: false).count,
+                          "comments_count" => Comment.where(author_id: id, course_id: params[:course_id], anonymous: false, anonymous_to_peers: false).count
+                         )
+      end
     end
     hash
   end
@@ -107,6 +111,14 @@ class User
     read_state.last_read_times[thread.id.to_s] = Time.now.utc
     read_state.save
   end
+
+  include ::NewRelic::Agent::MethodTracer
+  add_method_tracer :to_hash
+  add_method_tracer :subscribed_thread_ids
+  add_method_tracer :subscribed_commentable_ids
+  add_method_tracer :subscribed_user_ids
+  add_method_tracer :upvoted_ids
+  add_method_tracer :downvoted_ids
 
 end
 
