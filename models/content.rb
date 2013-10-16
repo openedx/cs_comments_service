@@ -1,6 +1,7 @@
 class Content
   
   include Mongoid::Document
+  include Mongo::Voteable
   
   field :visible, type: Boolean, default: true
   field :abuse_flaggers, type: Array, default: []
