@@ -5,6 +5,9 @@ These are notable changes in cs_comments_service.  This is a rolling list of cha
 in roughly chronological order, most recent first.  Add your entries at or near
 the top.  Include a label indicating the component affected.
 
+**api:** Add the ability to filter by commentable id to more endpoints
+  (in particular, /threads).
+
 **models:** added a new sorting key and index to `Comment` documents, removing the need
 for certain hierarchical db queries.  Also added a copy of the author's username 
 to `Comment` and `CommentThread` models, to reduce the number db queries.  

@@ -14,6 +14,7 @@ class Content
 
   index({comment_thread_id: 1, sk: 1}, {sparse: true})
   index({comment_thread_id: 1, endorsed: 1}, {sparse: true})
+  index({commentable_id: 1}, {sparse: true, background: true})
 
   before_save :set_username
   def set_username

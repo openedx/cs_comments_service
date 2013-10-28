@@ -26,6 +26,24 @@ describe "app" do
             res["course_id"].should == "abc"
           }
         end
+        it "returns only threads where course id and commentable id match" do
+          @threads["t1"].course_id = "course1"
+          @threads["t1"].commentable_id = "commentable1"
+          @threads["t1"].save!
+          @threads["t2"].course_id = "course1"
+          @threads["t2"].commentable_id = "commentable2"
+          @threads["t2"].save!
+          @threads["t3"].course_id = "course1"
+          @threads["t3"].commentable_id = "commentable3"
+          @threads["t3"].save!
+          @threads["t4"].course_id = "course2"
+          @threads["t4"].commentable_id = "commentable1"
+          @threads["t4"].save!
+          rs = thread_result course_id: "course1", commentable_ids: "commentable1,commentable3"
+          rs.length.should == 2
+          check_thread_result(nil, @threads["t3"], rs[0])
+          check_thread_result(nil, @threads["t1"], rs[1])
+        end
         it "returns only threads where course id and group id match" do
           @threads["t1"].course_id = "omg"
           @threads["t1"].group_id = 100
