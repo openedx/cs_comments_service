@@ -66,6 +66,21 @@ if RACK_ENV.to_s != "test" # disable api_key auth in test environment
   end
 end
 
+if ENV["ENABLE_IDMAP_LOGGING"]
+
+  after do
+    idmap = Mongoid::Threaded.identity_map
+    vals = {
+      "pid" => Process.pid,
+      "dyno" => ENV["DYNO"],
+      "request_id" => params[:request_id]
+    }
+    idmap.each {|k, v| vals["idmap_count_#{k.to_s}"] = v.size }
+    logger.info vals.map{|e| e.join("=") }.join(" ")
+  end
+
+end
+
 # Enable the identity map. The middleware ensures that the identity map is
 # cleared for every request.
 Mongoid.identity_map_enabled = true
