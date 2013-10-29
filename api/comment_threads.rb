@@ -1,13 +1,11 @@
 get "#{APIPREFIX}/threads" do # retrieve threads by course
   #if a group id is sent, then process the set of threads with that group id or with no group id
+  threads = Content.where(_type:"CommentThread", course_id: params["course_id"])
   if params["group_id"]
-    threads = CommentThread.any_of(
-    {:course_id => params["course_id"],:group_id => params[:group_id]},
-    {:course_id => params["course_id"],:group_id.exists => false},
+    threads = threads.any_of(
+      {:group_id => params[:group_id].to_i},
+      {:group_id.exists => false},
     )
-  else
-    threads = CommentThread.where(course_id: params["course_id"])
-    #else process them all
   end
   handle_threads_query(threads)
 end

@@ -8,6 +8,10 @@ class Content
   field :historical_abuse_flaggers, type: Array, default: [] #preserve abuse flaggers after a moderator unflags
   field :author_username, type: String, default: nil
   
+  index({_type: 1, course_id: 1, pinned: -1, created_at: -1 }, {background: true} )
+  index({_type: 1, course_id: 1, pinned: -1, comment_count: -1, created_at: -1}, {background: true})
+  index({_type: 1, course_id: 1, pinned: -1, "votes.point" => -1, created_at: -1}, {background: true})
+
   index({comment_thread_id: 1, sk: 1}, {sparse: true})
   index({comment_thread_id: 1, endorsed: 1}, {sparse: true})
 

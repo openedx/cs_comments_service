@@ -1,3 +1,5 @@
+require 'new_relic/agent/method_tracer'
+
 helpers do
 
   def commentable
@@ -118,20 +120,21 @@ helpers do
     
     if params[:course_id]
       comment_threads = comment_threads.where(:course_id=>params[:course_id])
-      
+
       if params[:flagged]
-        #get flagged threads and threads containing flagged responses
-        comment_ids = Comment.where(:course_id=>params[:course_id]).
-          where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
-          collect{|c| c.comment_thread_id}.uniq
+        self.class.trace_execution_scoped(['Custom/handle_threads_query/find_flagged']) do
+          #get flagged threads and threads containing flagged responses
+          comment_ids = Comment.where(:course_id=>params[:course_id]).
+            where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
+            collect{|c| c.comment_thread_id}.uniq
+            
+          thread_ids = comment_threads.where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
+            collect{|c| c.id}
+            
+          comment_ids += thread_ids
           
-        thread_ids = comment_threads.where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
-          collect{|c| c.id}
-          
-        comment_ids += thread_ids
-        
-        comment_threads = comment_threads.where(:id.in => comment_ids)
-        
+          comment_threads = comment_threads.where(:id.in => comment_ids)
+        end
       end
     end
 
