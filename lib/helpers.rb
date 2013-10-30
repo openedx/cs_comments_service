@@ -182,11 +182,15 @@ helpers do
         collection = pres_threads.to_hash_array(bool_recursive)
       end
 
-      {
-        collection: collection, 
-        num_pages: num_pages,
-        page: page,
-      }.to_json
+      json_output = nil
+      self.class.trace_execution_scoped(['Custom/handle_threads_query/json_serialize']) do
+        json_output = {
+          collection: collection, 
+          num_pages: num_pages,
+          page: page,
+        }.to_json
+      end
+      json_output
     end
   end
 
@@ -285,5 +289,14 @@ helpers do
       error 503
     end
   end
+  
+  include ::NewRelic::Agent::MethodTracer
+  add_method_tracer :user
+  add_method_tracer :thread
+  add_method_tracer :comment
+  add_method_tracer :flag_as_abuse
+  add_method_tracer :unflag_as_abuse
+  add_method_tracer :author_contents_only
+  add_method_tracer :handle_threads_query
 
 end

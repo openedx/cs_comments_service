@@ -1,3 +1,4 @@
+require 'new_relic/agent/method_tracer'
 require_relative 'content'
 
 class CommentThread < Content
@@ -143,11 +144,15 @@ class CommentThread < Content
       #unforutnately, we cannot paginate here, b/c we don't know how the ordinality is totally
       #unrelated to that of threads
       
-      c_results = search.results
-      
-      comment_ids = c_results.collect{|c| c.id}.uniq
-      comments = Comment.where(:id.in => comment_ids)
-      thread_ids = comments.collect{|c| c.comment_thread_id}
+      c_results = comment_ids = comments = thread_ids = nil
+      self.class.trace_execution_scoped(['Custom/perform_search/collect_comment_search_results']) do
+        c_results = search.results
+        comment_ids = c_results.collect{|c| c.id}.uniq
+      end
+      self.class.trace_execution_scoped(['Custom/perform_search/collect_comment_thread_ids']) do
+        comments = Comment.where(:id.in => comment_ids)
+        thread_ids = comments.collect{|c| c.comment_thread_id}
+      end
 
       #thread_ids = c_results.collect{|c| c.comment_thread_id}
       #as soon as we can add comment thread id to the ES index, via Tire updgrade, we'll 
@@ -155,13 +160,15 @@ class CommentThread < Content
      
       #use the elasticsearch index instead to avoid DB hit
       
-      original_thread_ids = results.collect{|r| r.id}
-      
-      #now add the original search thread ids
-      thread_ids += original_thread_ids
-      
-      thread_ids = thread_ids.uniq
-      
+      self.class.trace_execution_scoped(['Custom/perform_search/collect_unique_thread_ids']) do
+        original_thread_ids = results.collect{|r| r.id}
+
+        #now add the original search thread ids
+        thread_ids += original_thread_ids
+        
+        thread_ids = thread_ids.uniq
+      end
+
       #now run one more search to harvest the threads and filter by group
       search = Tire::Search::Search.new 'comment_threads'
       search.filter(:terms, :thread_id => thread_ids)
@@ -301,5 +308,8 @@ private
   def destroy_subscriptions
     subscriptions.delete_all
   end
-  
+
+  include ::NewRelic::Agent::MethodTracer
+  add_method_tracer :perform_search
+
 end

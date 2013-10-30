@@ -1,3 +1,5 @@
+require 'new_relic/agent/method_tracer'
+
 get "#{APIPREFIX}/search/threads" do
 
   sort_key_mapper = {
@@ -50,11 +52,15 @@ get "#{APIPREFIX}/search/threads" do
 
     num_pages = results.total_pages
     page = [num_pages, [1, page].max].min
-    {
-      collection: collection,
-      num_pages: num_pages,
-      page: page,
-    }.to_json
+    json_output = nil
+    self.class.trace_execution_scoped(['Custom/get_search_threads/json_serialize']) do
+      json_output = {
+        collection: collection,
+        num_pages: num_pages,
+        page: page,
+      }.to_json
+    end
+    json_output
   end
 end
 
