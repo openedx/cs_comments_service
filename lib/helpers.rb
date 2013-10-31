@@ -138,6 +138,10 @@ helpers do
       end
     end
 
+    if params[:commentable_ids]
+      comment_threads = comment_threads.in(commentable_id: params[:commentable_ids].split(","))
+    end
+
     sort_key_mapper = {
       "date" => :created_at,
       "activity" => :last_activity_at,
