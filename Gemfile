@@ -54,3 +54,4 @@ end
 gem 'newrelic_rpm'
 gem 'newrelic_moped'
 gem 'unicorn'
+gem "rack-timeout"
