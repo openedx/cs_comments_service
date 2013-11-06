@@ -308,6 +308,13 @@ describe "app" do
 
       before(:each) { init_without_subscriptions }
       
+      it "returns JSON" do
+        thread = CommentThread.first
+        get "/api/v1/threads/#{thread.id}"
+        last_response.should be_ok
+        last_response.content_type.should == "application/json;charset=utf-8"
+      end
+
       it "get information of a single comment thread" do
         thread = CommentThread.first
         get "/api/v1/threads/#{thread.id}"

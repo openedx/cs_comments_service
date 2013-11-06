@@ -4,6 +4,12 @@ describe "app" do
   describe "comments" do
     before(:each) { init_without_subscriptions }
     describe "GET /api/v1/comments/:comment_id" do
+      it "returns JSON" do
+        comment = Comment.first
+        get "/api/v1/comments/#{comment.id}"
+        last_response.should be_ok
+        last_response.content_type.should == "application/json;charset=utf-8"
+      end
       it "retrieve information of a single comment" do
         comment = Comment.first
         get "/api/v1/comments/#{comment.id}"
