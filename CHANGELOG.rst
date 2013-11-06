@@ -5,6 +5,8 @@ These are notable changes in cs_comments_service.  This is a rolling list of cha
 in roughly chronological order, most recent first.  Add your entries at or near
 the top.  Include a label indicating the component affected.
 
+**app.rb:** Return the correct Content-Type, application/json.
+
 **api:** Add the ability to filter by commentable id to more endpoints
   (in particular, /threads).
 

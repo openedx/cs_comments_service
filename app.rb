@@ -66,6 +66,10 @@ if RACK_ENV.to_s != "test" # disable api_key auth in test environment
   end
 end
 
+before do
+  content_type "application/json"
+end
+
 if ENV["ENABLE_IDMAP_LOGGING"]
 
   after do
