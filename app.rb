@@ -25,10 +25,22 @@ if ["staging", "production", "loadtest", "edgestage","edgeprod"].include? enviro
   require 'newrelic_rpm'
   require 'new_relic/agent/method_tracer'
   Moped::Session.class_eval do
-      include NewRelic::Agent::MethodTracer
-      add_method_tracer :new
-      add_method_tracer :use
-      add_method_tracer :login
+    include NewRelic::Agent::MethodTracer
+    add_method_tracer :new
+    add_method_tracer :use
+    add_method_tracer :login
+  end
+  Moped::Cluster.class_eval do
+    include NewRelic::Agent::MethodTracer
+    add_method_tracer :with_primary
+    add_method_tracer :nodes
+  end
+  Moped::Node.class_eval do
+    include NewRelic::Agent::MethodTracer
+    add_method_tracer :command
+    add_method_tracer :connect
+    add_method_tracer :flush
+    add_method_tracer :refresh
   end
 end
 
@@ -45,6 +57,7 @@ end
 
 Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
+Moped.logger.level = ENV["ENABLE_MOPED_DEBUGGING"] ? Logger::DEBUG : Logger::INFO
 
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
