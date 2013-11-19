@@ -117,7 +117,7 @@ GEM
       rack
     rack-test (0.6.1)
       rack (>= 1.0)
-    rack-timeout (0.0.4)
+    rack-timeout (0.1.0beta3)
     raindrops (0.10.0)
     rake (0.9.2.2)
     rdiscount (1.6.8)
@@ -191,7 +191,7 @@ DEPENDENCIES
   pry
   pry-nav
   rack-test
-  rack-timeout
+  rack-timeout (= 0.1.0beta3)
   rake
   rdiscount
   rest-client
