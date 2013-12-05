@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import logging
 import math
@@ -20,10 +21,17 @@ import heroku
 # this is used sanity-check configuration before doing anything else
 MIN_DYNOS = 5
 
+# minimum portion of dynos that must be active at runtime
+# for a valid analysis (the purpose is to avoid measuring a formation
+# that is presently being cycled or redeployed)
+MIN_DYNOS_ACTIVE = 0.8
+
 # minimum number of seconds for which a dyno must have been "up"
 # prior to capturing timings, else we disregard it.
 MIN_UPTIME = 60
 
+# used for parsing heroku app log lines
+LINE_REGEX = r'app\[(?P<dyno>web\.[0-9]+)\].* (?P<seconds>[0-9\.]+)$'
 
 #
 # defaults
@@ -53,36 +61,34 @@ def average(s):
 
 def variance(s): 
     avg = average(s)
-    return map(lambda x: (x - avg)**2, s)
+    return average(map(lambda x: (x - avg)**2, s))
 
 def stddev(s):
-    return math.sqrt(average(variance(s)))
+    return math.sqrt(variance(s))
 
 
-class DynoTimings(dict):
+class DynoTimings(defaultdict):
 
-    line_regex = r'app\[(?P<dyno>web\.[0-9]+)\].*(?P<status>[0-9]{3}) (?P<bytes>[0-9]+) (?P<seconds>[0-9\.]+)$'
 
-    def parse_line(self, line):
-        m = re.search(self.line_regex, line)
+    def process_line(self, line):
+        m = re.search(LINE_REGEX, line)
         if m:
             d = m.groupdict()
             dyno = d['dyno']
             seconds = float(d['seconds'])
-            self.setdefault(dyno, []).append(seconds)
+            self[dyno].append(seconds)
 
-    def averages(self):
-        return dict((dyno, average(self[dyno])) for dyno in self
-                            if len(self[dyno]) > settings['min_timings'])
+    def get_min_length(self):
+        return min([len(v) for v in self.values()])
 
-    def counts(self):
-        return dict((dyno, len(self[dyno])) for dyno in self)
+    def get_average_timings(self, dyno_names, min_timings):
+        return [average(self[name]) for name in dyno_names if len(self[name]) >= min_timings]
 
-    @property
-    def slow_threshold(self):
-        dyno_averages = self.averages().values()
-        return average(dyno_averages) + (3 * stddev(dyno_averages))
-
+    def get_thresholds(self, average_timings, kill_threshold, min_threshold):
+        mean_response_time = average(average_timings)
+        slow_threshold = mean_response_time + (kill_threshold * stddev(average_timings))
+        effective_threshold = max([slow_threshold, min_threshold])
+        return (mean_response_time, slow_threshold, effective_threshold)
 
 def alert(msg):
     """
@@ -132,13 +138,11 @@ def main(app, settings):
     msg = None
     if not settings['max_window'] >= settings['min_window']:
         msg = 'invalid timing window (max:{max_window} < min:{min_window})'
+        return abort(msg.format(**settings))
     else:
         for k in ('min_window', 'min_timings', 'min_threshold', 'kill_threshold'):
             if not settings[k] > 0:
-                msg = 'invalid setting for {k}: 0 > {{{k}}}'.format(k=k)
-                break
-    if msg:
-        return abort(msg.format(**settings))
+                return abort('invalid setting for {}: 0 > {}'.format(k, settings[k]))
 
     logging.info(json.dumps(settings))
 
@@ -151,10 +155,10 @@ def main(app, settings):
         for line in app.logs(source="app", ps="web", tail=True):
             queue.put(line)
 
-    timings = DynoTimings()
+    timings = DynoTimings(list)
 
-    llq = multiprocessing.Queue()
-    p = multiprocessing.Process(target=process_app_logs, args=(app, llq))
+    log_line_queue = multiprocessing.Queue()
+    p = multiprocessing.Process(target=process_app_logs, args=(app, log_line_queue))
     p.start()
 
     try:
@@ -172,33 +176,33 @@ def main(app, settings):
                 # might have more queued data to ingest.
                 if p.is_alive():
                     p.terminate()
+                    p.join()
             try:
-                line = llq.get(timeout=remaining_time + 1)
-                timings.parse_line(line)
+                line = log_line_queue.get(timeout=remaining_time + 1)
+                timings.process_line(line)
             except Queue.Empty:
                 break
             # we can stop now if the minimum timing window has elapsed *and* we
             # have enough data
-            if t >= min_stop_time and min(timings.counts().values()) >= settings['min_timings']:
+            if t >= min_stop_time and timings.get_min_length() >= settings['min_timings']:
                 break
 
     finally:
         # make sure subprocess is cleaned up before continuing...
         if p.is_alive():
             p.terminate()
+            p.join()
 
     elapsed_time = time.time() - start_time
     total_timings = sum([len(v) for v in timings.values()])
     msg = json.dumps({
         'timed_dynos': len(timings),
-        'min_window': settings['min_window'],
-        'max_window': settings['max_window'],
         'requests_timed': total_timings,
         'elapsed': elapsed_time
         })
     logging.info(msg)
 
-    time.sleep(1) # cheaply avoid timing issues with requests library
+    time.sleep(1)
 
 
     #
@@ -225,31 +229,21 @@ def main(app, settings):
     # ensure at least 80% of dynos are presently active before continuing with
     # response time analysis.  otherwise, assume the formation is in mid-cycle
     # or mid-deploy, and skip.
-    if len(active_dynos) / float(len(all_dynos)) < 0.8:
+    if len(active_dynos) / float(len(all_dynos)) < MIN_DYNOS_ACTIVE:
         msg = 'not enough dynos are active ({} / {}) - skipping slow dyno detection'
         return skip(msg.format(len(active_dynos), len(all_dynos)))
 
-    # compute the mean response time across all dynos from which we captured
-    # a sufficient number of timings.
-    dyno_response_times = []
-    timing_counts = []
-    for dyno_name in active_dynos:
-        timings.setdefault(dyno_name, [])
-        if len(timings[dyno_name]) >= settings['min_timings']:
-            timing_counts.append(len(timings[dyno_name]))
-            dyno_response_times.append(average(timings[dyno_name]))
+    dyno_response_times = timings.get_average_timings(active_dynos, settings['min_timings'])
 
     # ensure that the number of dynos included in the sample is at least half
     # of the total size of the formation.  if not, assume we either have a
     # throughput issue, or a script configuration problem.
     if len(dyno_response_times) / float(len(all_dynos)) < 0.5:
         msg = 'less than half of dynos ({} / {}) reported enough timings for slow dyno detection'
-        return alert(msg.format(len(dyno_response_times, len(all_dynos))))
+        return alert(msg.format(len(dyno_response_times), len(all_dynos)))
 
     # decide the threshold of 'slow'
-    mean_response_time = average(dyno_response_times)
-    slow_threshold = mean_response_time + (settings['kill_threshold'] * stddev(dyno_response_times))
-    effective_threshold = max([slow_threshold, settings['min_threshold']])
+    mean_response_time, slow_threshold, effective_threshold = timings.get_thresholds(dyno_response_times, settings['kill_threshold'], settings['min_threshold'])
     msg = json.dumps({
         'dynos_timed': len(dyno_response_times),
         'mean_response_time': mean_response_time,
@@ -322,7 +316,7 @@ if __name__=='__main__':
 
     logging.debug('hi')
     h = heroku.from_key(os.getenv('HEROKU_API_KEY'))
-    app = h.apps[os.getenv('NEW_RELIC_APP_NAME')]
+    app = h.apps[os.getenv('HEROKU_APP_NAME')]
     
     logging.info('starting slow dyno detection')
     try:
