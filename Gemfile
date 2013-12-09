@@ -55,3 +55,4 @@ gem 'newrelic_rpm'
 gem 'newrelic_moped'
 gem 'unicorn'
 gem "rack-timeout", "0.1.0beta3"
+gem "i18n"

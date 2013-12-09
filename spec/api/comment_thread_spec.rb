@@ -366,8 +366,10 @@ describe "app" do
       it "returns 400 when the thread does not exist" do
         get "/api/v1/threads/does_not_exist"
         last_response.status.should == 400
+        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
         get "/api/v1/threads/5016a3caec5eb9a12300000b1"
         last_response.status.should == 400
+        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
       
       it "get information of a single comment thread with its tags" do
@@ -406,6 +408,7 @@ describe "app" do
       it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
         last_response.status.should == 400
+        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
       it "returns 503 if the post body has been blocked" do
         thread = CommentThread.first
@@ -465,6 +468,7 @@ describe "app" do
       it "returns 400 when the thread does not exist" do
         post "/api/v1/threads/does_not_exist/comments", default_params
         last_response.status.should == 400
+        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
       it "returns error when body or course_id does not exist, or when body is blank" do
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: nil)
@@ -489,6 +493,7 @@ describe "app" do
       it "returns 400 when the thread does not exist" do
         delete "/api/v1/threads/does_not_exist"
         last_response.status.should == 400
+        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
     end
   end

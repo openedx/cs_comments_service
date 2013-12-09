@@ -59,6 +59,17 @@ Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
 Moped.logger.level = ENV["ENABLE_MOPED_DEBUGGING"] ? Logger::DEBUG : Logger::INFO
 
+# set up i18n
+I18n.load_path += Dir[File.join(File.dirname(__FILE__), 'locale', '*.yml').to_s]
+I18n.default_locale = CommentService.config[:default_locale]
+I18n::Backend::Simple.send(:include, I18n::Backend::Fallbacks)
+
+helpers do
+  def t(*args)
+    I18n.t(*args)
+  end
+end
+
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each {|file| require file}
@@ -124,11 +135,11 @@ if RACK_ENV.to_s == "development"
 end
 
 error Moped::Errors::InvalidObjectId do
-  error 400, ["requested object not found"].to_json
+  error 400, [t(:requested_object_not_found)].to_json
 end
 
 error Mongoid::Errors::DocumentNotFound do
-  error 400, ["requested object not found"].to_json
+  error 400, [t(:requested_object_not_found)].to_json
 end
 
 error ArgumentError do

@@ -178,6 +178,7 @@ DEPENDENCIES
   faker
   guard
   guard-unicorn
+  i18n
   kaminari!
   mongo
   mongoid (~> 3.0)

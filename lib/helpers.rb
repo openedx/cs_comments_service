@@ -7,7 +7,7 @@ helpers do
   end
 
   def user # TODO handle 404 if integrated user service
-    raise ArgumentError, "User id is required" unless @user || params[:user_id]
+    raise ArgumentError, t(:user_id_is_required) unless @user || params[:user_id]
     @user ||= User.find_by(external_id: params[:user_id])
   end
   
@@ -28,27 +28,27 @@ helpers do
     when "other"
       Commentable.find(params["source_id"])
     else
-      raise ArgumentError, "Source type must be 'user', 'thread' or 'other'"
+      raise ArgumentError, t(:source_type_must_be_user_thread_or_other)
     end
   end
 
   def vote_for(obj)
-    raise ArgumentError, "User id is required" unless user
-    raise ArgumentError, "Value is required" unless params["value"]
-    raise ArgumentError, "Value is invalid" unless %w[up down].include? params["value"]
+    raise ArgumentError, t(:user_id_is_required) unless user
+    raise ArgumentError, t(:value_is_required) unless params["value"]
+    raise ArgumentError, t(:value_is_invalid) unless %w[up down].include? params["value"]
     user.vote(obj, params["value"].to_sym)
     obj.reload.to_hash.to_json
   end
 
   def flag_as_abuse(obj)
-    raise ArgumentError, "User id is required" unless user
+    raise ArgumentError, t(:user_id_is_required) unless user
     obj.abuse_flaggers << user.id unless obj.abuse_flaggers.include? user.id
     obj.save
     obj.reload.to_hash.to_json
   end
   
   def un_flag_as_abuse(obj)
-    raise ArgumentError, "User id is required" unless user
+    raise ArgumentError, t(:user_id_is_required) unless user
     if params["all"]
       obj.historical_abuse_flaggers += obj.abuse_flaggers
       obj.historical_abuse_flaggers = obj.historical_abuse_flaggers.uniq
@@ -62,21 +62,21 @@ helpers do
   end
 
   def undo_vote_for(obj)
-    raise ArgumentError, "must provide user id" unless user
+    raise ArgumentError, t(:user_id_is_required) unless user
     user.unvote(obj)
     obj.reload.to_hash.to_json
   end
   
 
   def pin(obj)
-    raise ArgumentError, "User id is required" unless user
+    raise ArgumentError, t(:user_id_is_required) unless user
     obj.pinned = true
     obj.save
     obj.reload.to_hash.to_json
   end
   
   def unpin(obj)
-    raise ArgumentError, "User id is required" unless user
+    raise ArgumentError, t(:user_id_is_required) unless user
     obj.pinned = nil
     obj.save
     obj.reload.to_hash.to_json
@@ -268,7 +268,7 @@ helpers do
             end
 
             content_obj = {}
-            content_obj["username"] = c.author_with_anonymity(:username, "(anonymous)")
+            content_obj["username"] = c.author_with_anonymity(:username, t(:anonymous))
             content_obj["updated_at"] = c.updated_at
             content_obj["body"] = c.body
             t["content"] << content_obj
@@ -289,8 +289,9 @@ helpers do
       return
     end  
     if CommentService.blocked_hashes.include? hash then
-      logger.warn "blocked content with body hash [#{hash}]"
-      error 503
+      msg = t(:blocked_content_with_body_hash, :hash => hash) 
+      logger.warn msg
+      error 503, [msg].to_json
     end
   end
   

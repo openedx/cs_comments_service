@@ -99,6 +99,7 @@ describe "app" do
       it "returns 503 when the post content is blocked" do
         post '/api/v1/question_1/threads', default_params.merge(body: "BLOCKED POST")
         last_response.status.should == 503
+        parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
       end
       it "create a new comment thread with tag" do
         old_count = CommentThread.count
