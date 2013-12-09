@@ -450,6 +450,7 @@ describe "app" do
       end
     end
     describe "DELETE /api/v1/threads/:thread_id" do
+      before(:each) { init_without_subscriptions }
       it "delete the comment thread and its comments" do
         thread = CommentThread.first.to_hash
         delete "/api/v1/threads/#{thread['id']}"
