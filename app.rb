@@ -117,7 +117,6 @@ use Rack::Mongoid::Middleware::IdentityMap
 # these files must be required in order
 require './api/search'
 require './api/commentables'
-require './api/tags'
 require './api/comment_threads'
 require './api/comments'
 require './api/users'

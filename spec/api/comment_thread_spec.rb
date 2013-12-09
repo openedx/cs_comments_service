@@ -371,25 +371,7 @@ describe "app" do
         last_response.status.should == 400
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
-      
-      it "get information of a single comment thread with its tags" do
-        thread = CommentThread.new
-        thread.title = "new thread"
-        thread.body = "hahaah"
-        thread.course_id = "1"
-        thread.commentable_id = "1"
-        thread.author = User.first
-        thread.tags = "taga, tagb, tagc"
-        thread.save!
-        get "/api/v1/threads/#{thread.id}"
-        last_response.should be_ok
-        response_thread = parse last_response.body
-        check_thread_result(nil, thread, response_thread)
-        response_thread["tags"].length.should == 3
-        response_thread["tags"].should include "taga"
-        response_thread["tags"].should include "tagb"
-        response_thread["tags"].should include "tagc"
-      end
+
     end
     describe "PUT /api/v1/threads/:thread_id" do
 
@@ -416,22 +398,6 @@ describe "app" do
         last_response.status.should == 503
         put "/api/v1/threads/#{thread.id}", body: "blocked,   post...", title: "new title", commentable_id: "new_commentable_id"
         last_response.status.should == 503
-      end
-      it "updates tag of comment thread" do
-        thread = CommentThread.first
-        put "/api/v1/threads/#{thread.id}", tags: "haha, hoho, huhu"
-        last_response.should be_ok
-        thread.reload
-        thread.tags_array.length.should == 3
-        thread.tags_array.should include "haha"
-        thread.tags_array.should include "hoho"
-        thread.tags_array.should include "huhu"
-        put "/api/v1/threads/#{thread.id}", tags: "aha, oho"
-        last_response.should be_ok
-        thread.reload
-        thread.tags_array.length.should == 2
-        thread.tags_array.should include "aha"
-        thread.tags_array.should include "oho"
       end
     end
     describe "POST /api/v1/threads/:thread_id/comments" do
@@ -494,49 +460,6 @@ describe "app" do
         delete "/api/v1/threads/does_not_exist"
         last_response.status.should == 400
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
-      end
-    end
-  end
-  describe "GET /api/v1/threads/tags" do
-    it "get all tags used in threads" do
-      CommentThread.recalculate_all_context_tag_weights!
-      thread1 = CommentThread.all.to_a.first
-      thread2 = CommentThread.all.to_a.last
-      thread1.tags = "a, b, c"
-      thread1.save
-      thread2.tags = "d, e, f"
-      thread2.save
-      get "/api/v1/threads/tags"
-      last_response.should be_ok
-      tags = parse last_response.body
-      tags.length.should == 6
-    end
-  end
-  describe "GET /api/v1/threads/tags/autocomplete" do
-    def create_comment_thread(tags)
-      c = CommentThread.new(title: "Interesting question", body: "cool")
-      c.course_id = "1"
-      c.author = User.first
-      c.tags = tags
-      c.commentable_id = "1"
-      c.save!
-      c
-    end
-    it "returns autocomplete results" do
-      CommentThread.delete_all
-      CommentThread.recalculate_all_context_tag_weights!
-      create_comment_thread "c++, clojure, common-lisp, c#, c, coffeescript"
-      create_comment_thread "c++, clojure, common-lisp, c#, c"
-      create_comment_thread "c++, clojure, common-lisp, c#"
-      create_comment_thread "c++, clojure, common-lisp"
-      create_comment_thread "c++, clojure"
-      create_comment_thread "c++"
-      get "/api/v1/threads/tags/autocomplete", value: "c"
-      last_response.should be_ok
-      results = parse last_response.body
-      results.length.should == 5
-      %w[c++ clojure common-lisp c# c].each_with_index do |tag, index|
-        results[index].should == tag
       end
     end
   end

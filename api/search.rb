@@ -19,7 +19,7 @@ get "#{APIPREFIX}/search/threads" do
 
   sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
 
-  if (!params["text"] && !params["tags"] && !params["commentable_ids"]) || !sort_keyword_valid
+  if (!params["text"] && !params["commentable_ids"]) || !sort_keyword_valid
     {}.to_json
   else
     page = (params["page"] || DEFAULT_PAGE).to_i
@@ -94,16 +94,4 @@ get "#{APIPREFIX}/search/threads/recent_active" do
   end
 
   comment_threads.where(query_params.merge(:last_activity_at => {:$gte => from_time})).order_by(:last_activity_at.desc).limit(5).to_a.map(&:to_hash).to_json
-end
-
-
-get "#{APIPREFIX}/search/tags/trending" do
-  query_params = {}
-  query_params["course_id"] = params["course_id"] if params["course_id"]
-  query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
-  CommentThread.where(query_params).only(:tags_array).to_a
-               .map(&:tags_array).flatten.group_by{|x| x}
-               .map{|k, v| [k, v.count]}
-               .sort_by {|x| - x.last}[0..4]
-               .to_json
 end

@@ -200,7 +200,7 @@ def check_thread_result(user, thread, json_response, check_comments=false, is_se
   json_response["votes"]["up_count"].should == thread.votes["up_count"] 
   json_response["votes"]["down_count"].should == thread.votes["down_count"] 
   json_response["abuse_flaggers"].should == thread.abuse_flaggers
-  json_response["tags"].should == thread.tags_array
+  json_response["tags"].should == []
   json_response["type"].should == "thread"
   json_response["group_id"].should == thread.group_id
   json_response["pinned"].should == thread.pinned?

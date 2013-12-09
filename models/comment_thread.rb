@@ -4,10 +4,6 @@ require_relative 'content'
 class CommentThread < Content
 
   include Mongoid::Timestamps
-  include Mongoid::TaggableWithContext
-  include Mongoid::TaggableWithContext::AggregationStrategy::RealTime
-
-  taggable separator: ',', default: []
 
   voteable self, :up => +1, :down => -1
 
@@ -32,8 +28,6 @@ class CommentThread < Content
   mapping do
     indexes :title, type: :string, analyzer: :snowball, boost: 5.0, stored: true, term_vector: :with_positions_offsets
     indexes :body, type: :string, analyzer: :snowball, stored: true, term_vector: :with_positions_offsets
-    indexes :tags_in_text, type: :string, as: 'tags_array', index: :analyzed
-    indexes :tags_array, type: :string, as: 'tags_array', index: :not_analyzed, included_in_all: false
     indexes :created_at, type: :date, included_in_all: false
     indexes :updated_at, type: :date, included_in_all: false
     indexes :last_activity_at, type: :date, included_in_all: false
@@ -61,9 +55,6 @@ class CommentThread < Content
   validates_presence_of :commentable_id
   validates_presence_of :author, autosave: false
 
-  validate :tag_names_valid
-  validate :tag_names_unique
-
   before_create :set_last_activity_at
   before_update :set_last_activity_at, :unless => lambda { closed_changed? }
 
@@ -78,7 +69,6 @@ class CommentThread < Content
     c.commentable_id = options[:commentable_id] || "commentable_id"
     c.course_id = options[:course_id] || "course_id"
     c.author = options[:author] || User.first
-    c.tags = options[:tags] || "test-tag-1, test-tag-2"
     c.save!
     c
   end
@@ -110,7 +100,6 @@ class CommentThread < Content
 
     search.query {|query| query.text :_all, params["text"]} if params["text"]
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
-    search.filter(:bool, :must => params["tags"].split(/,/).map{ |tag| { :term => { :tags_array => tag } } }) if params["tags"]
     search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
     search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
@@ -248,7 +237,7 @@ class CommentThread < Content
     #  abuse_flaggers
     #    from original document 
     #  tags
-    #    from orig doc tags_array
+    #    deprecated - empty array
     #  type
     #    hardcoded "thread"
     #  group_id
@@ -263,16 +252,12 @@ class CommentThread < Content
                             "username" => author_username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),
                             "abuse_flaggers" => abuse_flaggers,
-                            "tags" => tags_array,
+                            "tags" => [],
                             "type" => "thread",
                             "group_id" => group_id,
                             "pinned" => pinned?,
                             "comments_count" => comment_count)
     
-  end
-
-  def self.tag_name_valid?(tag)
-    !!(tag =~ RE_TAG)
   end
 
   def comment_thread_id
@@ -281,25 +266,6 @@ class CommentThread < Content
   end  
   
 private
-
-  RE_HEADCHAR = /[a-z0-9]/
-  RE_ENDONLYCHAR = /\+/
-  RE_ENDCHAR = /[a-z0-9\#]/
-  RE_CHAR = /[a-z0-9\-\#\.]/
-  RE_WORD = /#{RE_HEADCHAR}(((#{RE_CHAR})*(#{RE_ENDCHAR})+)?(#{RE_ENDONLYCHAR})*)?/
-  RE_TAG = /^#{RE_WORD}( #{RE_WORD})*$/
-
-  def tag_names_valid
-    unless tags_array.all? {|tag| self.class.tag_name_valid? tag}
-      errors.add :tag, "can consist of words, numbers, dashes and spaces only and cannot start with dash"
-    end
-  end
-
-  def tag_names_unique
-    unless tags_array.uniq.size == tags_array.size
-      errors.add :tags, "must be unique"
-    end
-  end
 
   def set_last_activity_at
     self.last_activity_at = Time.now.utc unless last_activity_at_changed?
