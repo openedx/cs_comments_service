@@ -18,7 +18,7 @@ gem 'ampex'
 
 gem 'mongo'
 gem 'moped', "1.5.1"
-gem 'mongoid', "~> 3.0"
+gem 'mongoid', "3.0.15"
 gem 'bson_ext'
 
 gem 'delayed_job'
