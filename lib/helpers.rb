@@ -299,7 +299,7 @@ helpers do
   add_method_tracer :thread
   add_method_tracer :comment
   add_method_tracer :flag_as_abuse
-  add_method_tracer :unflag_as_abuse
+  add_method_tracer :un_flag_as_abuse
   add_method_tracer :author_contents_only
   add_method_tracer :handle_threads_query
 
