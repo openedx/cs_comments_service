@@ -11,48 +11,40 @@ test:
       hosts:
         - localhost:27017
 
+common: &default_session
+  uri: <%= ENV['MONGOHQ_URL'] %>
+  options:
+    skip_version_check: true
+    safe: true
+    consistency: strong
+    max_retries: <%= ENV['MONGOID_MAX_RETRIES'] || 1 %>
+    retry_interval: <%= ENV['MONGOID_RETRY_INTERVAL'] || 0 %>
+    timeout: <%= ENV['MONGOID_TIMEOUT'] || 0.5 %>
+
 production:
   sessions:
     default:
-      uri: <%= ENV['MONGOHQ_URL'] %>
-      options:
-        skip_version_check: true
-        safe: true
-        consistency: strong
+      <<: *default_session
 
 edgeprod:
   sessions:
     default:
-      uri: <%= ENV['MONGOHQ_URL'] %>
-      options:
-        skip_version_check: true
-        safe: true
-        consistency: strong
+      <<: *default_session
 
 edgestage:
   sessions:
     default:
-      uri: <%= ENV['MONGOHQ_URL'] %>
-      options:
-        skip_version_check: true
-        safe: true
-        consistency: strong
+      <<: *default_session
 
 staging:
   sessions:
     default:
-      uri: <%= ENV['MONGOHQ_URL'] %>
+      <<: *default_session
 
 loadtest:
   sessions:
     default:
-      uri: <%= ENV['MONGOHQ_URL'] %>
-      options:
-        skip_version_check: true
-        safe: true
-        consistency: strong
-        max_retries: 1
-        retry_interval: 1
+      <<: *default_session
 
 defaults: &defaults
   use_utc: false

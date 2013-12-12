@@ -309,7 +309,9 @@ private
     subscriptions.delete_all
   end
 
-  include ::NewRelic::Agent::MethodTracer
-  add_method_tracer :perform_search
+  class << self
+    include ::NewRelic::Agent::MethodTracer
+    add_method_tracer :perform_search, 'Custom/perform_search'
+  end
 
 end
