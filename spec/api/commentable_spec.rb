@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'unicode_shared_examples'
 
 describe "app" do
   describe "commentables" do
@@ -51,9 +52,24 @@ describe "app" do
         threads = response['collection']
         threads.length.should == 0
       end
+
+      def test_unicode_data(text)
+        commentable_id = "unicode_commentable"
+        thread = make_thread(User.first, text, "unicode_course", commentable_id)
+        make_comment(User.first, thread, text)
+        get "/api/v1/#{commentable_id}/threads", recursive: true
+        last_response.should be_ok
+        result = parse(last_response.body)["collection"]
+        result.should_not be_empty
+        check_thread_result(nil, thread, result.first, true)
+      end
+
+      include_examples "unicode data"
     end
     describe "POST /api/v1/:commentable_id/threads" do
-      default_params = {title: "Interesting question", body: "cool", course_id: "1", user_id: "1"}
+      let(:default_params) do
+        {title: "Interesting question", body: "cool", course_id: "1", user_id: "1"}
+      end
       it "create a new comment thread for the commentable object" do
         old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params
@@ -101,6 +117,15 @@ describe "app" do
         last_response.status.should == 503
         parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
       end
+
+      def test_unicode_data(text)
+        commentable_id = "unicode_commentable"
+        post "/api/v1/#{commentable_id}/threads", default_params.merge(body: text, title: text)
+        last_response.should be_ok
+        CommentThread.where(commentable_id: commentable_id, body: text, title: text).should_not be_empty
+      end
+
+      include_examples "unicode data"
     end
   end
 end

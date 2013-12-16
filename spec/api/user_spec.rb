@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'unicode_shared_examples'
 
 describe "app" do
   describe "users" do
@@ -194,6 +195,18 @@ describe "app" do
           actual_order.should == expected_order
         end
       end
+
+      def test_unicode_data(text)
+        user = User.first
+        course_id = "unicode_course"
+        thread = make_thread(user, text, course_id, "unicode_commentable")
+        make_comment(user, thread, text)
+        result = thread_result(user.id, course_id: course_id)
+        result.length.should == 1
+        check_thread_result(nil, thread, result.first)
+      end
+
+      include_examples "unicode data"
     end
   end
 end

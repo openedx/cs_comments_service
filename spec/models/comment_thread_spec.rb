@@ -1,6 +1,10 @@
 require 'spec_helper'
+require 'unicode_shared_examples'
 
 describe CommentThread do
+  let(:author) do
+    create_test_user(42)
+  end
 
   context "endorsed?" do
 
@@ -77,5 +81,13 @@ describe CommentThread do
     end
   end
 
+  def test_unicode_data(text)
+    thread = make_thread(author, text, "unicode_course", commentable_id: "unicode_commentable")
+    retrieved = CommentThread.find(thread._id)
+    retrieved.title.should == text
+    retrieved.body.should == text
+  end
+
+  include_examples "unicode data"
 end
 

@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'unicode_shared_examples'
 
 describe "app" do
   describe "comments" do
@@ -39,6 +40,16 @@ describe "app" do
         last_response.status.should == 400
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
+
+      def test_unicode_data(text)
+        comment = make_comment(User.first, CommentThread.first, text)
+        get "/api/v1/comments/#{comment.id}"
+        last_response.should be_ok
+        retrieved = parse last_response.body
+        retrieved["body"].should == text
+      end
+
+      include_examples "unicode data"
     end
     describe "PUT /api/v1/comments/:comment_id" do
       it "update information of the comment" do
@@ -60,6 +71,15 @@ describe "app" do
         last_response.status.should == 503
         parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
       end
+
+      def test_unicode_data(text)
+        comment = Comment.first
+        put "/api/v1/comments/#{comment.id}", body: text
+        last_response.should be_ok
+        comment.body.should == text
+      end
+
+      include_examples "unicode data"
     end
     describe "POST /api/v1/comments/:comment_id" do
       it "create a sub comment to the comment" do
@@ -85,6 +105,15 @@ describe "app" do
         last_response.status.should == 503
         parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
       end
+
+      def test_unicode_data(text)
+        parent = Comment.first
+        post "/api/v1/comments/#{parent.id}", body: text, course_id: parent.course_id, user_id: User.first.id
+        last_response.should be_ok
+        parent.children.where(body: text).should_not be_empty
+      end
+
+      include_examples "unicode data"
     end
     describe "DELETE /api/v1/comments/:comment_id" do
       it "delete the comment and its sub comments" do
