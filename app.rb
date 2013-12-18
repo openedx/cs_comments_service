@@ -114,6 +114,28 @@ end
 Mongoid.identity_map_enabled = true
 use Rack::Mongoid::Middleware::IdentityMap
 
+
+# use yajl implementation for to_json.
+# https://github.com/brianmario/yajl-ruby#json-gem-compatibility-api
+#
+# In addition to performance advantages over the standard JSON gem,
+# this avoids a bug with non-BMP characters.  For more info see:
+# https://github.com/rails/rails/issues/3727
+require 'yajl/json_gem'
+
+# patch json serialization of ObjectIds to work properly with yajl.
+# See https://groups.google.com/forum/#!topic/mongoid/MaXFVw7D_4s
+module Moped
+  module BSON
+    class ObjectId
+      def to_json
+        self.to_s.to_json
+      end
+    end
+  end
+end
+
+
 # these files must be required in order
 require './api/search'
 require './api/commentables'
