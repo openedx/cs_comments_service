@@ -48,6 +48,7 @@ group :test do
   gem 'guard'
   gem 'guard-unicorn'
   gem 'simplecov', :require => false
+  gem 'database_cleaner'
 end
 
 gem 'newrelic_rpm'

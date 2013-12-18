@@ -7,6 +7,7 @@ require File.join(File.dirname(__FILE__), '..', 'app')
 require 'sinatra'
 require 'rack/test'
 require 'yajl'
+require 'database_cleaner'
 
 # setup test environment
 set :environment, :test
@@ -25,7 +26,14 @@ RSpec.configure do |config|
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.filter_run focus: true
   config.run_all_when_everything_filtered = true
-  config.before(:each) { Mongoid::IdentityMap.clear }
+  config.before(:each) do
+    Mongoid::IdentityMap.clear
+    DatabaseCleaner.clean
+    [CommentThread, Comment].each do |class_|
+      class_.tire.index.delete
+      class_.create_elasticsearch_index
+    end
+  end
 end
 
 Mongoid.configure do |config|

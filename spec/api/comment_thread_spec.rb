@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'unicode_shared_examples'
 
 describe "app" do
   describe "comment threads" do
@@ -302,6 +303,15 @@ describe "app" do
         
       end
 
+      def test_unicode_data(text)
+        course_id = "unicode_course"
+        thread = make_thread(User.first, text, course_id, "unicode_commentable")
+        make_comment(User.first, thread, text)
+        result = thread_result(course_id: course_id, recursive: true).first
+        check_thread_result(nil, thread, result, true)
+      end
+
+      include_examples "unicode data"
     end
 
     describe "GET /api/v1/threads/:thread_id" do
@@ -372,6 +382,16 @@ describe "app" do
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
 
+      def test_unicode_data(text)
+        thread = make_thread(User.first, text, "unicode_course", "unicode_commentable")
+        make_comment(User.first, thread, text)
+        get "/api/v1/threads/#{thread.id}", recursive: true
+        last_response.should be_ok
+        result = parse last_response.body
+        check_thread_result(nil, thread, result, true)
+      end
+
+      include_examples "unicode data"
     end
     describe "PUT /api/v1/threads/:thread_id" do
 
@@ -399,6 +419,16 @@ describe "app" do
         put "/api/v1/threads/#{thread.id}", body: "blocked,   post...", title: "new title", commentable_id: "new_commentable_id"
         last_response.status.should == 503
       end
+
+      def test_unicode_data(text)
+        thread = CommentThread.first
+        put "/api/v1/threads/#{thread.id}", body: text, title: text
+        last_response.should be_ok
+        thread.body.should == text
+        thread.title.should == text
+      end
+
+      include_examples "unicode data"
     end
     describe "POST /api/v1/threads/:thread_id/comments" do
 
@@ -448,8 +478,18 @@ describe "app" do
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "BLOCKED POST")
         last_response.status.should == 503
       end
+
+      def test_unicode_data(text)
+        thread = CommentThread.first
+        post "/api/v1/threads/#{thread.id}/comments", default_params.merge(body: text)
+        last_response.should be_ok
+        thread.comments.where(body: text).should_not be_empty
+      end
+
+      include_examples "unicode data"
     end
     describe "DELETE /api/v1/threads/:thread_id" do
+      before(:each) { init_without_subscriptions }
       it "delete the comment thread and its comments" do
         thread = CommentThread.first.to_hash
         delete "/api/v1/threads/#{thread['id']}"
