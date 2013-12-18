@@ -99,36 +99,7 @@ describe "app" do
       it "returns 503 when the post content is blocked" do
         post '/api/v1/question_1/threads', default_params.merge(body: "BLOCKED POST")
         last_response.status.should == 503
-      end
-      it "create a new comment thread with tag" do
-        old_count = CommentThread.count
-        post '/api/v1/question_1/threads', default_params.merge(tags: "a, b, c")
-        last_response.should be_ok
-        CommentThread.count.should == old_count + 1
-        thread = CommentThread.where(title: "Interesting question").first
-        thread.tags_array.length.should == 3
-        thread.tags_array.should include "a"
-        thread.tags_array.should include "b"
-        thread.tags_array.should include "c"
-      end
-      it "strip spaces in tags" do
-        old_count = CommentThread.count
-        post '/api/v1/question_1/threads', default_params.merge(tags: " a, b ,c ")
-        last_response.should be_ok
-        CommentThread.count.should == old_count + 1
-        thread = CommentThread.where(title: "Interesting question").first
-        thread.tags_array.length.should == 3
-        thread.tags_array.should include "a"
-        thread.tags_array.should include "b"
-        thread.tags_array.should include "c"
-      end
-      it "accepts [a-z 0-9 + # - .]words, numbers, dashes, spaces but no underscores in tags" do
-        old_count = CommentThread.count
-        post '/api/v1/question_1/threads', default_params.merge(tags: "artificial-intelligence, machine-learning, 7-is-a-lucky-number, interesting problem, interesting problems in c++")
-        last_response.should be_ok
-        CommentThread.count.should == old_count + 1
-        thread = CommentThread.where(title: "Interesting question").first
-        thread.tags_array.length.should == 5
+        parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
       end
     end
   end

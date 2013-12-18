@@ -25,10 +25,6 @@ end
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   thread.update_attributes(params.slice(*%w[title body closed commentable_id group_id]))
   filter_blocked_content thread
-  if params["tags"]
-    thread.tags = params["tags"]
-    thread.save
-  end
 
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json

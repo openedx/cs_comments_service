@@ -30,13 +30,6 @@ GIT
       mongoid (>= 3.0, <= 4.0)
 
 GIT
-  remote: https://github.com/dementrock/mongoid_taggable_with_context.git
-  revision: 7cf165bd828f969cdd386102eed04ac35431a920
-  specs:
-    mongoid_taggable_with_context (0.8.1.1)
-      mongoid (>= 3.0.1)
-
-GIT
   remote: https://github.com/dementrock/voteable_mongo.git
   revision: 538e86856daa1c180ba80b7c6f2805e531ba420c
   specs:
@@ -178,12 +171,12 @@ DEPENDENCIES
   faker
   guard
   guard-unicorn
+  i18n
   kaminari!
   mongo
   mongoid (= 3.0.15)
   mongoid-tree!
   mongoid_magic_counter_cache!
-  mongoid_taggable_with_context!
   moped (= 1.5.1)
   newrelic_moped
   newrelic_rpm
