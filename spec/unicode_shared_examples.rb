@@ -14,7 +14,6 @@ shared_examples "unicode data" do
   end
 
   it "can handle non-BMP data" do
-    pending("circumventing a bug in ActiveSupport's JSON encoding of non-BMP characters")
     test_unicode_data("𝕋𝕙𝕚𝕤 𝕡𝕠𝕤𝕥 𝕔𝕠𝕟𝕥𝕒𝕚𝕟𝕤 𝕔𝕙𝕒𝕣𝕒𝕔𝕥𝕖𝕣𝕤 𝕠𝕦𝕥𝕤𝕚𝕕𝕖 𝕥𝕙𝕖 𝔹𝕄ℙ")
   end
 
