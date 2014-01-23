@@ -1,77 +1,65 @@
+require_relative 'thread_utils'
 require 'new_relic/agent/method_tracer'
 
 class ThreadPresenter
 
-  def initialize(comment_threads, user, course_id)
-    @threads = comment_threads
+  def self.factory(thread, user)
+    # use when working with one thread at a time.  fetches extended / 
+    # derived attributes from the db and explicitly initializes an instance.
+    course_id = thread.course_id
+    thread_key = thread._id.to_s
+    is_read, unread_count = ThreadUtils.get_read_states([thread], user, course_id).fetch(thread_key, [false, thread.comment_count])
+    is_endorsed = ThreadUtils.get_endorsed([thread]).fetch(thread_key, false)
+    self.new thread, user, is_read, unread_count, is_endorsed
+  end
+
+  def initialize(thread, user, is_read, unread_count, is_endorsed)
+    # generally not intended for direct use.  instantiated by self.factory or
+    # by thread list presenters.
+    @thread = thread
     @user = user
-    @course_id = course_id
-    @read_dates = nil # Hash, sparse, thread_key (str) => date
-    @unread_counts = nil # Hash, sparse, thread_key (str) => int
-    @endorsed_threads = nil # Hash, sparse, thread_key (str) => bool
-    load_aggregates
+    @is_read = is_read
+    @unread_count = unread_count
+    @is_endorsed = is_endorsed
   end
 
-  def load_aggregates
-    @read_dates = {}
-    if @user
-      read_state = @user.read_states.where(:course_id => @course_id).first
-      if read_state
-        @read_dates = read_state["last_read_times"].to_hash
+  def to_hash with_responses=false, resp_skip=0, resp_limit=nil
+    raise ArgumentError unless resp_skip >= 0
+    raise ArgumentError unless resp_limit.nil? or resp_limit >= 1
+    h = @thread.to_hash
+    h["read"] = @is_read
+    h["unread_comments_count"] = @unread_count
+    h["endorsed"] = @is_endorsed || false
+    if with_responses
+      unless resp_skip == 0 && resp_limit.nil?
+        # need to find responses first, set the window accordingly, then fetch the comments
+        # bypass mongoid/odm, to get just the response ids we need as directly as possible
+        responses = Content.collection.find({"comment_thread_id" => @thread._id, "parent_id" => {"$exists" => false}})
+        responses = responses.sort({"sk" => 1})
+        all_response_ids = responses.select({"_id" => 1}).to_a.map{|doc| doc["_id"] }
+        response_ids = (resp_limit.nil? ? all_response_ids[resp_skip..-1] : (all_response_ids[resp_skip,resp_limit])) || []
+        # now use the odm to fetch the desired responses and their comments
+        content = Content.where({"parent_id" => {"$in" => response_ids}}).to_a + Content.where({"_id" => {"$in" => response_ids}}).to_a
+        content.sort!{|a,b| a.sk <=> b.sk }
+        response_total = all_response_ids.length
+      else
+        content = Content.where({"comment_thread_id" => @thread._id}).order_by({"sk"=> 1})
+        response_total = content.to_a.select{|d| d.depth == 0 }.length
       end
+      h = merge_comments_recursive(h, content)
+      h["resp_skip"] = resp_skip
+      h["resp_limit"] = resp_limit
+      h["resp_total"] = response_total
     end
-
-    @unread_counts = {}
-    @endorsed_threads = {}
-
-    thread_ids = @threads.collect {|t| t._id}
-    Comment.collection.aggregate(
-      {"$match" => {"comment_thread_id" => {"$in" => thread_ids}, "endorsed" => true}},
-      {"$group" => {"_id" => "$comment_thread_id"}}
-    ).each do |res| 
-      @endorsed_threads[res["_id"].to_s] = true 
-    end
-
-    @threads.each do |t|
-      thread_key = t._id.to_s
-      if @read_dates.has_key? thread_key
-        @unread_counts[thread_key] = Comment.collection.where(
-          :comment_thread_id => t._id,
-          :author_id => {"$ne" => @user.id},
-          :updated_at => {"$gte" => @read_dates[thread_key]}
-          ).count
-      end
-    end
-  end
-
-  def to_hash thread, with_comments=false
-    thread_key = thread._id.to_s 
-    h = thread.to_hash
-    if @user
-      cnt_unread = @unread_counts.fetch(thread_key, thread.comment_count)
-      h["unread_comments_count"] = cnt_unread
-      h["read"] = @read_dates.has_key?(thread_key) && @read_dates[thread_key] >= thread.updated_at
-    else
-      h["unread_comments_count"] = thread.comment_count
-      h["read"] = false
-    end
-    h["endorsed"] = @endorsed_threads.fetch(thread_key, false)
-    h = merge_comments_recursive(h) if with_comments
     h
   end
 
-  def to_hash_array with_comments=false
-    @threads.map {|t| to_hash(t, with_comments)}
-  end
-
-  def merge_comments_recursive thread_hash
+  def merge_comments_recursive thread_hash, comments
     thread_id = thread_hash["id"]
     root = thread_hash = thread_hash.merge("children" => [])
-    # Content model is used deliberately here (instead of Comment), to work with sparse index
-    rs = Content.where(comment_thread_id: thread_id).order_by({"sk"=> 1})
     ancestry = [thread_hash]
     # weave the fetched comments into a single hierarchical doc
-    rs.each do | comment |
+    comments.each do | comment |
       thread_hash = comment.to_hash.merge("children" => [])
       parent_id = comment.parent_id || thread_id
       found_parent = false
@@ -94,13 +82,11 @@ class ThreadPresenter
         ancestry = [root]
       end
     end
-    ancestry.first 
+    ancestry.first
   end
 
   include ::NewRelic::Agent::MethodTracer
-  add_method_tracer :load_aggregates
   add_method_tracer :to_hash
-  add_method_tracer :to_hash_array
   add_method_tracer :merge_comments_recursive
 
 end

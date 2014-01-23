@@ -42,12 +42,12 @@ get "#{APIPREFIX}/search/threads" do
     if results.length == 0
       collection = []
     else
-      pres_threads = ThreadSearchResultPresenter.new(
+      pres_threads = ThreadSearchResultsPresenter.new(
         results,
         params[:user_id] ? user : nil,
         params[:course_id] || results.first.course_id
       )
-      collection = pres_threads.to_hash_array(bool_recursive)
+      collection = pres_threads.to_hash
     end
 
     num_pages = results.total_pages

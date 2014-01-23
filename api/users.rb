@@ -41,8 +41,8 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
     paged_thread_ids.index(t.id)
   end
 
-  presenter = ThreadPresenter.new(paged_active_threads.to_a, user, params[:course_id])
-  collection = presenter.to_hash_array()
+  presenter = ThreadListPresenter.new(paged_active_threads.to_a, user, params[:course_id])
+  collection = presenter.to_hash
 
   json_output = nil
   self.class.trace_execution_scoped(['Custom/get_user_active_threads/json_serialize']) do

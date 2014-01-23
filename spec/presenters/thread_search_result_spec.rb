@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe ThreadSearchResultPresenter do
+describe ThreadSearchResultsPresenter do
   context "#to_hash" do
   
     before(:each) { setup_10_threads }
@@ -11,7 +11,7 @@ describe ThreadSearchResultPresenter do
       hash["highlighted_title"].should == ((search_result.highlight[:title] || []).first || hash["title"])
     end
 
-    def check_search_results_hash_array(search_results, hashes)
+    def check_search_results_hash(search_results, hashes)
       expected_order = search_results.map {|t| t.id}
       actual_order = hashes.map {|h| h["id"].to_s}
       actual_order.should == expected_order
@@ -23,8 +23,8 @@ describe ThreadSearchResultPresenter do
       mock_results = threads_random_order.map do |t| 
         double(Tire::Results::Item, :id => t._id.to_s, :highlight => {:body => ["foo"], :title => ["bar"]})
       end
-      pres = ThreadSearchResultPresenter.new(mock_results, nil, DFLT_COURSE_ID)
-      check_search_results_hash_array(mock_results, pres.to_hash_array)
+      pres = ThreadSearchResultsPresenter.new(mock_results, nil, DFLT_COURSE_ID)
+      check_search_results_hash(mock_results, pres.to_hash)
     end
 
     it "presents search results with correct default highlights" do
@@ -32,8 +32,8 @@ describe ThreadSearchResultPresenter do
       mock_results = threads_random_order.map do |t| 
         double(Tire::Results::Item, :id => t._id.to_s, :highlight => {})
       end
-      pres = ThreadSearchResultPresenter.new(mock_results, nil, DFLT_COURSE_ID)
-      check_search_results_hash_array(mock_results, pres.to_hash_array)
+      pres = ThreadSearchResultsPresenter.new(mock_results, nil, DFLT_COURSE_ID)
+      check_search_results_hash(mock_results, pres.to_hash)
     end
 
   end
