@@ -198,18 +198,6 @@ helpers do
     end
   end
 
-  def author_contents_only(contents, author_id)
-    contents.map do |content|
-      content['children'] = author_contents_only(content['children'], author_id)
-      if content['children'].length > 0 or \
-          (content['user_id'] == author_id and not content['anonymous'] and not content['anonymous_to_peers'])
-        content
-      else
-        nil
-      end
-    end.compact
-  end
-
   def notifications_by_date_range_and_user_ids start_date_time, end_date_time, user_ids  
     #given a date range and a user, find all of the notifiable content
     #key by thread id, and return notification messages for each user
@@ -301,7 +289,6 @@ helpers do
   add_method_tracer :comment
   add_method_tracer :flag_as_abuse
   add_method_tracer :un_flag_as_abuse
-  add_method_tracer :author_contents_only
   add_method_tracer :handle_threads_query
 
 end
