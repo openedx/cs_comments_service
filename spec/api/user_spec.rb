@@ -64,30 +64,23 @@ describe "app" do
         last_response.body.should == "{}"
       end
 
-      it "only returns threads with activity from the specified user" do
+      it "only returns threads with activity from the specified user"  do
+        @comments["t3 c4"].author = @users["u100"]
+        @comments["t3 c4"].save!
         rs = thread_result 100, course_id: "xyz"
-        rs.length.should == 1
-        check_thread_result(@users["u100"], @threads["t0"], rs.first, true)      
-        rs.first["children"].length.should == 5
+        rs.length.should == 2
+        check_thread_result(@users["u100"], @threads["t3"], rs[0], false)
+        check_thread_result(@users["u100"], @threads["t0"], rs[1], false)
       end
 
-      it "does not include anonymous leaves" do
-        @comments["t0 c4"].anonymous = true
-        @comments["t0 c4"].save!
+      it "does not return threads in which the user has only participated anonymously" do
+        @comments["t3 c4"].author = @users["u100"]
+        @comments["t3 c4"].anonymous_to_peers = true
+        @comments["t3 c4"].save!
         rs = thread_result 100, course_id: "xyz"
         rs.length.should == 1
-        check_thread_result(@users["100"], @threads["t0"], rs.first, false)
-        rs.first["children"].length.should == 4
-      end
-
-      it "does not include anonymous-to-peers leaves" do
-        @comments["t0 c3"].anonymous_to_peers = true
-        @comments["t0 c3"].save!
-        rs = thread_result 100, course_id: "xyz"
-        rs.length.should == 1
-        check_thread_result(@users["100"], @threads["t0"], rs.first, false)
-        rs.first["children"].length.should == 4
-      end
+        check_thread_result(@users["u100"], @threads["t0"], rs.first, false)
+      end      
 
       it "only returns threads from the specified course" do
         @threads.each do |k, v|
@@ -113,38 +106,6 @@ describe "app" do
         actual_order.should == expected_order
       end
 
-      it "only returns content authored by the specified user, and ancestors of that content" do
-        # by default, number of comments returned by u100 would be 5
-        @comments["t0 c2"].author = @users["u101"]
-        # now 4
-        make_comment(@users["u100"], @comments["t0 c2"], "should see me")
-        # now 5
-        make_comment(@users["u101"], @comments["t0 c2"], "should not see me")
-        make_comment(@users["u100"], @threads["t1"], "should see me")
-        # now 6
-        make_comment(@users["u101"], @threads["t1"], "should not see me")
-        rs = thread_result 100, course_id: "xyz"
-        rs.length.should == 2
-        # the leaf of every subtree in the rs must have author==u100
-        # and the comment count should match our expectation
-        expected_comment_count = 6
-        @actual_comment_count = 0
-        def check_leaf(result)
-          if !result["children"] or result["children"].length == 0
-            result["username"].should == "user100"
-            @actual_comment_count += 1
-          else
-            result["children"].each do |child|
-              check_leaf(child)
-            end
-          end
-        end 
-        rs.each do |r|
-          check_leaf(r)
-        end
-        @actual_comment_count.should == expected_comment_count
-      end
-    
       # TODO: note the checks on result["num_pages"] are disabled.
       # there is a bug in GET "#{APIPREFIX}/users/:user_id/active_threads
       # and this value is often wrong.
