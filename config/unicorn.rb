@@ -1,6 +1,9 @@
-worker_processes 4
+worker_processes ENV['WORKER_PROCESSES'].to_i || 4
 timeout 25
 preload_app true
+listen "unix:" + ENV['DATA_DIR'] + "/forum.sock", :backlog => 512
+timeout 120
+pid ENV['DATA_DIR'] + "/forum_unicorn.pid"
 
 before_fork do |server, worker|
   Signal.trap 'TERM' do
