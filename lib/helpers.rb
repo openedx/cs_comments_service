@@ -178,12 +178,12 @@ helpers do
       if threads.length == 0
         collection = []
       else
-        pres_threads = ThreadPresenter.new(
+        pres_threads = ThreadListPresenter.new(
           threads,
           params[:user_id] ? user : nil,
           params[:course_id] || threads.first.course_id
         )
-        collection = pres_threads.to_hash_array(bool_recursive)
+        collection = pres_threads.to_hash
       end
 
       json_output = nil

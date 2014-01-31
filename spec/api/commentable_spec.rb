@@ -25,26 +25,6 @@ describe "app" do
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
       end
-      it "get all comment threads and comments associated with a commentable object" do
-        get "/api/v1/question_1/threads", recursive: true
-        last_response.should be_ok
-        response = parse last_response.body
-        threads = response['collection']
-        threads.length.should == 2
-        threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
-        threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
-        thread = threads.select{|c| c["body"] == "can anyone help me?"}.first
-        children = thread["children"]
-        children.length.should == 2
-        children.index{|c| c["body"] == "this problem is so easy"}.should_not be_nil
-        children.index{|c| c["body"] =~ /^see the textbook/}.should_not be_nil
-        so_easy = children.select{|c| c["body"] == "this problem is so easy"}.first
-        so_easy["children"].length.should == 1
-        not_for_me = so_easy["children"].first
-        not_for_me["body"].should == "not for me!"
-        not_for_me["children"].length.should == 1
-        not_for_me["children"].first["body"].should == "not for me neither!"
-      end
       it "returns an empty array when the commentable object does not exist (no threads)" do
         get "/api/v1/does_not_exist/threads"
         last_response.should be_ok
@@ -57,11 +37,11 @@ describe "app" do
         commentable_id = "unicode_commentable"
         thread = make_thread(User.first, text, "unicode_course", commentable_id)
         make_comment(User.first, thread, text)
-        get "/api/v1/#{commentable_id}/threads", recursive: true
+        get "/api/v1/#{commentable_id}/threads"
         last_response.should be_ok
         result = parse(last_response.body)["collection"]
         result.should_not be_empty
-        check_thread_result(nil, thread, result.first, true)
+        check_thread_result_json(nil, thread, result.first)
       end
 
       include_examples "unicode data"

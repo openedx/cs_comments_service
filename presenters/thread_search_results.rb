@@ -1,6 +1,6 @@
-require_relative 'thread'
+require_relative 'thread_list'
 
-class ThreadSearchResultPresenter < ThreadPresenter
+class ThreadSearchResultsPresenter < ThreadListPresenter
 
   alias :super_to_hash :to_hash
 
@@ -12,12 +12,13 @@ class ThreadSearchResultPresenter < ThreadPresenter
     super(threads, user, course_id)
   end
 
-  def to_hash(thread, with_comments=false)
-    thread_hash = super_to_hash(thread, with_comments)
-    highlight = @search_result_map[thread.id.to_s].highlight || {}
-    thread_hash["highlighted_body"] = (highlight[:body] || []).first || thread_hash["body"]
-    thread_hash["highlighted_title"] = (highlight[:title] || []).first || thread_hash["title"]
-    thread_hash
+  def to_hash
+    super_to_hash.each do |thread_hash|
+      thread_key = thread_hash['id'].to_s
+      highlight = @search_result_map[thread_key].highlight || {}
+      thread_hash["highlighted_body"] = (highlight[:body] || []).first || thread_hash["body"]
+      thread_hash["highlighted_title"] = (highlight[:title] || []).first || thread_hash["title"]
+    end
   end
 
 end

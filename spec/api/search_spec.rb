@@ -16,11 +16,11 @@ describe "app" do
         # Elasticsearch does not necessarily make newly indexed content
         # available immediately, so we must explicitly refresh the index
         CommentThread.tire.index.refresh
-        get "/api/v1/search/threads", course_id: course_id, text: search_term, recursive: true
+        get "/api/v1/search/threads", course_id: course_id, text: search_term
         last_response.should be_ok
         result = parse(last_response.body)["collection"]
         result.length.should == 1
-        check_thread_result(nil, thread, result.first, true, true)
+        check_thread_result_json(nil, thread, result.first, true)
       end
 
       include_examples "unicode data"

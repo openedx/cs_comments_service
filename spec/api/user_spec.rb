@@ -69,8 +69,8 @@ describe "app" do
         @comments["t3 c4"].save!
         rs = thread_result 100, course_id: "xyz"
         rs.length.should == 2
-        check_thread_result(@users["u100"], @threads["t3"], rs[0], false)
-        check_thread_result(@users["u100"], @threads["t0"], rs[1], false)
+        check_thread_result_json(@users["u100"], @threads["t3"], rs[0])
+        check_thread_result_json(@users["u100"], @threads["t0"], rs[1])
       end
 
       it "does not return threads in which the user has only participated anonymously" do
@@ -79,7 +79,7 @@ describe "app" do
         @comments["t3 c4"].save!
         rs = thread_result 100, course_id: "xyz"
         rs.length.should == 1
-        check_thread_result(@users["u100"], @threads["t0"], rs.first, false)
+        check_thread_result_json(@users["u100"], @threads["t0"], rs.first)
       end      
 
       it "only returns threads from the specified course" do
@@ -164,7 +164,7 @@ describe "app" do
         make_comment(user, thread, text)
         result = thread_result(user.id, course_id: course_id)
         result.length.should == 1
-        check_thread_result(nil, thread, result.first)
+        check_thread_result_json(nil, thread, result.first)
       end
 
       include_examples "unicode data"
