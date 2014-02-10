@@ -1,7 +1,7 @@
 [main]
 host = https://www.transifex.com
 
-[edx-comments-service.sinatra]
+[edx-platform.comments-service]
 file_filter = locale/<lang>.yml
 source_file = locale/en-US.yml
 source_lang = en-US
