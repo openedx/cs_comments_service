@@ -35,6 +35,14 @@ GIT
   specs:
     voteable_mongo (0.9.3)
 
+GIT
+  remote: https://github.com/rack/rack-contrib.git
+  revision: 6ff3ca2b2d988911ca52a2712f6a7da5e064aa27
+  ref: 6ff3ca2b2d988911ca52a2712f6a7da5e064aa27
+  specs:
+    rack-contrib (1.2.0)
+      rack (>= 0.9.1)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -185,6 +193,7 @@ DEPENDENCIES
   nokogiri
   pry
   pry-nav
+  rack-contrib!
   rack-test
   rack-timeout (= 0.1.0beta3)
   rake

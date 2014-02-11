@@ -1,0 +1,10 @@
+x-test:
+  requested_object_not_found: "##x-test## requested object not found"
+  user_id_is_required: "##x-test## User id is required"
+  source_type_must_be_user_thread_or_other: "##x-test## Source type must be 'user', 'thread' or 'other'"
+  value_is_required: "##x-test## Value is required"
+  value_is_invalid: "##x-test## Value is invalid"
+  anonymous: "##x-test## anonymous"
+  blocked_content_with_body_hash: "##x-test## blocked content with body hash %{hash}"
+  param_must_be_a_non_negative_number: "##x-test## %{param} must be a non-negative number"
+  param_must_be_a_number_greater_than_zero: "##x-test## %{param} must be a number greater than zero"
