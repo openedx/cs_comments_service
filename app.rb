@@ -63,6 +63,7 @@ Moped.logger.level = ENV["ENABLE_MOPED_DEBUGGING"] ? Logger::DEBUG : Logger::INF
 I18n.load_path += Dir[File.join(File.dirname(__FILE__), 'locale', '*.yml').to_s]
 I18n.default_locale = CommentService.config[:default_locale]
 I18n::Backend::Simple.send(:include, I18n::Backend::Fallbacks)
+use Rack::Locale
 
 helpers do
   def t(*args)
