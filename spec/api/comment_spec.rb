@@ -124,6 +124,14 @@ describe "app" do
         Comment.count.should == prev_count - cnt_comments
         Comment.all.select{|c| c.id == comment.id}.first.should be_nil
       end
+      it "can delete a sub comment" do
+        parent = CommentThread.first.comments.first
+        sub_comment = parent.children.first
+        id = sub_comment.id
+        delete "/api/v1/comments/#{id}"
+        Comment.where(:id => id).should be_empty
+        parent.children.where(:id => id).should be_empty
+      end
       it "returns 400 when the comment does not exist" do
         delete "/api/v1/comments/does_not_exist"
         last_response.status.should == 400
