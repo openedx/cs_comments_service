@@ -354,6 +354,21 @@ namespace :db do
     do_reindex(args[:classname])
   end
 
+  task :resync, [:classname, :hours] => :environment do |t, args|
+    klass = CommentService.const_get(args[:classname])
+    raise RuntimeError unless klass.instance_of? Class
+    raise RuntimeError unless klass.respond_to? "tire"
+    the_index = klass.tire.index
+    alias_ = Tire::Alias.find the_index.name
+    # this check makes sure we are working with the index to which
+    # the desired model's alias presently points.
+    raise RuntimeError if alias_.nil?
+    t2 = Time.now
+    t1 = t2 - (args[:hours].to_i * 3600)
+    cursor = klass.where(:updated_at.gte => t1, :updated_at.lte => t2)
+    import_from_cursor(cursor, the_index, 200)
+  end
+
   task :reindex_search => :environment do
     do_reindex("CommentThread")
     do_reindex("Comment")
