@@ -5,8 +5,7 @@ preload_app true
 
 listen_host = ENV['LISTEN_HOST'] || '0.0.0.0'
 listen_port = ENV['LISTEN_PORT'] || '4567'
-listen "#{listen_host}:#{listen_port}", :tcp_nopush => true
+listen "#{listen_host}:#{listen_port}", :tcp_nopush => true, :backlog => 512
 
 data_dir = ENV['DATA_DIR'] || Dir.tmpdir
 pid "#{data_dir}/forum_unicorn.pid"
-
