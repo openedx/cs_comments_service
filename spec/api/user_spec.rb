@@ -47,6 +47,20 @@ describe "app" do
         last_response.status.should == 400 
       end
     end
+    describe "GET /api/v1/users/:user_id" do
+      it "returns user information" do
+        get "/api/v1/users/1"
+        last_response.status.should == 200
+        res = parse(last_response.body)
+        user1 = User.find_by("1")
+        res["external_id"].should == user1.external_id
+        res["username"].should == user1.username
+      end
+      it "returns 404 if user does not exist" do
+        get "/api/v1/users/3"
+        last_response.status.should == 404
+      end
+    end
     describe "GET /api/v1/users/:user_id/active_threads" do
 
       before(:each) { setup_10_threads }
