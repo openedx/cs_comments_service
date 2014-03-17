@@ -13,7 +13,11 @@ post "#{APIPREFIX}/users" do
 end
 
 get "#{APIPREFIX}/users/:user_id" do |user_id|
-  user.to_hash(complete: bool_complete, course_id: params["course_id"]).to_json
+  begin
+    user.to_hash(complete: bool_complete, course_id: params["course_id"]).to_json
+  rescue Mongoid::Errors::DocumentNotFound
+    error 404
+  end
 end
 
 get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
