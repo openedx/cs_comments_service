@@ -170,3 +170,30 @@ end
 
 CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).each.map {|d| d["hash"]}
 
+get '/heartbeat' do
+  t1 = Time.now
+  # any expected config / environment variables are set to sane values
+  # TODO: is there anything else applicable to check wrt config?
+
+  # mongo is reachable and ready to handle requests
+  db = Mongoid::Sessions.default
+  res = db.command(isMaster: 1)
+  if res["ismaster"] != true or Integer(res["ok"]) != 1
+    error 500, res.to_json
+  end
+
+  # E_S is reachable and ready to handle requests
+  res = Tire::Configuration.client.get Tire::Configuration.url
+  es_status = JSON.parse res.body
+  if es_status["ok"] != true or es_status["status"] != 200
+    error 500, res.to_json
+  end
+
+  status = {
+    "last_post_created" => db[:contents].find().sort(_id: -1).limit(1).one["created_at"],
+    "total_posts" => db[:contents].find.count,
+    "total_users" => db[:contents].find.count,
+    "elapsed_time" => Time.now - t1
+  }
+  JSON.generate(status)
+end
