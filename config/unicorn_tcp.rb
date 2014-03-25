@@ -9,3 +9,7 @@ listen "#{listen_host}:#{listen_port}", :tcp_nopush => true, :backlog => 512
 
 data_dir = ENV['DATA_DIR'] || Dir.tmpdir
 pid "#{data_dir}/forum_unicorn.pid"
+
+after_fork do |server, worker|
+  ::Mongoid.default_session.disconnect
+end
