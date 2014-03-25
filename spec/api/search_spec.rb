@@ -3,6 +3,9 @@ require 'unicode_shared_examples'
 
 describe "app" do
   describe "search" do
+
+    before (:each) { set_api_key_header }
+
     let(:author) { create_test_user(42) }
 
     describe "GET /api/v1/search/threads" do

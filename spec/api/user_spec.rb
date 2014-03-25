@@ -7,6 +7,7 @@ describe "app" do
       User.delete_all
       create_test_user 1
       create_test_user 2
+      set_api_key_header
     end
     describe "POST /api/v1/users" do
       it "creates a user" do

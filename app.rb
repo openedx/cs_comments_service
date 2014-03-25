@@ -84,11 +84,10 @@ APIPREFIX = CommentService::API_PREFIX
 DEFAULT_PAGE = 1
 DEFAULT_PER_PAGE = 20
 
-if RACK_ENV.to_s != "test" # disable api_key auth in test environment
-  before do
-    api_key = CommentService.config[:api_key]
-    error 401 unless params[:api_key] == api_key or env["HTTP_X_EDX_API_KEY"] == api_key
-  end
+before do
+  pass if request.path_info == '/heartbeat'
+  api_key = CommentService.config[:api_key]
+  error 401 unless params[:api_key] == api_key or env["HTTP_X_EDX_API_KEY"] == api_key
 end
 
 before do
@@ -170,30 +169,53 @@ end
 
 CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).each.map {|d| d["hash"]}
 
-get '/heartbeat' do
-  t1 = Time.now
-  # any expected config / environment variables are set to sane values
-  # TODO: is there anything else applicable to check wrt config?
+def get_db_is_master
+  Mongoid::Sessions.default.command(isMaster: 1)
+end
 
+def get_es_status
+  res = Tire::Configuration.client.get Tire::Configuration.url
+  JSON.parse res.body
+end
+
+get '/heartbeat' do
   # mongo is reachable and ready to handle requests
-  db = Mongoid::Sessions.default
-  res = db.command(isMaster: 1)
-  if res["ismaster"] != true or Integer(res["ok"]) != 1
-    error 500, res.to_json
+  db_ok = false
+  begin
+    res = get_db_is_master
+    db_ok = ( res["ismaster"] == true and Integer(res["ok"]) == 1 )
+  rescue
   end
+  error 500, JSON.generate({"OK" => false, "check" => "db"}) unless db_ok
 
   # E_S is reachable and ready to handle requests
-  res = Tire::Configuration.client.get Tire::Configuration.url
-  es_status = JSON.parse res.body
-  if es_status["ok"] != true or es_status["status"] != 200
-    error 500, res.to_json
+  es_ok = false
+  begin
+    es_status = get_es_status
+    es_ok = ( es_status["ok"] == true and es_status["status"] == 200 )
+  rescue
   end
+  error 500, JSON.generate({"OK" => false, "check" => "es"}) unless es_ok
 
-  status = {
-    "last_post_created" => db[:contents].find().sort(_id: -1).limit(1).one["created_at"],
-    "total_posts" => db[:contents].find.count,
-    "total_users" => db[:contents].find.count,
-    "elapsed_time" => Time.now - t1
-  }
-  JSON.generate(status)
+  JSON.generate({"OK" => true})
+end
+
+get '/selftest' do
+  begin
+    t1 = Time.now
+    status = {
+      "db" => get_db_is_master,
+      "es" => get_es_status,
+      "last_post_created" => (Content.last.created_at rescue nil),
+      "total_posts" => Content.count,
+      "total_users" => User.count,
+      "elapsed_time" => Time.now - t1
+    }
+    JSON.generate(status)
+  rescue => ex
+    [ 500,
+      {'Content-Type' => 'text/plain'},
+      "#{ex.backtrace.first}: #{ex.message} (#{ex.class})\n\t#{ex.backtrace[1..-1].join("\n\t")}"
+    ]
+  end
 end

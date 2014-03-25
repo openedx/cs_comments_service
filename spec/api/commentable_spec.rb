@@ -3,7 +3,12 @@ require 'unicode_shared_examples'
 
 describe "app" do
   describe "commentables" do
-    before(:each) { init_without_subscriptions }
+
+    before(:each) do
+      init_without_subscriptions
+      set_api_key_header
+    end
+
     describe "DELETE /api/v1/:commentable_id/threads" do
       it "delete all associated threads and comments of a commentable" do
         delete '/api/v1/question_1/threads'

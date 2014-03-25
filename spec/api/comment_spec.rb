@@ -2,6 +2,9 @@ require 'spec_helper'
 require 'unicode_shared_examples'
 
 describe "app" do
+
+  before(:each) { set_api_key_header }
+
   describe "comments" do
     before(:each) { init_without_subscriptions }
     describe "GET /api/v1/comments/:comment_id" do
