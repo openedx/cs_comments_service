@@ -4,6 +4,7 @@ require 'unicode_shared_examples'
 describe "app" do
   describe "comment threads" do
 
+    before(:each) { set_api_key_header }
 
     describe "GET /api/v1/threads" do
 

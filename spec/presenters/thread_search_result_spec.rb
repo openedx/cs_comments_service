@@ -5,7 +5,7 @@ describe ThreadSearchResultsPresenter do
   
     before(:each) { setup_10_threads }
 
-    # NOTE: throrough coverage of search result hash structure is presently provided in spec/api/search_spec
+    # NOTE: throrough coverage of search result hash structure is presently provided in spec/presenters/thread_spec
     def check_search_result_hash(search_result, hash)
       hash["highlighted_body"].should == ((search_result.highlight[:body] || []).first || hash["body"])
       hash["highlighted_title"].should == ((search_result.highlight[:title] || []).first || hash["title"])

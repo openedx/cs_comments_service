@@ -21,6 +21,13 @@ def app
   Sinatra::Application
 end
 
+TEST_API_KEY = 'comments-service-test-api-key'
+CommentService.config[:api_key] = TEST_API_KEY
+
+def set_api_key_header
+  current_session.header "X-Edx-Api-Key", TEST_API_KEY
+end
+
 RSpec.configure do |config|
   config.include Rack::Test::Methods
   config.treat_symbols_as_metadata_keys_with_true_values = true

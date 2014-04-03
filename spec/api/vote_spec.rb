@@ -2,7 +2,12 @@ require 'spec_helper'
 
 describe "app" do
   describe "votes" do
-    before(:each) { init_without_subscriptions }
+
+    before(:each) do
+      init_without_subscriptions
+      set_api_key_header
+    end
+
     describe "PUT /api/v1/comments/:comment_id/votes" do
       it "create or update the vote on the comment" do
         user = User.first

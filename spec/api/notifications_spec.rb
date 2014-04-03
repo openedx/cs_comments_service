@@ -2,7 +2,12 @@ require 'spec_helper'
 
 describe "app" do
   describe "notifications" do
-    before(:each) { init_without_subscriptions }
+
+    before(:each) do
+      init_without_subscriptions
+      set_api_key_header
+    end
+
     describe "POST /api/v1/notifications" do
       it "returns notifications by class and user" do
         start_time = Time.now
