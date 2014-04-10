@@ -11,7 +11,11 @@ get "#{APIPREFIX}/threads" do # retrieve threads by course
 end
 
 get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
-  thread = CommentThread.find(thread_id)
+  begin
+    thread = CommentThread.find(thread_id)
+  rescue Mongoid::Errors::DocumentNotFound
+    error 404, [t(:requested_object_not_found)].to_json
+  end
 
   if params["user_id"] and bool_mark_as_read
     user = User.only([:id, :username, :read_states]).find_by(external_id: params["user_id"])

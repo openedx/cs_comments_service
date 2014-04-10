@@ -376,12 +376,14 @@ describe "app" do
         check_thread_response_paging_json(thread, parse(last_response.body))
       end
 
-      it "returns 400 when the thread does not exist" do
-        get "/api/v1/threads/does_not_exist"
-        last_response.status.should == 400
-        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
-        get "/api/v1/threads/5016a3caec5eb9a12300000b1"
-        last_response.status.should == 400
+      it "returns 404 when the thread does not exist" do
+        thread = CommentThread.first
+        path = "/api/v1/threads/#{thread.id}"
+        get path
+        last_response.should be_ok
+        thread.destroy
+        get path
+        last_response.status.should == 404
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
 
