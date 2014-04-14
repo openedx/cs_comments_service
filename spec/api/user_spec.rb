@@ -92,6 +92,9 @@ describe "app" do
         @comments["t3 c4"].author = @users["u100"]
         @comments["t3 c4"].anonymous_to_peers = true
         @comments["t3 c4"].save!
+        @comments["t5 c1"].author = @users["u100"]
+        @comments["t5 c1"].anonymous = true
+        @comments["t5 c1"].save!
         rs = thread_result 100, course_id: "xyz"
         rs.length.should == 1
         check_thread_result_json(@users["u100"], @threads["t0"], rs.first)
@@ -108,22 +111,25 @@ describe "app" do
         rs.length.should == 9
       end
 
-      it "correctly orders results by most recently updated" do
-        @threads.each do |k, v|
-          v.author = @users["u100"]
-          v.save!
-        end
-        @threads["t5"].updated_at = DateTime.now
-        @threads["t5"].save!
-        expected_order = @threads.keys.reverse.select{|k| k!="t5"}.insert(0, "t5")
+      it "correctly orders results by most recent update by selected user" do
+        user = @users["u100"]
+        base_time = DateTime.now
+        @comments["t2 c2"].author = user
+        @comments["t2 c2"].updated_at = base_time
+        @comments["t2 c2"].save!
+        @comments["t4 c4"].author = user
+        @comments["t4 c4"].updated_at = base_time + 1
+        @comments["t4 c4"].save!
+        @threads["t2"].updated_at = base_time + 2
+        @threads["t2"].save!
+        @threads["t3"].author = user
+        @threads["t3"].updated_at = base_time + 4
+        @threads["t3"].save!
         rs = thread_result 100, course_id: "xyz"
         actual_order = rs.map {|v| v["title"]}
-        actual_order.should == expected_order
+        actual_order.should == ["t3", "t4", "t2", "t0"]
       end
 
-      # TODO: note the checks on result["num_pages"] are disabled.
-      # there is a bug in GET "#{APIPREFIX}/users/:user_id/active_threads
-      # and this value is often wrong.
       context "pagination" do
         def thread_result_page (page, per_page)
           get "/api/v1/users/100/active_threads", course_id: "xyz", page: page, per_page: per_page
@@ -132,27 +138,27 @@ describe "app" do
         end
 
         before(:each) do
-          @threads.each do |k, v|
-            @comments["#{k} c4"].author = @users["u100"]
-            @comments["#{k} c4"].save!
+          @comments.each do |k, v|
+            @comments[k].author = @users["u100"]
+            @comments[k].save!
           end
         end
 
         it "returns single page" do
           result = thread_result_page(1, 20)
           result["collection"].length.should == 10
-          #result["num_pages"].should == 1
+          result["num_pages"].should == 1
           result["page"].should == 1
         end
         it "returns multiple pages" do
           result = thread_result_page(1, 5)
           result["collection"].length.should == 5
-          #result["num_pages"].should == 2
+          result["num_pages"].should == 2
           result["page"].should == 1
 
           result = thread_result_page(2, 5)
           result["collection"].length.should == 5
-          #result["num_pages"].should == 2
+          result["num_pages"].should == 2
           result["page"].should == 2
         end
         it "orders correctly across pages" do
@@ -164,11 +170,29 @@ describe "app" do
             page = i + 1
             result = thread_result_page(page, per_page)
             result["collection"].length.should == (page * per_page <= @threads.length ? per_page : @threads.length % per_page)
-            #result["num_pages"].should == num_pages
+            result["num_pages"].should == num_pages
             result["page"].should == page
             actual_order += result["collection"].map {|v| v["title"]}
           end
           actual_order.should == expected_order
+        end
+        it "accepts negative parameters" do
+          result = thread_result_page(-5, -5)
+          result["collection"].length.should == 10
+          result["num_pages"].should == 1
+          result["page"].should == 1
+        end
+        it "accepts excessively large parameters" do
+          result = thread_result_page(9999, 9999)
+          result["collection"].length.should == 10
+          result["num_pages"].should == 1
+          result["page"].should == 1
+        end
+        it "accepts empty parameters" do
+          result = thread_result_page("", "")
+          result["collection"].length.should == 10
+          result["num_pages"].should == 1
+          result["page"].should == 1
         end
       end
 
