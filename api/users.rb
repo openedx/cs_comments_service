@@ -23,20 +23,25 @@ end
 get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
   return {}.to_json if not params["course_id"]
 
-  get_thread_id = lambda {|c| c._type == "Comment" ? c.comment_thread_id : c.id}
-  get_thread = lambda {|thread_id| CommentThread.find(thread_id)}
-
   page = (params["page"] || DEFAULT_PAGE).to_i
   per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
+  per_page = DEFAULT_PER_PAGE if per_page <= 0
 
   active_contents = Content.where(author_id: user_id, anonymous: false, anonymous_to_peers: false, course_id: params["course_id"])
                            .order_by(updated_at: :desc)
 
-  num_pages = [1, (active_contents.count / per_page.to_f).ceil].max
+  # Get threads ordered by most recent activity, taking advantage of the fact
+  # that active_contents is already sorted that way
+  active_thread_ids = active_contents.inject([]) do |thread_ids, content|
+    thread_id = content._type == "Comment" ? content.comment_thread_id : content.id
+    thread_ids << thread_id if not thread_ids.include?(thread_id)
+    thread_ids
+  end
+
+  num_pages = [1, (active_thread_ids.count / per_page.to_f).ceil].max
   page = [num_pages, [1, page].max].min
 
-  paged_active_contents = active_contents.page(page).per(per_page)
-  paged_thread_ids = paged_active_contents.map(&get_thread_id).uniq
+  paged_thread_ids = active_thread_ids[(page - 1) * per_page, per_page]
 
   # Find all the threads by id, and then put them in the order found earlier.
   # Necessary because CommentThread.find does return results in the same
