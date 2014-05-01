@@ -98,7 +98,7 @@ class CommentThread < Content
         
     search = Tire::Search::Search.new 'comment_threads'
 
-    search.query {|query| query.text :_all, params["text"]} if params["text"]
+    search.query {|query| query.match :_all, params["text"]} if params["text"]
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
     search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
     search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
@@ -126,7 +126,7 @@ class CommentThread < Content
     if params["text"]
 
       search = Tire::Search::Search.new 'comments'
-      search.query {|query| query.text :_all, params["text"]} if params["text"]
+      search.query {|query| query.match :_all, params["text"]} if params["text"]
       search.filter(:term, course_id: params["course_id"]) if params["course_id"]
       search.size CommentService.config["max_deep_search_comment_count"].to_i
       
