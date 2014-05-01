@@ -106,15 +106,11 @@ describe "app" do
       end
 
       it "reports success when es is ready" do
-        test_es_check({"ok" => true, "status" => 200}, true)
-      end
-
-      it "reports failure when es is not ok" do
-        test_es_check({"ok" => false, "status" => 200}, false)
+        test_es_check({"status" => 200}, true)
       end
 
       it "reports failure when es status is unexpected" do
-        test_es_check({"ok" => true, "status" => 201}, false)
+        test_es_check({"status" => 503}, false)
       end
 
       it "reports failure when es status is malformed" do

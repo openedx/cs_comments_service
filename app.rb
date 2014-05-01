@@ -192,7 +192,7 @@ get '/heartbeat' do
   es_ok = false
   begin
     es_status = get_es_status
-    es_ok = ( es_status["ok"] == true and es_status["status"] == 200 )
+    es_ok = es_status["status"] == 200
   rescue
   end
   error 500, JSON.generate({"OK" => false, "check" => "es"}) unless es_ok
