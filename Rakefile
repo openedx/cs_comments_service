@@ -34,7 +34,7 @@ task :environment do
 end
 
 def create_test_user(id)
-  User.create!(external_id: id, username: "user#{id}", email: "user#{id}@test.com")
+  User.create!(external_id: id, username: "user#{id}")
 end
 
 Dir.glob('lib/tasks/*.rake').each { |r| import r }

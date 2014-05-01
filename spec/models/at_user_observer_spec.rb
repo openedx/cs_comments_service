@@ -23,8 +23,8 @@ require 'spec_helper'
 #what is the 'at' symbol doing there? @dementrock
 #"""
 #    User.delete_all
-#    User.create!(external_id: "1", username: "tom", email: "tom@test.com")
-#    User.create!(external_id: "2", username: "pi314", email: "pi314@test.com")
+#    User.create!(external_id: "1", username: "tom")
+#    User.create!(external_id: "2", username: "pi314")
 #  end
 #
 #  describe "#get_marked_text(text)" do

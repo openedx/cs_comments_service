@@ -11,18 +11,15 @@ describe "app" do
     end
     describe "POST /api/v1/users" do
       it "creates a user" do
-        post "/api/v1/users", id: "100", username: "user100", email: "user100@test.com"
+        post "/api/v1/users", id: "100", username: "user100"
         last_response.should be_ok
         user = User.find_by(external_id: "100")
         user.username.should == "user100"
-        user.email.should == "user100@test.com"
       end
-      it "returns error when id / username / email already exists" do
-        post "/api/v1/users", id: "1", username: "user100", email: "user100@test.com"
+      it "returns error when id / username already exists" do
+        post "/api/v1/users", id: "1", username: "user100"
         last_response.status.should == 400
-        post "/api/v1/users", id: "100", username: "user1", email: "user100@test.com"
-        last_response.status.should == 400
-        post "/api/v1/users", id: "100", username: "user100", email: "user1@test.com"
+        post "/api/v1/users", id: "100", username: "user1"
         last_response.status.should == 400
       end
     end

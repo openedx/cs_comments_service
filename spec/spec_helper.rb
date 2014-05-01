@@ -52,7 +52,7 @@ def parse(text)
 end
 
 def create_test_user(id)
-  User.create!(external_id: id.to_s, username: "user#{id}", email: "user#{id}@test.com")
+  User.create!(external_id: id.to_s, username: "user#{id}")
 end
 
 def init_without_subscriptions
