@@ -359,6 +359,10 @@ namespace :db do
     do_reindex("Comment")
   end
 
+  task :create_search_indexes => :environment do
+    [CommentThread, Comment].each { |klass| create_index_for_class(klass) }
+  end
+
   task :add_anonymous_to_peers => :environment do
     Content.collection.find(:anonymous_to_peers=>nil).update_all({"$set" => {'anonymous_to_peers' => false}})
   end
