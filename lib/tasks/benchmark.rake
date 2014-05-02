@@ -21,7 +21,7 @@ namespace :benchmark do
 
       x.report "create users" do
         (1..USERS).each do |user_id|
-          data = { id: user_id, username: "user#{user_id}", email: "user#{user_id}@test.com" }
+          data = { id: user_id, username: "user#{user_id}" }
           RestClient.post "#{PREFIX}/users", data
         end
       end

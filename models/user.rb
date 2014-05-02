@@ -7,7 +7,6 @@ class User
   field :_id, type: String, default: -> { external_id }
   field :external_id, type: String
   field :username, type: String
-  field :email, type: String
   field :default_sort_key, type: String, default: "date"
 
   embeds_many :read_states
@@ -18,10 +17,8 @@ class User
 
   validates_presence_of :external_id
   validates_presence_of :username
-  validates_presence_of :email
   validates_uniqueness_of :external_id
   validates_uniqueness_of :username
-  validates_uniqueness_of :email
 
   index( {external_id: 1}, {unique: true, background: true} )
 

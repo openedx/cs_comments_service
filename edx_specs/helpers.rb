@@ -1,7 +1,6 @@
 def log_in
   visit "/"
   click_link "Log In"
-  fill_in "email", with: "student@student.com"
   fill_in "password", with: "student"
   click_button "Access My Courses"
   wait_until { page.find('.dashboard') }
