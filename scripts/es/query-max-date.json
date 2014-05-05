@@ -1,0 +1,17 @@
+{
+    "query" : {
+        "match_all" : {}
+    },
+    "facets" : {
+        "created_at_stats" : {
+            "statistical" : {
+                "field" : "created_at"
+            }
+        },
+        "updated_at_stats": {
+            "statistical": {
+               "field": "updated_at"
+            }
+        }
+    }
+}
