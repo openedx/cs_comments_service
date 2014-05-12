@@ -57,12 +57,14 @@ STATS=$(curl -s -XPOST "${TARGET_SERVER}/${TARGET_INDEX}/_search" -d @query-max-
 # }
 
 # extract the max create and update time in millis since epoch
-MAX_CREATED_AT=$( echo $STATS | jq '.facets.created_at_stats.max' )
-MAX_UPDATED_AT=$( echo $STATS | jq '.facets.updated_at_stats.max' )
+MAX_CREATED_AT=$( echo $STATS | jq -r '.facets.created_at_stats.max' )
+MAX_UPDATED_AT=$( echo $STATS | jq -r '.facets.updated_at_stats.max' )
 
-# increment the values for use in the range query.
-MAX_CREATED_AT=$((MAX_CREATED_AT+1))
-MAX_UPDATED_AT=$((MAX_UPDATED_AT+1))
+# expand the lower bound of the query by a second, allowing for
+# latency between writes in the ruby application and replication
+# to elasticsearch.
+MAX_CREATED_AT=$((MAX_CREATED_AT-1000))
+MAX_UPDATED_AT=$((MAX_UPDATED_AT-1000))
 
 echo "Updating the target indices with records added since ${MAX_CREATED_AT} or updated since ${MAX_UPDATED_AT}"
 
