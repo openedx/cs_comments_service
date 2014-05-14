@@ -115,74 +115,61 @@ class CommentThread < Content
     search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order #TODO should have search option 'auto sort or sth'
 
     #again, b/c there is no relationship in ordinality, we cannot paginate if it's a text query
-    
-    if not params["text"]
-      search.size per_page
-      search.from per_page * (page - 1)
-    end
-
     results = search.results
-    
-    #if this is a search query, then also search the comments and harvest the matching comments
-    if params["text"]
 
-      search = Tire::Search::Search.new 'comments'
-      search.query {|query| query.match :body, params["text"]} if params["text"]
-      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
-      search.size CommentService.config["max_deep_search_comment_count"].to_i
-      
-      #unforutnately, we cannot paginate here, b/c we don't know how the ordinality is totally
-      #unrelated to that of threads
-      
-      c_results = comment_ids = comments = thread_ids = nil
-      self.class.trace_execution_scoped(['Custom/perform_search/collect_comment_search_results']) do
-        c_results = search.results
-        comment_ids = c_results.collect{|c| c.id}.uniq
-      end
-      self.class.trace_execution_scoped(['Custom/perform_search/collect_comment_thread_ids']) do
-        comments = Comment.where(:id.in => comment_ids)
-        thread_ids = comments.collect{|c| c.comment_thread_id}
-      end
+    search = Tire::Search::Search.new 'comments'
+    search.query {|query| query.match :body, params["text"]} if params["text"]
+    search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+    search.size CommentService.config["max_deep_search_comment_count"].to_i
 
-      #thread_ids = c_results.collect{|c| c.comment_thread_id}
-      #as soon as we can add comment thread id to the ES index, via Tire updgrade, we'll 
-      #use ES instead of mongo to collect the thread ids
-     
-      #use the elasticsearch index instead to avoid DB hit
-      
-      self.class.trace_execution_scoped(['Custom/perform_search/collect_unique_thread_ids']) do
-        original_thread_ids = results.collect{|r| r.id}
+    #unforutnately, we cannot paginate here, b/c we don't know how the ordinality is totally
+    #unrelated to that of threads
 
-        #now add the original search thread ids
-        thread_ids += original_thread_ids
-        
-        thread_ids = thread_ids.uniq
-      end
-
-      #now run one more search to harvest the threads and filter by group
-      search = Tire::Search::Search.new 'comment_threads'
-      search.filter(:terms, :thread_id => thread_ids)
-      search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
-      search.filter(:term, course_id: params["course_id"]) if params["course_id"]
-
-      search.size per_page
-      search.from per_page * (page - 1)
-
-      if params["group_id"]
-
-        search.filter :or, [
-          {:not => {:exists => {:field => :group_id}}},
-          {:term => {:group_id => params["group_id"]}}
-
-        ]
-      end
-
-      search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order 
-      results = search.results
-
+    c_results = comment_ids = comments = thread_ids = nil
+    self.class.trace_execution_scoped(['Custom/perform_search/collect_comment_search_results']) do
+      c_results = search.results
+      comment_ids = c_results.collect{|c| c.id}.uniq
+    end
+    self.class.trace_execution_scoped(['Custom/perform_search/collect_comment_thread_ids']) do
+      comments = Comment.where(:id.in => comment_ids)
+      thread_ids = comments.collect{|c| c.comment_thread_id.to_s}
     end
 
-    results
+    #thread_ids = c_results.collect{|c| c.comment_thread_id}
+    #as soon as we can add comment thread id to the ES index, via Tire updgrade, we'll 
+    #use ES instead of mongo to collect the thread ids
+
+    #use the elasticsearch index instead to avoid DB hit
+
+    self.class.trace_execution_scoped(['Custom/perform_search/collect_unique_thread_ids']) do
+      original_thread_ids = results.collect{|r| r.id}
+
+      #now add the original search thread ids
+      thread_ids += original_thread_ids
+
+      thread_ids = thread_ids.uniq
+    end
+    
+    #now run one more search to harvest the threads and filter by group
+    search = Tire::Search::Search.new 'comment_threads'
+    search.filter(:terms, :thread_id => thread_ids)
+    search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
+    search.filter(:term, course_id: params["course_id"]) if params["course_id"]
+
+    search.size per_page
+    search.from per_page * (page - 1)
+
+    if params["group_id"]
+
+      search.filter :or, [
+        {:not => {:exists => {:field => :group_id}}},
+        {:term => {:group_id => params["group_id"]}}
+
+      ]
+    end
+
+    search.sort {|sort| sort.by sort_key, sort_order} if sort_key && sort_order 
+    {results: search.results, total_results: thread_ids.length}
   end
 
   def activity_since(from_time=nil)

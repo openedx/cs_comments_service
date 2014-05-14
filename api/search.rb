@@ -19,7 +19,7 @@ get "#{APIPREFIX}/search/threads" do
 
   sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
 
-  if (!params["text"] && !params["commentable_ids"]) || !sort_keyword_valid
+  if !params["text"] || !sort_keyword_valid
     {}.to_json
   else
     page = (params["page"] || DEFAULT_PAGE).to_i
@@ -33,10 +33,14 @@ get "#{APIPREFIX}/search/threads" do
       per_page: per_page,
     }
 
-    results = CommentThread.perform_search(params, options)
+    result_hash = CommentThread.perform_search(params, options)
+    results = result_hash[:results]
+    total_results = result_hash[:total_results]
 
     if page > results.total_pages #TODO find a better way for this
-      results = CommentThread.perform_search(params, options.merge(page: results.total_pages))
+      result_hash = CommentThread.perform_search(params, options.merge(page: results.total_pages))
+      results = result_hash[:results]
+      total_results = result_hash[:total_results]
     end
 
     if results.length == 0
@@ -56,6 +60,7 @@ get "#{APIPREFIX}/search/threads" do
     self.class.trace_execution_scoped(['Custom/get_search_threads/json_serialize']) do
       json_output = {
         collection: collection,
+        total_results: total_results,
         num_pages: num_pages,
         page: page,
       }.to_json
