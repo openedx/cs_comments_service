@@ -35,7 +35,7 @@ gem 'will_paginate_mongoid'
 gem 'rdiscount'
 gem 'nokogiri'
 
-gem 'tire', "0.5.2"
+gem 'tire', "0.6.2"
 gem 'tire-contrib'
 
 gem 'dalli'
