@@ -53,7 +53,6 @@ namespace :db do
   task :clean => :environment do
     Comment.delete_all
     CommentThread.delete_all
-    CommentThread.recalculate_all_context_tag_weights!
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
@@ -68,14 +67,6 @@ namespace :db do
   def generate_comments_for(commentable_id, num_threads=THREADS_PER_COMMENTABLE, num_top_comments=TOP_COMMENTS_PER_THREAD, num_subcomments=ADDITIONAL_COMMENTS_PER_THREAD)
     level_limit = CommentService.config["level_limit"]
 
-    tag_seeds = [
-      "artificial-intelligence",
-      "random rant",
-      "c++",
-      "c#",
-      "java-sucks",
-      "2012",
-    ]
 
     users = User.all.to_a
 
@@ -90,7 +81,6 @@ namespace :db do
 
       comment_thread = CommentThread.new(commentable_id: commentable_id, body: Faker::Lorem.paragraphs.join("\n\n"), title: Faker::Lorem.sentence(6))
       comment_thread.author = users.sample
-      comment_thread.tags = tag_seeds.sort_by{rand}[0..2].join(",")
       comment_thread.course_id = COURSE_ID
       comment_thread.save!
       threads << comment_thread
@@ -192,7 +182,6 @@ namespace :db do
 
     Comment.delete_all
     CommentThread.delete_all
-    CommentThread.recalculate_all_context_tag_weights!
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
