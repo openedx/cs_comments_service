@@ -28,6 +28,25 @@ def set_api_key_header
   current_session.header "X-Edx-Api-Key", TEST_API_KEY
 end
 
+def delete_es_index
+  Tire.index Content::ES_INDEX_NAME do delete end
+end
+
+def create_es_index
+  new_index = Tire.index Content::ES_INDEX_NAME
+  new_index.create
+  [CommentThread, Comment].each do |klass|
+    klass.put_search_index_mapping
+  end
+end
+
+def refresh_es_index
+  # we are using the same index for two types, which is against the
+  # grain of Tire's design.  This is why this method works for both
+  # comment_threads and comments.
+  CommentThread.tire.index.refresh
+end
+
 RSpec.configure do |config|
   config.include Rack::Test::Methods
   config.treat_symbols_as_metadata_keys_with_true_values = true
@@ -36,10 +55,8 @@ RSpec.configure do |config|
   config.before(:each) do
     Mongoid::IdentityMap.clear
     DatabaseCleaner.clean
-    [CommentThread, Comment].each do |class_|
-      class_.tire.index.delete
-      class_.create_elasticsearch_index
-    end
+    delete_es_index
+    create_es_index
   end
 end
 
@@ -59,8 +76,8 @@ def init_without_subscriptions
 
   [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
   Content.mongo_session[:blocked_hash].drop
-  Tire.index 'comment_threads' do delete end
-  CommentThread.create_elasticsearch_index
+  delete_es_index
+  create_es_index
   
   commentable = Commentable.new("question_1")
 
@@ -140,8 +157,8 @@ end
 def init_with_subscriptions
   [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
 
-  Tire.index 'comment_threads' do delete end
-  CommentThread.create_elasticsearch_index
+  delete_es_index
+  create_es_index
 
   user1 = create_test_user(1)
   user2 = create_test_user(2)

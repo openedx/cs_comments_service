@@ -53,6 +53,7 @@ CommentService.config = YAML.load(application_yaml).with_indifferent_access
 
 Tire.configure do
   url CommentService.config[:elasticsearch_server]
+  logger STDERR if ENV["ENABLE_ELASTICSEARCH_DEBUGGING"]
 end
 
 Mongoid.load!("config/mongoid.yml", environment)
@@ -74,6 +75,10 @@ end
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
 Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each {|file| require file}
+
+# Ensure elasticsearch index mappings exist.
+Comment.put_search_index_mapping
+CommentThread.put_search_index_mapping
 
 # Comment out observers until notifications are actually set up properly.
 #Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}

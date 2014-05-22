@@ -30,9 +30,14 @@ class Comment < Content
   include Tire::Model::Search
   include Tire::Model::Callbacks
 
+  index_name Content::ES_INDEX_NAME
+
   mapping do
     indexes :body, type: :string, analyzer: :english, stored: true, term_vector: :with_positions_offsets
     indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
+    indexes :comment_thread_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'comment_thread_id'
+    indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'commentable_id'
+    indexes :group_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'group_id'
     indexes :created_at, type: :date, included_in_all: false
     indexes :updated_at, type: :date, included_in_all: false
   end
@@ -111,6 +116,19 @@ class Comment < Content
         t.commentable_id
       end
     end
+  rescue Mongoid::Errors::DocumentNotFound
+    nil
+  end
+
+  def group_id
+    if self.comment_thread_id
+      t = CommentThread.find self.comment_thread_id
+      if t
+        t.group_id
+      end
+    end
+  rescue Mongoid::Errors::DocumentNotFound
+    nil
   end
 
   def self.by_date_range_and_thread_ids from_when, to_when, thread_ids
