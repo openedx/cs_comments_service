@@ -8,7 +8,162 @@ describe "app" do
 
     let(:author) { create_test_user(42) }
 
+    let(:course_id) { "test/course/id" }
+
+    def get_result_ids(result)
+      result["collection"].map {|t| t["id"]}
+    end
+
     describe "GET /api/v1/search/threads" do
+      def assert_empty_response
+        last_response.should be_ok
+        result = parse(last_response.body)
+        result.should == {}
+      end
+
+      it "returns an empty reuslt if text parameter is missing" do
+        get "/api/v1/search/threads", course_id: course_id
+        assert_empty_response
+      end
+
+      it "returns an empty reuslt if sort key is invalid" do
+        get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "invalid", sort_order: "desc"
+        assert_empty_response
+      end
+
+      it "returns an empty reuslt if sort order is invalid" do
+        get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "date", sort_order: "invalid"
+        assert_empty_response
+      end
+
+      describe "filtering works" do
+        let!(:threads) do
+          threads = (0..29).map do |i|
+            thread = make_thread(author, "text", course_id + (i % 2).to_s, "commentable" + (i % 3).to_s)
+            if i % 5 != 0
+              thread.group_id = i % 5
+              thread.save!
+            end
+            thread
+          end
+          refresh_es_index
+          threads
+        end
+
+        def assert_response_contains(expected_thread_indexes)
+          last_response.should be_ok
+          result = parse(last_response.body)
+          actual_ids = Set.new get_result_ids(result)
+          expected_ids = Set.new expected_thread_indexes.map {|i| threads[i].id.to_s}
+          actual_ids.should == expected_ids
+        end
+
+        it "by course_id" do
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0"
+          assert_response_contains((0..29).find_all {|i| i % 2 == 0})
+        end
+
+        it "by commentable_id" do
+          get "/api/v1/search/threads", text: "text", commentable_id: "commentable0"
+          assert_response_contains((0..29).find_all {|i| i % 3 == 0})
+        end
+
+        it "by commentable_ids" do
+          get "/api/v1/search/threads", text: "text", commentable_ids: "commentable0,commentable1"
+          assert_response_contains((0..29).find_all {|i| i % 3 == 0 || i % 3 == 1})
+        end
+
+        it "by group_id" do
+          get "/api/v1/search/threads", text: "text", group_id: "1"
+          assert_response_contains((0..29).find_all {|i| i % 5 == 0 || i % 5 == 1})
+        end
+
+        it "by all filters combined" do
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", commentable_id: "commentable0", group_id: "1"
+          assert_response_contains([0, 6])
+        end
+      end
+
+      describe "sorting works" do
+        let!(:threads) do
+          threads = (0..5).map {|i| make_thread(author, "text", course_id, "dummy")}
+          [1, 2].map {|i| author.vote(threads[i], :up)}
+          [1, 3].map do |i|
+            threads[i].comment_count = 5
+            threads[i].save!
+          end
+          threads[4].save!
+          refresh_es_index
+          threads
+        end
+
+        def check_sort(sort_key, sort_order, expected_thread_indexes)
+          get "/api/v1/search/threads", text: "text", course_id: course_id, sort_key: sort_key, sort_order: sort_order
+          last_response.should be_ok
+          result = parse(last_response.body)
+          actual_ids = get_result_ids(result)
+          expected_ids = expected_thread_indexes.map {|i| threads[i].id.to_s}
+          actual_ids.should == expected_ids
+        end
+
+        it "by date" do
+          asc_order = [0, 1, 2, 3, 4, 5]
+          check_sort("date", "asc", asc_order)
+          check_sort("date", "desc", asc_order.reverse)
+        end
+
+        it "by activity" do
+          asc_order = [0, 2, 5, 1, 3, 4]
+          check_sort("activity", "asc", asc_order)
+          check_sort("activity", "desc", asc_order.reverse)
+        end
+
+        it "by votes" do
+          check_sort("votes", "asc", [5, 4, 3, 0, 2, 1])
+          check_sort("votes", "desc", [2, 1, 5, 4, 3, 0])
+        end
+
+        it "by comments" do
+          check_sort("comments", "asc", [5, 4, 2, 0, 3, 1])
+          check_sort("comments", "desc", [3, 1, 5, 4, 2, 0])
+        end
+
+        it "by default" do
+          check_sort(nil, nil, [5, 4, 3, 2, 1, 0])
+        end
+      end
+
+      describe "pagination" do
+        let!(:threads) do
+          threads = (1..50).map {|i| make_thread(author, "text", course_id, "dummy")}
+          refresh_es_index
+          threads
+        end
+
+        def check_pagination(per_page, num_pages)
+          result_ids = []
+          (1..(num_pages + 1)).each do |i| # Go past the end to make sure non-existent pages are empty
+            get "/api/v1/search/threads", text: "text", page: i, per_page: per_page
+            last_response.should be_ok
+            result = parse(last_response.body)
+            result_ids += get_result_ids(result)
+          end
+          result_ids.should == threads.reverse.map {|t| t.id.to_s}
+        end
+
+        it "works correctly with page size 1" do
+          check_pagination(1, 50)
+        end
+
+        it "works correctly with page size 30" do
+          check_pagination(30, 2)
+        end
+
+        it "works correctly with default page size" do
+          check_pagination(nil, 3)
+        end
+      end
+
       it "returns the correct values for total_results and num_pages" do
         course_id = "test/course/id"
         for i in 1..100 do
@@ -55,7 +210,7 @@ describe "app" do
         last_response.should be_ok
         result = parse(last_response.body)["collection"]
         result.length.should == 1
-        check_thread_result_json(nil, thread, result.first, true)
+        check_thread_result_json(nil, thread, result.first)
       end
 
       include_examples "unicode data"

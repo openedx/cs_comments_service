@@ -201,14 +201,11 @@ end
 
 # this method is used to test results produced using the helper function handle_threads_query
 # which is used in multiple areas of the API
-def check_thread_result(user, thread, hash, is_search=false, is_json=false)
+def check_thread_result(user, thread, hash, is_json=false)
   expected_keys = %w(id title body course_id commentable_id created_at updated_at)
   expected_keys += %w(anonymous anonymous_to_peers at_position_list closed user_id)
   expected_keys += %w(username votes abuse_flaggers tags type group_id pinned)
   expected_keys += %w(comments_count unread_comments_count read endorsed)
-  if is_search
-    expected_keys += %w(highlighted_body highlighted_title)
-  end
   # these keys are checked separately, when desired, using check_thread_response_paging.
   actual_keys = hash.keys - ["children", "resp_skip", "resp_limit", "resp_total"]
   actual_keys.sort.should == expected_keys.sort
@@ -267,8 +264,8 @@ def check_thread_result(user, thread, hash, is_search=false, is_json=false)
   end
 end
 
-def check_thread_result_json(user, thread, json_response, is_search=false)
-  check_thread_result(user, thread, json_response, is_search, true)
+def check_thread_result_json(user, thread, json_response)
+  check_thread_result(user, thread, json_response, true)
 end
 
 def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false)
