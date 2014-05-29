@@ -26,6 +26,8 @@ class CommentThread < Content
   include Tire::Model::Search
   include Tire::Model::Callbacks
 
+  index_name Content::ES_INDEX_NAME
+
   mapping do
     indexes :title, type: :string, analyzer: :english, boost: 5.0, stored: true, term_vector: :with_positions_offsets
     indexes :body, type: :string, analyzer: :english, stored: true, term_vector: :with_positions_offsets
@@ -97,10 +99,11 @@ class CommentThread < Content
       
     #so first, find the comment threads associated with comments that hit the query
         
-    search = Tire::Search::Search.new 'comment_threads'
+    search = Tire::Search::Search.new Content::ES_INDEX_NAME
 
     search.query {|query| query.match [:title, :body], params["text"]} if params["text"]
     search.highlight({title: { number_of_fragments: 0 } } , {body: { number_of_fragments: 0 } }, options: { tag: "<highlight>" })
+    search.filter(:type, value: 'comment_thread')
     search.filter(:term, commentable_id: params["commentable_id"]) if params["commentable_id"]
     search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
@@ -117,8 +120,9 @@ class CommentThread < Content
     #again, b/c there is no relationship in ordinality, we cannot paginate if it's a text query
     results = search.results
 
-    search = Tire::Search::Search.new 'comments'
+    search = Tire::Search::Search.new Content::ES_INDEX_NAME
     search.query {|query| query.match :body, params["text"]} if params["text"]
+    search.filter(:type, value: 'comment')
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]
     search.size CommentService.config["max_deep_search_comment_count"].to_i
 
@@ -151,7 +155,8 @@ class CommentThread < Content
     end
     
     #now run one more search to harvest the threads and filter by group
-    search = Tire::Search::Search.new 'comment_threads'
+    search = Tire::Search::Search.new Content::ES_INDEX_NAME
+    search.filter(:type, value: 'comment_thread')
     search.filter(:terms, :thread_id => thread_ids)
     search.filter(:terms, commentable_id: params["commentable_ids"]) if params["commentable_ids"]
     search.filter(:term, course_id: params["course_id"]) if params["course_id"]

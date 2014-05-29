@@ -9,8 +9,8 @@ describe "app" do
     let(:author) { create_test_user(42) }
 
     describe "GET /api/v1/search/threads" do
-      it "returns the correct values for total_results and num_pages", :focus => true do
-        course_id = "test_course_id"
+      it "returns the correct values for total_results and num_pages" do
+        course_id = "test/course/id"
         for i in 1..100 do
           text = "all"
           text += " half" if i % 2 == 0
@@ -24,8 +24,7 @@ describe "app" do
         end
         # Elasticsearch does not necessarily make newly indexed content
         # available immediately, so we must explicitly refresh the index
-        CommentThread.tire.index.refresh
-        Comment.tire.index.refresh
+        refresh_es_index
 
         test_text = lambda do |text, expected_total_results, expected_num_pages|
           get "/api/v1/search/threads", course_id: course_id, text: text, per_page: "10"
@@ -46,12 +45,12 @@ describe "app" do
         # Elasticsearch may not be able to handle searching for non-ASCII text,
         # so prepend the text with an ASCII term we can search for.
         search_term = "artichoke"
-        course_id = "unicode_course"
+        course_id = "unicode/course"
         thread = make_thread(author, "#{search_term} #{text}", course_id, "unicode_commentable")
         make_comment(author, thread, text)
         # Elasticsearch does not necessarily make newly indexed content
         # available immediately, so we must explicitly refresh the index
-        CommentThread.tire.index.refresh
+        refresh_es_index
         get "/api/v1/search/threads", course_id: course_id, text: search_term
         last_response.should be_ok
         result = parse(last_response.body)["collection"]
