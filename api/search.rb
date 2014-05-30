@@ -4,7 +4,8 @@ get "#{APIPREFIX}/search/threads" do
   local_params = params # Necessary for params to be available inside blocks
   sort_criteria = get_sort_criteria(local_params)
 
-  if !local_params["text"] || !sort_criteria
+  search_text = local_params["text"]
+  if !search_text || !sort_criteria
     {}.to_json
   else
     page = (local_params["page"] || DEFAULT_PAGE).to_i
@@ -17,36 +18,58 @@ get "#{APIPREFIX}/search/threads" do
     # number of documents considered (ordered by update recency), which means
     # that matching threads can be missed if the search terms are very common.
 
-    thread_ids = Set.new
-    self.class.trace_execution_scoped(["Custom/get_search_threads/es_search"]) do
-      search = Tire.search Content::ES_INDEX_NAME do
-        query do
-          match [:title, :body], local_params["text"]
-          filtered do
-            filter :term, :commentable_id => local_params["commentable_id"] if local_params["commentable_id"]
-            filter :terms, :commentable_id => local_params["commentable_ids"].split(",") if local_params["commentable_ids"]
-            filter :term, :course_id => local_params["course_id"] if local_params["course_id"]
-            if local_params["group_id"]
-              filter :or, [
-                {:not => {:exists => {:field => :group_id}}},
-                {:term => {:group_id => local_params["group_id"]}}
-              ]
+    get_matching_thread_ids = lambda do |search_text|
+      self.class.trace_execution_scoped(["Custom/get_search_threads/es_search"]) do
+        search = Tire.search Content::ES_INDEX_NAME do
+          query do
+            match [:title, :body], search_text, :operator => "AND"
+            filtered do
+              filter :term, :commentable_id => local_params["commentable_id"] if local_params["commentable_id"]
+              filter :terms, :commentable_id => local_params["commentable_ids"].split(",") if local_params["commentable_ids"]
+              filter :term, :course_id => local_params["course_id"] if local_params["course_id"]
+              if local_params["group_id"]
+                filter :or, [
+                  {:not => {:exists => {:field => :group_id}}},
+                  {:term => {:group_id => local_params["group_id"]}}
+                ]
+              end
             end
           end
+          sort do
+            by "updated_at", "desc"
+          end
+          size CommentService.config["max_deep_search_comment_count"].to_i
         end
-        sort do
-          by "updated_at", "desc"
+        thread_ids = Set.new
+        search.results.each do |content|
+          case content.type
+          when "comment_thread"
+            thread_ids.add(content.id)
+          when "comment"
+            thread_ids.add(content.comment_thread_id)
+          end
         end
-        size CommentService.config["max_deep_search_comment_count"].to_i
+        thread_ids
       end
-      search.results.each do |content|
-        case content.type
-        when "comment_thread"
-          thread_ids.add(content.id)
-        when "comment"
-          thread_ids.add(content.comment_thread_id)
+    end
+
+    # Sadly, Elasticsearch does not have a facility for computing suggestions
+    # with respect to a filter. It would be expensive to determine the best
+    # suggestion with respect to our filter parameters, so we simply re-query
+    # with the top suggestion. If that has no results, then we return no results
+    # and no correction.
+    thread_ids = get_matching_thread_ids.call(search_text)
+    corrected_text = nil
+    if thread_ids.empty?
+      suggest = Tire.suggest Content::ES_INDEX_NAME do
+        suggestion "" do
+          text search_text
+          phrase :_all
         end
       end
+      corrected_text = suggest.results.texts.first
+      thread_ids = get_matching_thread_ids.call(corrected_text) if corrected_text
+      corrected_text = nil if thread_ids.empty?
     end
 
     results = nil
@@ -76,6 +99,7 @@ get "#{APIPREFIX}/search/threads" do
     self.class.trace_execution_scoped(['Custom/get_search_threads/json_serialize']) do
       json_output = {
         collection: collection,
+        corrected_text: corrected_text,
         total_results: total_results,
         num_pages: num_pages,
         page: page,

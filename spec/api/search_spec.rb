@@ -164,6 +164,72 @@ describe "app" do
         end
       end
 
+      describe "spelling correction" do
+        let(:commentable_id) {"test_commentable"}
+
+        def check_correction(original_text, corrected_text)
+          get "/api/v1/search/threads", text: original_text
+          last_response.should be_ok
+          result = parse(last_response.body)
+          result["corrected_text"].should == corrected_text
+          result["collection"].first.should_not be_nil
+        end
+
+        before(:each) do
+          thread = make_thread(author, "a thread about green artichokes", course_id, commentable_id)
+          make_comment(author, thread, "a comment about greed pineapples")
+          refresh_es_index
+        end
+
+        it "can correct a word appearing only in a comment" do
+          check_correction("pinapples", "pineapples")
+        end
+
+        it "can correct a word appearing only in a thread" do
+          check_correction("arichokes", "artichokes")
+        end
+
+        it "can correct a word appearing in both a comment and a thread" do
+          check_correction("abot", "about")
+        end
+
+        it "can correct a word with multiple errors" do
+          check_correction("artcokes", "artichokes")
+        end
+
+        it "can correct misspellings in different terms in the same search" do
+          check_correction("comment abot pinapples", "comment about pineapples")
+        end
+
+        it "does not correct a word that appears in a thread but has a correction and no matches in comments" do
+          check_correction("green", nil)
+        end
+
+        it "does not correct a word that appears in a comment but has a correction and no matches in threads" do
+          check_correction("greed", nil)
+        end
+
+        it "does not return a suggestion with no results" do
+          # Add documents containing a word that is close to our search term
+          # but that do not match our filter criteria; because we currently only
+          # consider the top suggestion returned by Elasticsearch without regard
+          # to the filter, and that suggestion in this case does not match any
+          # results, we should get back no results and no correction.
+          10.times do
+            thread = make_thread(author, "abbot", "other_course_id", "other_commentable_id")
+            thread.group_id = 1
+            thread.save!
+          end
+          refresh_es_index
+
+          get "/api/v1/search/threads", text: "abot", course_id: course_id
+          last_response.should be_ok
+          result = parse(last_response.body)
+          result["corrected_text"].should be_nil
+          result["collection"].should be_empty
+        end
+      end
+
       it "returns the correct values for total_results and num_pages" do
         course_id = "test/course/id"
         for i in 1..100 do
