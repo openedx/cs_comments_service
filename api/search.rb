@@ -1,65 +1,105 @@
 require 'new_relic/agent/method_tracer'
 
 get "#{APIPREFIX}/search/threads" do
+  local_params = params # Necessary for params to be available inside blocks
+  sort_criteria = get_sort_criteria(local_params)
 
-  sort_key_mapper = {
-    "date" => :created_at,
-    "activity" => :last_activity_at,
-    "votes" => :votes_point,
-    "comments" => :comment_count,
-  }
-
-  sort_order_mapper = {
-    "desc" => :desc,
-    "asc" => :asc,
-  }
-
-  sort_key = sort_key_mapper[params["sort_key"]]
-  sort_order = sort_order_mapper[params["sort_order"]]
-
-  sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
-
-  if !params["text"] || !sort_keyword_valid
+  search_text = local_params["text"]
+  if !search_text || !sort_criteria
     {}.to_json
   else
-    page = (params["page"] || DEFAULT_PAGE).to_i
-    per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
-    # for multi commentable searching
-    params["commentable_ids"] = params["commentable_ids"].split(',') if params["commentable_ids"]
-    options = {
-      sort_key: sort_key,
-      sort_order: sort_order,
-      page: page,
-      per_page: per_page,
-    }
+    page = (local_params["page"] || DEFAULT_PAGE).to_i
+    per_page = (local_params["per_page"] || DEFAULT_PER_PAGE).to_i
 
-    result_hash = CommentThread.perform_search(params, options)
-    results = result_hash[:results]
-    total_results = result_hash[:total_results]
+    # Because threads and comments are currently separate unrelated documents in
+    # Elasticsearch, we must first query for all matching documents, then
+    # extract the set of thread ids, and then sort the threads by the specified
+    # criteria and paginate. For performance reasons, we currently limit the
+    # number of documents considered (ordered by update recency), which means
+    # that matching threads can be missed if the search terms are very common.
 
-    if page > results.total_pages #TODO find a better way for this
-      result_hash = CommentThread.perform_search(params, options.merge(page: results.total_pages))
-      results = result_hash[:results]
-      total_results = result_hash[:total_results]
+    get_matching_thread_ids = lambda do |search_text|
+      self.class.trace_execution_scoped(["Custom/get_search_threads/es_search"]) do
+        search = Tire.search Content::ES_INDEX_NAME do
+          query do
+            match [:title, :body], search_text, :operator => "AND"
+            filtered do
+              filter :term, :commentable_id => local_params["commentable_id"] if local_params["commentable_id"]
+              filter :terms, :commentable_id => local_params["commentable_ids"].split(",") if local_params["commentable_ids"]
+              filter :term, :course_id => local_params["course_id"] if local_params["course_id"]
+              if local_params["group_id"]
+                filter :or, [
+                  {:not => {:exists => {:field => :group_id}}},
+                  {:term => {:group_id => local_params["group_id"]}}
+                ]
+              end
+            end
+          end
+          sort do
+            by "updated_at", "desc"
+          end
+          size CommentService.config["max_deep_search_comment_count"].to_i
+        end
+        thread_ids = Set.new
+        search.results.each do |content|
+          case content.type
+          when "comment_thread"
+            thread_ids.add(content.id)
+          when "comment"
+            thread_ids.add(content.comment_thread_id)
+          end
+        end
+        thread_ids
+      end
     end
+
+    # Sadly, Elasticsearch does not have a facility for computing suggestions
+    # with respect to a filter. It would be expensive to determine the best
+    # suggestion with respect to our filter parameters, so we simply re-query
+    # with the top suggestion. If that has no results, then we return no results
+    # and no correction.
+    thread_ids = get_matching_thread_ids.call(search_text)
+    corrected_text = nil
+    if thread_ids.empty?
+      suggest = Tire.suggest Content::ES_INDEX_NAME do
+        suggestion "" do
+          text search_text
+          phrase :_all
+        end
+      end
+      corrected_text = suggest.results.texts.first
+      thread_ids = get_matching_thread_ids.call(corrected_text) if corrected_text
+      corrected_text = nil if thread_ids.empty?
+    end
+
+    results = nil
+    self.class.trace_execution_scoped(["Custom/get_search_threads/mongo_sort_page"]) do
+      results = CommentThread.
+        where(:id.in => thread_ids.to_a).
+        order_by(sort_criteria).
+        page(page).
+        per(per_page).
+        to_a
+    end
+    total_results = thread_ids.size
+    num_pages = (total_results + per_page - 1) / per_page
 
     if results.length == 0
       collection = []
     else
-      pres_threads = ThreadSearchResultsPresenter.new(
+      pres_threads = ThreadListPresenter.new(
         results,
-        params[:user_id] ? user : nil,
-        params[:course_id] || results.first.course_id
+        local_params[:user_id] ? user : nil,
+        local_params[:course_id] || results.first.course_id
       )
       collection = pres_threads.to_hash
     end
 
-    num_pages = results.total_pages
-    page = [num_pages, [1, page].max].min
     json_output = nil
     self.class.trace_execution_scoped(['Custom/get_search_threads/json_serialize']) do
       json_output = {
         collection: collection,
+        corrected_text: corrected_text,
         total_results: total_results,
         num_pages: num_pages,
         page: page,

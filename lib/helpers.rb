@@ -142,34 +142,15 @@ helpers do
       comment_threads = comment_threads.in(commentable_id: params[:commentable_ids].split(","))
     end
 
-    sort_key_mapper = {
-      "date" => :created_at,
-      "activity" => :last_activity_at,
-      "votes" => :"votes.point",
-      "comments" => :comment_count,
-    }
+    sort_criteria = get_sort_criteria(params)
 
-    sort_order_mapper = {
-      "desc" => :desc,
-      "asc" => :asc,
-    }
-
-    sort_key = sort_key_mapper[params["sort_key"] || "date"]
-    sort_order = sort_order_mapper[params["sort_order"] || "desc"] 
-    sort_keyword_valid = (!params["sort_key"] && !params["sort_order"] || sort_key && sort_order)
-
-    if not sort_keyword_valid
+    if not sort_criteria
       {}.to_json
     else
       page = (params["page"] || DEFAULT_PAGE).to_i
       per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
 
-      order_clause = "pinned DESC, #{sort_key} #{sort_order}"
-      if ![:created_at, :last_activity_at].include? sort_key
-        # make sort order predictable when preceding sorts are non-unique
-        order_clause = "#{order_clause}, created_at DESC"
-      end
-      comment_threads = comment_threads.order_by(order_clause)
+      comment_threads = comment_threads.order_by(sort_criteria)
       num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
       page = [num_pages, [1, page].max].min
       # actual query happens here (by doing to_a)
@@ -195,6 +176,35 @@ helpers do
         }.to_json
       end
       json_output
+    end
+  end
+
+  # Given query params, return sort criteria appropriate for passing to the
+  # order_by function of a Mongoid query. Returns nil if params are not valid.
+  def get_sort_criteria(params)
+    sort_key_mapper = {
+      "date" => :created_at,
+      "activity" => :last_activity_at,
+      "votes" => :"votes.point",
+      "comments" => :comment_count,
+    }
+
+    sort_order_mapper = {
+      "desc" => :desc,
+      "asc" => :asc,
+    }
+
+    sort_key = sort_key_mapper[params["sort_key"] || "date"]
+    sort_order = sort_order_mapper[params["sort_order"] || "desc"]
+
+    if sort_key && sort_order
+      sort_criteria = [[:pinned, :desc], [sort_key, sort_order]]
+      if ![:created_at, :last_activity_at].include? sort_key
+        sort_criteria << [:created_at, :desc]
+      end
+      sort_criteria
+    else
+      nil
     end
   end
 

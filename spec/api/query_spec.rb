@@ -21,7 +21,7 @@ describe "app" do
         get "/api/v1/search/threads", text: random_string
         last_response.should be_ok
         threads = parse(last_response.body)['collection']
-        check_thread_result_json(nil, thread, threads.select{|t| t["id"] == thread.id.to_s}.first, true)
+        check_thread_result_json(nil, thread, threads.select{|t| t["id"] == thread.id.to_s}.first)
       end
 
     end
@@ -50,7 +50,7 @@ describe "app" do
         get "/api/v1/search/threads", text: random_string
         last_response.should be_ok
         threads = parse(last_response.body)['collection']
-        check_thread_result_json(nil, thread, threads.select{|t| t["id"] == thread.id.to_s}.first, true)
+        check_thread_result_json(nil, thread, threads.select{|t| t["id"] == thread.id.to_s}.first)
       end
     end
   end
