@@ -278,9 +278,9 @@ helpers do
 
   end
 
-  def filter_blocked_content c
+  def filter_blocked_content body
     begin
-      normalized_body = c.body.strip.downcase.gsub(/[^a-z ]/, '').gsub(/\s+/, ' ')
+      normalized_body = body.strip.downcase.gsub(/[^a-z ]/, '').gsub(/\s+/, ' ')
       hash = Digest::MD5.hexdigest(normalized_body)
     rescue
       # body was nil, or the hash function failed somehow - never mind

@@ -97,10 +97,11 @@ describe "app" do
         post '/api/v1/question_1/threads', default_params.merge(body: "     \n    \n")
         last_response.status.should == 400
       end
-      it "returns 503 when the post content is blocked" do
+      it "returns 503 and does not create when the post content is blocked" do
         post '/api/v1/question_1/threads', default_params.merge(body: "BLOCKED POST")
         last_response.status.should == 503
         parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
+        CommentThread.where(body: "BLOCKED POST").to_a.should be_empty
       end
 
       def test_unicode_data(text)

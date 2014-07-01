@@ -68,11 +68,14 @@ describe "app" do
         last_response.status.should == 400
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
-      it "returns 503 when the post hash is blocked" do
+      it "returns 503 and does not update when the post hash is blocked" do
         comment = Comment.first
+        original_body = comment.body
         put "/api/v1/comments/#{comment.id}", body: "BLOCKED POST", endorsed: true
         last_response.status.should == 503
         parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
+        comment.reload
+        comment.body.should == original_body
       end
 
       def test_unicode_data(text)
@@ -101,12 +104,13 @@ describe "app" do
         last_response.status.should == 400
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
-      it "returns 503 when the post hash is blocked" do
+      it "returns 503 and does not create when the post hash is blocked" do
         comment = Comment.first.to_hash(recursive: true)
         user = User.first
         post "/api/v1/comments/#{comment["id"]}", body: "BLOCKED POST", course_id: "1", user_id: User.first.id
         last_response.status.should == 503
         parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
+        Comment.where(body: "BLOCKED POST").to_a.should be_empty
       end
 
       def test_unicode_data(text)
