@@ -1,19 +1,5 @@
 module ThreadUtils
 
-  def self.get_endorsed(threads)
-    # returns sparse hash {thread_key => true, ...}
-    # only threads which are endorsed will have entries, value will always be true.
-    endorsed_threads = {}
-    thread_ids = threads.collect {|t| t._id}
-    Comment.collection.aggregate(
-      {"$match" => {"comment_thread_id" => {"$in" => thread_ids}, "endorsed" => true}},
-      {"$group" => {"_id" => "$comment_thread_id"}}
-    ).each do |res| 
-      endorsed_threads[res["_id"].to_s] = true
-    end
-    endorsed_threads
-  end
-
   def self.get_read_states(threads, user, course_id)
     # returns sparse hash {thread_key => [is_read, unread_comment_count], ...}
     read_states = {}
@@ -42,6 +28,5 @@ module ThreadUtils
   extend self
     include ::NewRelic::Agent::MethodTracer
     add_method_tracer :get_read_states
-    add_method_tracer :get_endorsed
 
 end
