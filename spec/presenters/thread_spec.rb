@@ -99,11 +99,9 @@ describe ThreadPresenter do
 
     it "fails with invalid arguments" do
       @threads_with_num_comments.each do |thread, num_comments|
-        [-1, true, "", nil].each do |skip|
-          expect{ThreadPresenter.new(thread, @reader, false, num_comments, false).to_hash true, 0, limit}.to raise_error
-        end
-        [-1, 0, true, "hello"].each do |limit|
-          expect{ThreadPresenter.new(thread, @reader, false, num_comments, false).to_hash true, 0, limit}.to raise_error
+        expect{ThreadPresenter.new(thread, @reader, false, num_comments, false).to_hash true, -1, nil}.to raise_error(ArgumentError)
+        [-1, 0].each do |limit|
+          expect{ThreadPresenter.new(thread, @reader, false, num_comments, false).to_hash true, 0, limit}.to raise_error(ArgumentError)
         end
       end
     end
