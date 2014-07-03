@@ -335,7 +335,7 @@ describe "app" do
         check_thread_result_json(nil, thread, response_thread)
       end
 
-      it "computes endorsed? correctly" do
+      it "computes endorsed correctly" do
         thread = CommentThread.first
         comment = thread.root_comments[1]
         comment.endorsed = true

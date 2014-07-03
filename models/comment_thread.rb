@@ -5,9 +5,12 @@ require_relative 'content'
 class CommentThread < Content
 
   include Mongoid::Timestamps
+  extend Enumerize
 
   voteable self, :up => +1, :down => -1
 
+  field :thread_type, type: String, default: :discussion
+  enumerize :thread_type, in: [:question, :discussion]
   field :comment_count, type: Integer, default: 0
   field :title, type: String
   field :body, type: String
@@ -52,6 +55,7 @@ class CommentThread < Content
 
   attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed
 
+  validates_presence_of :thread_type
   validates_presence_of :title
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
@@ -113,33 +117,7 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-
-    # to_hash returns the following model for each thread
-    #  title body course_id anonymous anonymous_to_peers commentable_id
-    #  created_at updated_at at_position_list closed
-    #    (all the above direct from the original document)
-    #  id
-    #    from doc._id
-    #  user_id
-    #    from doc.author_id
-    #  username
-    #    from doc.author_username
-    #  votes
-    #    from subdocument votes - {count, up_count, down_count, point}  
-    #  abuse_flaggers
-    #    from original document 
-    #  tags
-    #    deprecated - empty array
-    #  type
-    #    hardcoded "thread"
-    #  group_id
-    #    from orig doc
-    #  pinned
-    #    from orig doc
-    #  comments_count
-    #    count across all comments
-
-    as_document.slice(*%w[title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
+    as_document.slice(*%w[thread_type title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
                      .merge("id" => _id, "user_id" => author_id,
                             "username" => author_username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),

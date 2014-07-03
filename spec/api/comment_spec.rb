@@ -55,13 +55,43 @@ describe "app" do
       include_examples "unicode data"
     end
     describe "PUT /api/v1/comments/:comment_id" do
-      it "update information of the comment" do
+      def test_update_endorsed(true_val, false_val)
+        comment = Comment.first
+        before = DateTime.now
+        put "/api/v1/comments/#{comment.id}", endorsed: true_val, endorsement_user_id: "#{User.first.id}"
+        after = DateTime.now
+        last_response.should be_ok
+        comment.reload
+        comment.endorsed.should == true
+        comment.endorsement.should_not be_nil
+        comment.endorsement["user_id"].should == "#{User.first.id}"
+        comment.endorsement["time"].should be_between(before, after)
+        put "/api/v1/comments/#{comment.id}", endorsed: false_val
+        last_response.should be_ok
+        comment.reload
+        comment.endorsed.should == false
+        comment.endorsement.should be_nil
+      end
+      it "updates endorsed correctly" do
+        test_update_endorsed(true, false)
+      end
+      it "updates endorsed correctly with Pythonic values" do
+        test_update_endorsed("True", "False")
+      end
+      it "updates body correctly" do
+        comment = Comment.first
+        put "/api/v1/comments/#{comment.id}", body: "new body"
+        last_response.should be_ok
+        comment.reload
+        comment.body.should == "new body"
+      end
+      it "can update endorsed and body simultaneously" do
         comment = Comment.first
         put "/api/v1/comments/#{comment.id}", body: "new body", endorsed: true
         last_response.should be_ok
-        new_comment = Comment.find(comment.id)
-        new_comment.body.should == "new body"
-        new_comment.endorsed.should == true
+        comment.reload
+        comment.body.should == "new body"
+        comment.endorsed.should == true
       end
       it "returns 400 when the comment does not exist" do
         put "/api/v1/comments/does_not_exist", body: "new body", endorsed: true

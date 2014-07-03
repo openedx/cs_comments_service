@@ -13,6 +13,7 @@ describe "app" do
         random_string = (0...8).map{ ('a'..'z').to_a[rand(26)] }.join
 
         thread = CommentThread.new(title: "Test title", body: random_string, course_id: "1", commentable_id: commentable.id)
+        thread.thread_type = :discussion
         thread.author = author
         thread.save!
 
@@ -35,6 +36,7 @@ describe "app" do
         random_string = (0...8).map{ ('a'..'z').to_a[rand(26)] }.join
 
         thread = CommentThread.new(title: "Test title", body: "elephant otter", course_id: "1", commentable_id: commentable.id)
+        thread.thread_type = :discussion
         thread.author = author
         thread.save!
 

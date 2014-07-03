@@ -62,6 +62,15 @@ describe "app" do
         CommentThread.count.should == old_count + 1
         CommentThread.where(title: "Interesting question").first.should_not be_nil
       end
+      CommentThread.thread_type.values.each do |thread_type|
+        it "can create a #{thread_type} thread" do
+          old_count = CommentThread.where(thread_type: thread_type).count
+          post "/api/v1/question_1/threads", default_params.merge(thread_type: thread_type.to_s)
+          last_response.should be_ok
+          parse(last_response.body)["thread_type"].should == thread_type.to_s
+          CommentThread.where(thread_type: thread_type).count.should == old_count + 1
+        end
+      end
       it "allows anonymous thread" do
         old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params.merge(anonymous: true)

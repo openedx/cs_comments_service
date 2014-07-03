@@ -4,7 +4,15 @@ end
 
 put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   filter_blocked_content params["body"]
-  comment.update_attributes(params.slice(*%w[body endorsed]))
+  updated_content = params.slice(*%w[body endorsed])
+  if params.has_key?("endorsed")
+    new_endorsed_val = Boolean.mongoize(params["endorsed"])
+    if new_endorsed_val != comment.endorsed
+      endorsement = {:user_id => params["endorsement_user_id"], :time => DateTime.now}
+      updated_content["endorsement"] = new_endorsed_val ? endorsement : nil
+    end
+  end
+  comment.update_attributes(updated_content)
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
   else

@@ -85,6 +85,7 @@ def init_without_subscriptions
   user = users.first
 
   thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: commentable.id)
+  thread.thread_type = :discussion
   thread.author = user
   thread.save!
   user.subscribe(thread)
@@ -110,6 +111,7 @@ def init_without_subscriptions
   comment1.save!
 
   thread = CommentThread.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2", commentable_id: commentable.id)
+  thread.thread_type = :discussion
   thread.author = user
   thread.save!
   user.subscribe(thread)
@@ -130,6 +132,7 @@ def init_without_subscriptions
   comment1.save!
 
   thread = CommentThread.new(title: "I don't know what to say", body: "lol", course_id: "2", commentable_id: "something else")
+  thread.thread_type = :discussion
   thread.author = users[1]
   thread.save!
 
@@ -202,12 +205,15 @@ end
 # this method is used to test results produced using the helper function handle_threads_query
 # which is used in multiple areas of the API
 def check_thread_result(user, thread, hash, is_json=false)
-  expected_keys = %w(id title body course_id commentable_id created_at updated_at)
+  expected_keys = %w(id thread_type title body course_id commentable_id created_at updated_at)
   expected_keys += %w(anonymous anonymous_to_peers at_position_list closed user_id)
   expected_keys += %w(username votes abuse_flaggers tags type group_id pinned)
   expected_keys += %w(comments_count unread_comments_count read endorsed)
   # these keys are checked separately, when desired, using check_thread_response_paging.
-  actual_keys = hash.keys - ["children", "resp_skip", "resp_limit", "resp_total"]
+  actual_keys = hash.keys - [
+    "children", "endorsed_responses", "non_endorsed_responses", "resp_skip",
+    "resp_limit", "resp_total", "non_endorsed_resp_total"
+  ]
   actual_keys.sort.should == expected_keys.sort
 
   hash["title"].should == thread.title
@@ -269,31 +275,64 @@ def check_thread_result_json(user, thread, json_response)
 end
 
 def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false)
+  case thread.thread_type
+  when "discussion"
+    check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json)
+  when "question"
+    check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json)
+  end
+end
+
+def check_comment(comment, hash, is_json)
+  hash["id"].should == (is_json ? comment.id.to_s : comment.id) # Convert from ObjectId if necessary
+  hash["body"].should == comment.body
+  hash["user_id"].should == comment.author_id
+  hash["username"].should == comment.author_username
+  hash["endorsed"].should == comment.endorsed
+  hash["endorsement"].should == comment.endorsement
+  children = Comment.where({"parent_id" => comment.id}).sort({"sk" => 1}).to_a
+  hash["children"].length.should == children.length
+  hash["children"].each_with_index do |child_hash, i|
+    check_comment(children[i], child_hash, is_json)
+  end
+end
+
+def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false)
   all_responses = thread.root_comments.sort({"sk" => 1}).to_a
   total_responses = all_responses.length
   hash["resp_total"].should == total_responses
-  expected_response_slice = (resp_skip..(resp_limit.nil? ? total_responses : [total_responses, resp_skip + resp_limit].min)-1).to_a
-  expected_response_ids = expected_response_slice.map{|i| all_responses[i]["_id"] }
-  expected_response_ids.map!{|id| id.to_s } if is_json # otherwise they are BSON ObjectIds
-  actual_response_ids = []
-  hash["children"].each_with_index do |response, i|
-    actual_response_ids << response["id"]
-    response["body"].should == all_responses[expected_response_slice[i]].body
-    response["user_id"].should == all_responses[expected_response_slice[i]].author_id
-    response["username"].should == all_responses[expected_response_slice[i]].author_username
-    comments = Comment.where({"parent_id" => response["id"]}).sort({"sk" => 1}).to_a
-    expected_comment_ids = comments.map{|doc| doc["_id"] }
-    expected_comment_ids.map!{|id| id.to_s } if is_json # otherwise they are BSON ObjectIds
-    actual_comment_ids = []
-    response["children"].each_with_index do |comment, j|
-      actual_comment_ids << comment["id"]
-      comment["body"].should == comments[j].body
-      comment["user_id"].should == comments[j].author_id
-      comment["username"].should == comments[j].author_username
-    end
-    actual_comment_ids.should == expected_comment_ids
+  expected_responses = resp_limit.nil? ?
+    all_responses.drop(resp_skip) :
+    all_responses.drop(resp_skip).take(resp_limit)
+  hash["children"].length.should == expected_responses.length
+  hash["children"].each_with_index do |response_hash, i|
+    check_comment(expected_responses[i], response_hash, is_json)
   end
-  actual_response_ids.should == expected_response_ids
+  hash["resp_skip"].to_i.should == resp_skip
+  if resp_limit.nil?
+    hash["resp_limit"].should be_nil
+  else
+    hash["resp_limit"].to_i.should == resp_limit
+  end
+end
+
+def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false)
+  all_responses = thread.root_comments.sort({"sk" => 1}).to_a
+  endorsed_responses, non_endorsed_responses = all_responses.partition { |resp| resp.endorsed }
+
+  hash["endorsed_responses"].length.should == endorsed_responses.length
+  hash["endorsed_responses"].each_with_index do |response_hash, i|
+    check_comment(endorsed_responses[i], response_hash, is_json)
+  end
+
+  hash["non_endorsed_resp_total"] == non_endorsed_responses.length
+  expected_non_endorsed_responses = resp_limit.nil? ?
+    non_endorsed_responses.drop(resp_skip) :
+    non_endorsed_responses.drop(resp_skip).take(resp_limit)
+  hash["non_endorsed_responses"].length.should == expected_non_endorsed_responses.length
+  hash["non_endorsed_responses"].each_with_index do |response_hash, i|
+    check_comment(expected_non_endorsed_responses[i], response_hash, is_json)
+  end
   hash["resp_skip"].to_i.should == resp_skip
   if resp_limit.nil?
     hash["resp_limit"].should be_nil
@@ -307,8 +346,9 @@ def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil)
 end
 
 # general purpose factory helpers
-def make_thread(author, text, course_id, commentable_id)
+def make_thread(author, text, course_id, commentable_id, thread_type=:discussion)
   thread = CommentThread.new(title: text, body: text, course_id: course_id, commentable_id: commentable_id)
+  thread.thread_type = thread_type
   thread.author = author
   thread.save!
   thread

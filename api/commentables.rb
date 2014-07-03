@@ -17,6 +17,7 @@ end
 post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   filter_blocked_content params["body"]
   thread = CommentThread.new(params.slice(*%w[title body course_id ]).merge(commentable_id: commentable_id))
+  thread.thread_type = params["thread_type"] || :discussion
   thread.anonymous = bool_anonymous || false
   thread.anonymous_to_peers = bool_anonymous_to_peers || false
   
