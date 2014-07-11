@@ -2,6 +2,7 @@ require 'new_relic/agent/method_tracer'
 
 get "#{APIPREFIX}/search/threads" do
   local_params = params # Necessary for params to be available inside blocks
+  group_ids = get_group_ids_from_params(local_params)
   search_text = local_params["text"]
   if !search_text
     {}.to_json
@@ -22,12 +23,20 @@ get "#{APIPREFIX}/search/threads" do
               filter :term, :commentable_id => local_params["commentable_id"] if local_params["commentable_id"]
               filter :terms, :commentable_id => local_params["commentable_ids"].split(",") if local_params["commentable_ids"]
               filter :term, :course_id => local_params["course_id"] if local_params["course_id"]
-              if local_params["group_id"]
+
+              if not group_ids.empty?
+                if group_ids.length > 1
+                  group_id_criteria = {:terms => {:group_id => group_ids}}
+                else
+                  group_id_criteria = {:term => {:group_id => group_ids[0]}}
+                end
+
                 filter :or, [
                   {:not => {:exists => {:field => :group_id}}},
-                  {:term => {:group_id => local_params["group_id"]}}
+                  group_id_criteria
                 ]
               end
+
             end
           end
           sort do
@@ -71,7 +80,7 @@ get "#{APIPREFIX}/search/threads" do
       CommentThread.in({"_id" => thread_ids.to_a}),
       local_params["user_id"],
       local_params["course_id"],
-      local_params["group_id"],
+      group_ids,
       value_to_boolean(local_params["flagged"]),
       value_to_boolean(local_params["unread"]),
       value_to_boolean(local_params["unanswered"]),

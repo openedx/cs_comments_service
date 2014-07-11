@@ -58,6 +58,16 @@ describe "app" do
           rs.length.should == 1
           check_thread_result_json(nil, @threads["t1"], rs.first)
         end
+        it "returns only threads where course id and group ids match" do
+          @threads["t1"].course_id = "omg"
+          @threads["t1"].group_id = 100
+          @threads["t1"].save!
+          @threads["t2"].course_id = "omg"
+          @threads["t2"].group_id = 101
+          @threads["t2"].save!
+          rs = thread_result course_id: "omg", group_ids: "100,101", sort_order: "asc"
+          rs.length.should == 2
+        end
         it "returns only threads where course id and group id match or group id is nil" do
           @threads["t1"].course_id = "omg"
           @threads["t1"].group_id = 100
