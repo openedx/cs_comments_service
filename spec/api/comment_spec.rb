@@ -66,13 +66,11 @@ describe "app" do
         comment.endorsement.should_not be_nil
         comment.endorsement["user_id"].should == "#{User.first.id}"
         comment.endorsement["time"].should be_between(before, after)
-        comment.comment_thread.endorsed_response_count.should == 1
         put "/api/v1/comments/#{comment.id}", endorsed: false_val
         last_response.should be_ok
         comment.reload
         comment.endorsed.should == false
         comment.endorsement.should be_nil
-        comment.comment_thread.endorsed_response_count.should == 0
       end
       it "updates endorsed correctly" do
         test_update_endorsed(true, false)

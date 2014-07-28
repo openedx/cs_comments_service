@@ -17,15 +17,4 @@ describe Comment do
   end
 
   include_examples "unicode data"
-
-  it "should update its thread when endorsed changes" do
-    comment = make_comment(author, thread, "dummy")
-    orig_count = thread.endorsed_response_count
-    comment.endorsed = true
-    comment.save!
-    thread.endorsed_response_count.should == orig_count + 1
-    comment.endorsed = false
-    comment.save!
-    thread.endorsed_response_count.should == orig_count
-  end
 end

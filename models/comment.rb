@@ -28,14 +28,6 @@ class Comment < Content
     end
   end
 
-  before_update :update_thread
-  def update_thread()
-    if self.endorsed_changed?
-      delta = self.endorsed ? 1 : -1
-      self.comment_thread.inc(:endorsed_response_count, delta)
-    end
-  end
-
   include Tire::Model::Search
   include Tire::Model::Callbacks
 

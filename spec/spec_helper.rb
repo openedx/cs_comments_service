@@ -208,7 +208,7 @@ def check_thread_result(user, thread, hash, is_json=false)
   expected_keys = %w(id thread_type title body course_id commentable_id created_at updated_at)
   expected_keys += %w(anonymous anonymous_to_peers at_position_list closed user_id)
   expected_keys += %w(username votes abuse_flaggers tags type group_id pinned)
-  expected_keys += %w(comments_count unread_comments_count read endorsed endorsed_response_count)
+  expected_keys += %w(comments_count unread_comments_count read endorsed)
   # these keys are checked separately, when desired, using check_thread_response_paging.
   actual_keys = hash.keys - [
     "children", "endorsed_responses", "non_endorsed_responses", "resp_skip",
@@ -235,8 +235,7 @@ def check_thread_result(user, thread, hash, is_json=false)
   hash["type"].should == "thread"
   hash["group_id"].should == thread.group_id
   hash["pinned"].should == thread.pinned?
-  hash["endorsed"].should == thread.endorsed_response_count > 0
-  hash["endorsed_response_count"].should == thread.endorsed_response_count
+  hash["endorsed"].should == thread.endorsed?
   hash["comments_count"].should == thread.comments.length
 
   if is_json
@@ -321,7 +320,6 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
   all_responses = thread.root_comments.sort({"sk" => 1}).to_a
   endorsed_responses, non_endorsed_responses = all_responses.partition { |resp| resp.endorsed }
 
-  hash["endorsed_response_count"] == endorsed_responses.length
   hash["endorsed_responses"].length.should == endorsed_responses.length
   hash["endorsed_responses"].each_with_index do |response_hash, i|
     check_comment(endorsed_responses[i], response_hash, is_json)

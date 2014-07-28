@@ -9,16 +9,18 @@ class ThreadPresenter
     course_id = thread.course_id
     thread_key = thread._id.to_s
     is_read, unread_count = ThreadUtils.get_read_states([thread], user, course_id).fetch(thread_key, [false, thread.comment_count])
-    self.new thread, user, is_read, unread_count
+    is_endorsed = ThreadUtils.get_endorsed([thread]).fetch(thread_key, false)
+    self.new thread, user, is_read, unread_count, is_endorsed
   end
 
-  def initialize(thread, user, is_read, unread_count)
+  def initialize(thread, user, is_read, unread_count, is_endorsed)
     # generally not intended for direct use.  instantiated by self.factory or
     # by thread list presenters.
     @thread = thread
     @user = user
     @is_read = is_read
     @unread_count = unread_count
+    @is_endorsed = is_endorsed
   end
 
   def to_hash with_responses=false, resp_skip=0, resp_limit=nil
@@ -27,7 +29,7 @@ class ThreadPresenter
     h = @thread.to_hash
     h["read"] = @is_read
     h["unread_comments_count"] = @unread_count
-    h["endorsed"] = @thread.endorsed_response_count > 0
+    h["endorsed"] = @is_endorsed || false
     if with_responses
       if @thread.thread_type.discussion? && resp_skip == 0 && resp_limit.nil?
         content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => 1})

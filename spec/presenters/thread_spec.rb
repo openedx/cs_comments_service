@@ -79,7 +79,8 @@ describe ThreadPresenter do
 
       it "handles with_responses=false" do
         @threads_with_num_comments.each do |thread, num_comments|
-          hash = ThreadPresenter.new(thread, @reader, false, num_comments).to_hash
+          is_endorsed = num_comments > 0 && endorse_responses
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash
           check_thread_result(@reader, thread, hash)
           ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be_false }
         end
@@ -87,7 +88,8 @@ describe ThreadPresenter do
 
       it "handles with_responses=true" do
         @threads_with_num_comments.each do |thread, num_comments|
-          hash = ThreadPresenter.new(thread, @reader, false, num_comments).to_hash true
+          is_endorsed = num_comments > 0 && endorse_responses
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash true
           check_thread_result(@reader, thread, hash)
           check_thread_response_paging(thread, hash)
         end
@@ -95,8 +97,9 @@ describe ThreadPresenter do
 
       it "handles skip with no limit" do
         @threads_with_num_comments.each do |thread, num_comments|
+          is_endorsed = num_comments > 0 && endorse_responses
           [0, 1, 2, 9, 10, 11, 1000].each do |skip|
-            hash = ThreadPresenter.new(thread, @reader, false, num_comments).to_hash true, skip
+            hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash true, skip
             check_thread_result(@reader, thread, hash)
             check_thread_response_paging(thread, hash, skip)
           end
@@ -105,9 +108,10 @@ describe ThreadPresenter do
 
       it "handles skip and limit" do
         @threads_with_num_comments.each do |thread, num_comments|
+          is_endorsed = num_comments > 0 && endorse_responses
           [1, 2, 3, 9, 10, 11, 1000].each do |limit|
             [0, 1, 2, 9, 10, 11, 1000].each do |skip|
-              hash = ThreadPresenter.new(thread, @reader, false, num_comments).to_hash true, skip, limit
+              hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash true, skip, limit
               check_thread_result(@reader, thread, hash)
               check_thread_response_paging(thread, hash, skip, limit)
             end
@@ -117,9 +121,10 @@ describe ThreadPresenter do
 
       it "fails with invalid arguments" do
         @threads_with_num_comments.each do |thread, num_comments|
-          expect{ThreadPresenter.new(thread, @reader, false, num_comments).to_hash(true, -1, nil)}.to raise_error(ArgumentError)
+          is_endorsed = num_comments > 0 && endorse_responses
+          expect{ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, -1, nil)}.to raise_error(ArgumentError)
           [-1, 0].each do |limit|
-            expect{ThreadPresenter.new(thread, @reader, false, num_comments).to_hash(true, 0, limit)}.to raise_error(ArgumentError)
+            expect{ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, limit)}.to raise_error(ArgumentError)
           end
         end
       end
@@ -152,7 +157,7 @@ describe ThreadPresenter do
       c01 = make_comment(c0)
       c010 = make_comment(c01)
 
-      pres = ThreadPresenter.new(nil, nil, nil, nil)
+      pres = ThreadPresenter.new(nil, nil, nil, nil, nil)
       responses = pres.merge_response_content([c0, c00, c01, c010])
       responses.size.should == 1 # c0
       responses[0]["id"].should == c0.id
@@ -174,7 +179,7 @@ describe ThreadPresenter do
       # lose c0 and c11 from result set.  their descendants should
       # be silently skipped over.
 
-      pres = ThreadPresenter.new(nil, nil, nil, nil)
+      pres = ThreadPresenter.new(nil, nil, nil, nil, nil)
       responses = pres.merge_response_content([c00, c000, c1, c10, c111])
       responses.size.should == 1 # c1
       responses[0]["id"].should == c1.id

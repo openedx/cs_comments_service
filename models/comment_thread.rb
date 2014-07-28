@@ -11,7 +11,6 @@ class CommentThread < Content
 
   enumerize :thread_type, in: [:question, :discussion]
   field :comment_count, type: Integer, default: 0
-  field :endorsed_response_count, type: Integer, default: 0
   field :title, type: String
   field :body, type: String
   field :course_id, type: String
@@ -112,8 +111,12 @@ class CommentThread < Content
     subscriptions.map(&:subscriber)
   end
 
+  def endorsed?
+    comments.where(endorsed: true).exists?
+  end
+
   def to_hash(params={})
-    as_document.slice(*%w[thread_type title body endorsed_response_count course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
+    as_document.slice(*%w[thread_type title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
                      .merge("id" => _id, "user_id" => author_id,
                             "username" => author_username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),
