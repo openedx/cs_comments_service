@@ -31,62 +31,86 @@ class ThreadPresenter
     h["unread_comments_count"] = @unread_count
     h["endorsed"] = @is_endorsed || false
     if with_responses
-      unless resp_skip == 0 && resp_limit.nil?
-        # need to find responses first, set the window accordingly, then fetch the comments
-        # bypass mongoid/odm, to get just the response ids we need as directly as possible
-        responses = Content.collection.find({"comment_thread_id" => @thread._id, "parent_id" => {"$exists" => false}})
-        responses = responses.sort({"sk" => 1})
-        all_response_ids = responses.select({"_id" => 1}).to_a.map{|doc| doc["_id"] }
-        response_ids = (resp_limit.nil? ? all_response_ids[resp_skip..-1] : (all_response_ids[resp_skip,resp_limit])) || []
-        # now use the odm to fetch the desired responses and their comments
-        content = Content.where({"parent_id" => {"$in" => response_ids}}).to_a + Content.where({"_id" => {"$in" => response_ids}}).to_a
-        content.sort!{|a,b| a.sk <=> b.sk }
-        response_total = all_response_ids.length
+      if @thread.thread_type.discussion? && resp_skip == 0 && resp_limit.nil?
+        content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => 1})
+        h["children"] = merge_response_content(content)
+        h["resp_total"] = content.to_a.select{|d| d.depth == 0 }.length
       else
-        content = Content.where({"comment_thread_id" => @thread._id}).order_by({"sk"=> 1})
-        response_total = content.to_a.select{|d| d.depth == 0 }.length
+        responses = Content.where(comment_thread_id: @thread._id).exists(parent_id: false)
+        case @thread.thread_type
+        when "question"
+          endorsed_responses = responses.where(endorsed: true)
+          non_endorsed_responses = responses.where(endorsed: false)
+          endorsed_response_info = get_paged_merged_responses(@thread._id, endorsed_responses, 0, nil)
+          non_endorsed_response_info = get_paged_merged_responses(
+            @thread._id,
+            non_endorsed_responses,
+            resp_skip,
+            resp_limit
+          )
+          h["endorsed_responses"] = endorsed_response_info["responses"]
+          h["non_endorsed_responses"] = non_endorsed_response_info["responses"]
+          h["non_endorsed_resp_total"] = non_endorsed_response_info["response_count"]
+        when "discussion"
+          response_info = get_paged_merged_responses(@thread._id, responses, resp_skip, resp_limit)
+          h["children"] = response_info["responses"]
+          h["resp_total"] = response_info["response_count"]
+        end
       end
-      h = merge_comments_recursive(h, content)
       h["resp_skip"] = resp_skip
       h["resp_limit"] = resp_limit
-      h["resp_total"] = response_total
     end
     h
   end
 
-  def merge_comments_recursive thread_hash, comments
-    thread_id = thread_hash["id"]
-    root = thread_hash = thread_hash.merge("children" => [])
-    ancestry = [thread_hash]
-    # weave the fetched comments into a single hierarchical doc
-    comments.each do | comment |
-      thread_hash = comment.to_hash.merge("children" => [])
-      parent_id = comment.parent_id || thread_id
-      found_parent = false
-      while ancestry.length > 0 do
-        if parent_id == ancestry.last["id"] then
-          # found the children collection to which this comment belongs
-          ancestry.last["children"] << thread_hash
-          ancestry << thread_hash
-          found_parent = true
-          break
-        else
-          # try again with one level back in the ancestry til we find the parent
-          ancestry.pop
+  # Given a Mongoid object representing responses, apply pagination and return
+  # a hash containing the following:
+  #   responses
+  #     An array of hashes representing the page of responses (including
+  #     children)
+  #   response_count
+  #     The total number of responses
+  def get_paged_merged_responses(thread_id, responses, skip, limit)
+    response_ids = responses.only(:_id).sort({"sk" => 1}).to_a.map{|doc| doc["_id"]}
+    paged_response_ids = limit.nil? ? response_ids.drop(skip) : response_ids.drop(skip).take(limit)
+    content = Comment.where(comment_thread_id: thread_id).
+      or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
+      sort({"sk" => 1})
+    {"responses" => merge_response_content(content), "response_count" => response_ids.length}
+  end
+
+  # Takes content output from Mongoid in a depth-first traversal order and
+  # returns an array of first-level response hashes with content represented
+  # hierarchically, with a comment's list of children in the key "children".
+  def merge_response_content(content)
+    top_level = []
+    ancestry = []
+    content.each do |item|
+      item_hash = item.to_hash.merge("children" => [])
+      if item.parent_id.nil?
+        top_level << item_hash
+        ancestry = [item_hash]
+      else
+        while ancestry.length > 0 do
+          if item.parent_id == ancestry.last["id"]
+            ancestry.last["children"] << item_hash
+            ancestry << item_hash
+            break
+          else
+            ancestry.pop
+            next
+          end
+        end
+        if ancestry.empty? # invalid parent; ignore item
           next
         end
-      end 
-      if not found_parent
-        # if we arrive here, it means a parent_id somewhere in the result set
-        # is pointing to an invalid place.  reset the ancestry search path.
-        ancestry = [root]
       end
     end
-    ancestry.first
+    top_level
   end
 
   include ::NewRelic::Agent::MethodTracer
   add_method_tracer :to_hash
-  add_method_tracer :merge_comments_recursive
+  add_method_tracer :merge_response_content
 
 end

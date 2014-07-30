@@ -41,8 +41,8 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
 end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
+  filter_blocked_content params["body"]
   thread.update_attributes(params.slice(*%w[title body closed commentable_id group_id]))
-  filter_blocked_content thread
 
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
@@ -53,12 +53,12 @@ put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
 end
 
 post "#{APIPREFIX}/threads/:thread_id/comments" do |thread_id|
+  filter_blocked_content params["body"]
   comment = Comment.new(params.slice(*%w[body course_id]))
   comment.anonymous = bool_anonymous || false
   comment.anonymous_to_peers = bool_anonymous_to_peers || false
   comment.author = user
   comment.comment_thread = thread
-  filter_blocked_content comment
   comment.save
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json

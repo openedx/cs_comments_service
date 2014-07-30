@@ -6,31 +6,6 @@ describe CommentThread do
     create_test_user(42)
   end
 
-  context "endorsed?" do
-
-    it "knows if it is #endorsed?" do
-      thread = CommentThread.new
-      criteria = build_criteria(thread, :exists? => true)
-      thread.endorsed?.should be_true
-    end
-
-    it "knows when it is not #endorsed?" do
-      thread = CommentThread.new
-      criteria = build_criteria(thread, :exists? => false)
-      thread.endorsed?.should be_false
-    end
-
-    def build_criteria(thread, options)
-      double("criteria").tap do |criteria|
-        comments = double("relation")
-        comments.stub(:where).with(endorsed: true).and_return(criteria)
-        thread.stub(:comments).and_return(comments)
-        criteria.stub(options)
-      end
-    end
-  end
-
-
   context "sorting" do
 
     before (:each) do
@@ -42,6 +17,7 @@ describe CommentThread do
       author = create_test_user('billy')
 
       thread = CommentThread.new(title: "test case", body: "testing 123", course_id: "foo", commentable_id: "bar")
+      thread.thread_type = :discussion
       thread.author = author
       thread.save!
 

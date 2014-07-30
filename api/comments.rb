@@ -3,8 +3,16 @@ get "#{APIPREFIX}/comments/:comment_id" do |comment_id|
 end
 
 put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
-  comment.update_attributes(params.slice(*%w[body endorsed]))
-  filter_blocked_content comment
+  filter_blocked_content params["body"]
+  updated_content = params.slice(*%w[body endorsed])
+  if params.has_key?("endorsed")
+    new_endorsed_val = Boolean.mongoize(params["endorsed"])
+    if new_endorsed_val != comment.endorsed
+      endorsement = {:user_id => params["endorsement_user_id"], :time => DateTime.now}
+      updated_content["endorsement"] = new_endorsed_val ? endorsement : nil
+    end
+  end
+  comment.update_attributes(updated_content)
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
   else
@@ -13,12 +21,12 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
 end
 
 post "#{APIPREFIX}/comments/:comment_id" do |comment_id|
+  filter_blocked_content params["body"]
   sub_comment = comment.children.new(params.slice(*%w[body course_id]))
   sub_comment.anonymous = bool_anonymous || false
   sub_comment.anonymous_to_peers = bool_anonymous_to_peers || false
   sub_comment.author = user
   sub_comment.comment_thread = comment.comment_thread
-  filter_blocked_content sub_comment
   sub_comment.save
   if sub_comment.errors.any?
     error 400, sub_comment.errors.full_messages.to_json

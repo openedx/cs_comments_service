@@ -335,7 +335,7 @@ describe "app" do
         check_thread_result_json(nil, thread, response_thread)
       end
 
-      it "computes endorsed? correctly" do
+      it "computes endorsed correctly" do
         thread = CommentThread.first
         comment = thread.root_comments[1]
         comment.endorsed = true
@@ -480,12 +480,17 @@ describe "app" do
         last_response.status.should == 400
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
-      it "returns 503 if the post body has been blocked" do
+      it "returns 503 and does not update if the post body has been blocked" do
         thread = CommentThread.first
+        original_body = thread.body
         put "/api/v1/threads/#{thread.id}", body: "BLOCKED POST", title: "new title", commentable_id: "new_commentable_id"
         last_response.status.should == 503
+        thread.reload
+        thread.body.should == original_body
         put "/api/v1/threads/#{thread.id}", body: "blocked,   post...", title: "new title", commentable_id: "new_commentable_id"
         last_response.status.should == 503
+        thread.reload
+        thread.body.should == original_body
       end
 
       def test_unicode_data(text)
@@ -542,9 +547,10 @@ describe "app" do
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "    \n      \n  ")
         last_response.status.should == 400
       end
-      it "returns 503 when the post body has been blocked" do
+      it "returns 503 and does not create when the post body has been blocked" do
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "BLOCKED POST")
         last_response.status.should == 503
+        Comment.where(body: "BLOCKED POST").to_a.should be_empty
       end
 
       def test_unicode_data(text)
