@@ -103,6 +103,59 @@ describe "app" do
             rs.length.should == 0 
           end
         end
+        it "filters unread posts" do
+          user = create_test_user(Random.new)
+          rs = thread_result course_id: DFLT_COURSE_ID, user_id: user.id
+          rs.length.should == 10
+          rs2 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs2.should == rs
+          user.mark_as_read(@threads[rs.first["title"]])
+          rs3 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs3.should == rs[1..9]
+          rs[1..8].each { |r| user.mark_as_read(@threads[r["title"]]) }
+          rs4 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs4.should == rs[9, 1]
+          user.mark_as_read(@threads[rs.last["title"]])
+          rs5 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs5.should == []
+          make_comment(create_test_user(Random.new), @threads[rs.first["title"]], "new activity")
+          rs6 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs6.length.should == 1
+          rs6.first["title"].should == rs.first["title"]
+        end
+        it "filters unanswered questions" do
+          %w[t9 t7 t5 t3 t1].each do |thread_key|
+            @threads[thread_key].thread_type = :question
+            @threads[thread_key].save!
+          end
+          rs = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs.length.should == 5
+          @comments["t1 c0"].endorsed = true
+          @comments["t1 c0"].save!
+          rs2 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs2.length.should == 4
+          %w[t9 t7 t5].each do |thread_key|
+            comment = @threads[thread_key].comments.first
+            comment.endorsed = true
+            comment.save!
+          end
+          rs3 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs3.length.should == 1
+          @comments["t3 c0"].endorsed = true
+          @comments["t3 c0"].save!
+          rs3 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs3.length.should == 0
+        end
+        it "ignores endorsed comments that are not question responses" do
+          thread = @threads["t0"]
+          thread.thread_type = :question
+          thread.save!
+          comment = make_comment(create_test_user(Random.new), thread.comments.first, "comment on a response")
+          comment.endorsed = true
+          comment.save!
+          rs = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs.length.should == 1
+        end
         it "correctly considers read state" do
           user = create_test_user(123)
           [@threads["t1"], @threads["t2"]].each do |t| 
@@ -259,8 +312,8 @@ describe "app" do
           end
           
           context "pagination" do
-            def thread_result_page (sort_key, sort_order, page, per_page)
-              get "/api/v1/threads", course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order, page: page, per_page: per_page
+            def thread_result_page (sort_key, sort_order, page, per_page, user_id=nil, unread=false)
+              get "/api/v1/threads", course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order, page: page, per_page: per_page, user_id: user_id, unread: unread
               last_response.should be_ok
               parse(last_response.body)
             end
@@ -282,23 +335,59 @@ describe "app" do
               result["num_pages"].should == 2
               result["page"].should == 2
             end
+
+            def test_paged_order (sort_spec, expected_order, filter_spec=[], user_id=nil)
+              # sort spec is a hash with keys: sort_key, sort_dir, per_page
+              # filter spec is an array of filters to set, e.g. "unread", "flagged"
+              # expected order is an array of the expected titles of returned threads, in the expected order
+              actual_order = []
+              per_page = sort_spec['per_page']
+              num_pages = (expected_order.length + per_page - 1) / per_page
+              num_pages.times do |i|
+                page = i + 1
+                result = thread_result_page(
+                  sort_spec['sort_key'],
+                  sort_spec['sort_dir'],
+                  page,
+                  per_page,
+                  user_id,
+                  filter_spec.include?("unread")
+                )
+                result["collection"].length.should == (page * per_page <= expected_order.length ? per_page : expected_order.length % per_page)
+                if filter_spec.include?("unread")
+                  # because of the way we handle num_pages for the unread filter, this is a special case.
+                  result["num_pages"].should == (page == num_pages ? page : page + 1)
+                else
+                  result["num_pages"].should == num_pages
+                end
+                result["page"].should == page
+                actual_order += result["collection"].map {|v| v["title"]}
+              end
+              actual_order.should == expected_order
+            end
+
             it "orders correctly across pages" do
               make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
               @threads["t7"].pinned = true
               @threads["t7"].save!
               expected_order = move_to_front(move_to_end(@default_order, "t5"), "t7")
-              actual_order = []
-              per_page = 3
-              num_pages = (@threads.length + per_page - 1) / per_page
-              num_pages.times do |i|
-                page = i + 1
-                result = thread_result_page("comments", "asc", page, per_page)
-                result["collection"].length.should == (page * per_page <= @threads.length ? per_page : @threads.length % per_page)
-                result["num_pages"].should == num_pages
-                result["page"].should == page
-                actual_order += result["collection"].map {|v| v["title"]}
-              end
-              actual_order.should == expected_order
+              test_paged_order({'sort_key'=>'comments', 'sort_dir'=>'asc', 'per_page'=>3}, expected_order)
+            end
+
+            it "orders correctly acrosss pages with unread filter" do
+              user = create_test_user(Random.new)
+              user.mark_as_read(@threads["t0"])
+              user.mark_as_read(@threads["t9"])
+              make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
+              @threads["t7"].pinned = true
+              @threads["t7"].save!
+              expected_order = move_to_front(move_to_end(@default_order[1..8], "t5"), "t7")
+              test_paged_order(
+                {'sort_key'=>'comments', 'sort_dir'=>'asc', 'per_page'=>3},
+                expected_order,
+                ["unread"],
+                user.id
+              )
             end
           end
         end

@@ -31,7 +31,7 @@ class User
   end
 
   def subscribed_threads
-    CommentThread.where(:id.in => subscribed_thread_ids)
+    CommentThread.in({"_id" => subscribed_thread_ids})
   end
 
   def to_hash(params={})
