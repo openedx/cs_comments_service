@@ -2,15 +2,10 @@ require 'new_relic/agent/method_tracer'
 
 get "#{APIPREFIX}/search/threads" do
   local_params = params # Necessary for params to be available inside blocks
-  sort_criteria = get_sort_criteria(local_params)
-
   search_text = local_params["text"]
-  if !search_text || !sort_criteria
+  if !search_text
     {}.to_json
   else
-    page = (local_params["page"] || DEFAULT_PAGE).to_i
-    per_page = (local_params["per_page"] || DEFAULT_PER_PAGE).to_i
-
     # Because threads and comments are currently separate unrelated documents in
     # Elasticsearch, we must first query for all matching documents, then
     # extract the set of thread ids, and then sort the threads by the specified
@@ -72,40 +67,26 @@ get "#{APIPREFIX}/search/threads" do
       corrected_text = nil if thread_ids.empty?
     end
 
-    results = nil
-    self.class.trace_execution_scoped(["Custom/get_search_threads/mongo_sort_page"]) do
-      results = CommentThread.
-        where(:id.in => thread_ids.to_a).
-        order_by(sort_criteria).
-        page(page).
-        per(per_page).
-        to_a
+    result_obj = handle_threads_query(
+      CommentThread.in({"_id" => thread_ids.to_a}),
+      local_params["user_id"],
+      local_params["course_id"],
+      value_to_boolean(local_params["flagged"]),
+      value_to_boolean(local_params["unread"]),
+      value_to_boolean(local_params["unanswered"]),
+      local_params["sort_key"],
+      local_params["sort_order"],
+      local_params["page"],
+      local_params["per_page"]
+    )
+    if !result_obj.empty?
+      result_obj[:corrected_text] = corrected_text
+      # NOTE this reflects the total results from ES, but does not consider
+      # any post-filtering that might happen (e.g. unread, flagged...) before
+      # results are shown to the user.
+      result_obj[:total_results] = thread_ids.size
     end
-    total_results = thread_ids.size
-    num_pages = (total_results + per_page - 1) / per_page
-
-    if results.length == 0
-      collection = []
-    else
-      pres_threads = ThreadListPresenter.new(
-        results,
-        local_params[:user_id] ? user : nil,
-        local_params[:course_id] || results.first.course_id
-      )
-      collection = pres_threads.to_hash
-    end
-
-    json_output = nil
-    self.class.trace_execution_scoped(['Custom/get_search_threads/json_serialize']) do
-      json_output = {
-        collection: collection,
-        corrected_text: corrected_text,
-        total_results: total_results,
-        num_pages: num_pages,
-        page: page,
-      }.to_json
-    end
-    json_output
+    result_obj.to_json
   end
 end
 
