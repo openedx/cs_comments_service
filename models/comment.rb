@@ -56,7 +56,7 @@ class Comment < Content
 
   counter_cache :comment_thread
 
-  before_destroy :delete_descendants # TODO async
+  before_destroy :destroy_children # TODO async
 
   before_create :set_thread_last_activity_at
   before_update :set_thread_last_activity_at
