@@ -116,8 +116,26 @@ helpers do
 
   end
 
-  def handle_threads_query(comment_threads, user_id, course_id, filter_flagged, filter_unread, filter_unanswered, sort_key, sort_order, page, per_page)
-    
+  def handle_threads_query(
+    comment_threads,
+    user_id,
+    course_id,
+    group_id,
+    filter_flagged,
+    filter_unread,
+    filter_unanswered,
+    sort_key,
+    sort_order,
+    page,
+    per_page
+  )
+    if group_id
+      comment_threads = comment_threads.any_of(
+        {"group_id" => group_id.to_i},
+        {"group_id" => {"$exists" => false}}
+      )
+    end
+
     if filter_flagged
       self.class.trace_execution_scoped(['Custom/handle_threads_query/find_flagged']) do
         # TODO replace with aggregate query?

@@ -71,6 +71,7 @@ get "#{APIPREFIX}/search/threads" do
       CommentThread.in({"_id" => thread_ids.to_a}),
       local_params["user_id"],
       local_params["course_id"],
+      local_params["group_id"],
       value_to_boolean(local_params["flagged"]),
       value_to_boolean(local_params["unread"]),
       value_to_boolean(local_params["unanswered"]),

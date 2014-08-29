@@ -85,6 +85,21 @@ describe "app" do
         check_thread_result_json(@users["u100"], @threads["t0"], rs[1])
       end
 
+      it "filters by group_id" do
+        @threads["t1"].author = @users["u100"]
+        @threads["t1"].save!
+        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
+        rs.length.should == 2
+        @threads["t1"].group_id = 43
+        @threads["t1"].save!
+        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
+        rs.length.should == 1
+        @threads["t1"].group_id = 42
+        @threads["t1"].save!
+        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
+        rs.length.should == 2
+      end
+
       it "does not return threads in which the user has only participated anonymously" do
         @comments["t3 c4"].author = @users["u100"]
         @comments["t3 c4"].anonymous_to_peers = true

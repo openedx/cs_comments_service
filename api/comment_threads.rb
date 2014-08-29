@@ -4,18 +4,12 @@ get "#{APIPREFIX}/threads" do # retrieve threads by course
   if params[:commentable_ids]
     threads = threads.in({"commentable_id" => params[:commentable_ids].split(",")})
   end
-  #if a group id is sent, then process the set of threads with that group id or with no group id
-  if params["group_id"]
-    threads = threads.any_of(
-      {"group_id" => params[:group_id].to_i},
-      {"group_id" => {"$exists" => false}},
-    )
-  end
 
   handle_threads_query(
     threads,
     params["user_id"],
     params["course_id"],
+    params["group_id"],
     value_to_boolean(params["flagged"]),
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),

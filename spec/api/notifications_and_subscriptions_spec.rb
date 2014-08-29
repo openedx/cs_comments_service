@@ -41,6 +41,18 @@ describe "app" do
           rs.length.should == 0 
         end
       end
+      it "filters by group_id" do
+        rs = thread_result course_id: DFLT_COURSE_ID, group_id: 42
+        rs.length.should == 5
+        @threads["t3"].group_id = 43
+        @threads["t3"].save!
+        rs = thread_result course_id: DFLT_COURSE_ID, group_id: 42
+        rs.length.should == 4
+        @threads["t3"].group_id = 42
+        @threads["t3"].save!
+        rs = thread_result course_id: DFLT_COURSE_ID, group_id: 42
+        rs.length.should == 5
+      end
       it "filters unread posts" do
         rs = thread_result course_id: DFLT_COURSE_ID
         rs.length.should == 5
