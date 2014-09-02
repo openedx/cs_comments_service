@@ -5,8 +5,6 @@ require 'erb'
 Bundler.setup
 Bundler.require
 
-require 'tire/queries/more_like_this'
-
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
 environment = env_arg || ENV["SINATRA_ENV"] || "development"

@@ -21,20 +21,32 @@ describe "app" do
       end
     end
     describe "GET /api/v1/:commentable_id/threads" do
-      it "get all comment threads associated with a commentable object" do
-        get "/api/v1/question_1/threads"
+      def thread_result(commentable_id, params={})
+        get "/api/v1/#{commentable_id}/threads", params
         last_response.should be_ok
-        response = parse last_response.body
-        threads = response['collection']
+        parse(last_response.body)["collection"]
+      end
+      it "get all comment threads associated with a commentable object" do
+        threads = thread_result "question_1"
         threads.length.should == 2
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
       end
+      it "filters by group_id" do
+        group_thread = Commentable.find("question_1").comment_threads.first
+        threads = thread_result "question_1", group_id: 42
+        threads.length.should == 2
+        group_thread.group_id = 43
+        group_thread.save!
+        threads = thread_result "question_1", group_id: 42
+        threads.length.should == 1
+        group_thread.group_id = 42
+        group_thread.save!
+        threads = thread_result "question_1", group_id: 42
+        threads.length.should == 2
+      end
       it "returns an empty array when the commentable object does not exist (no threads)" do
-        get "/api/v1/does_not_exist/threads"
-        last_response.should be_ok
-        response = parse last_response.body
-        threads = response['collection']
+        threads = thread_result "does_not_exist"
         threads.length.should == 0
       end
 

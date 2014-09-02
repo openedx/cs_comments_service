@@ -37,19 +37,22 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
     thread_ids
   end
 
-  num_pages = [1, (active_thread_ids.count / per_page.to_f).ceil].max
-  page = [num_pages, [1, page].max].min
+  threads = CommentThread.in({"_id" => active_thread_ids})
 
-  paged_thread_ids = active_thread_ids[(page - 1) * per_page, per_page]
-
-  # Find all the threads by id, and then put them in the order found earlier.
-  # Necessary because CommentThread.find does return results in the same
-  # order as the provided ids.
-  paged_active_threads = CommentThread.find(paged_thread_ids).sort_by do |t| 
-    paged_thread_ids.index(t.id)
+  if params["group_id"]
+    threads = threads.any_of(
+      {"group_id" => params["group_id"].to_i},
+      {"group_id" => {"$exists" => false}}
+    )
   end
 
-  presenter = ThreadListPresenter.new(paged_active_threads.to_a, user, params[:course_id])
+  num_pages = [1, (threads.count / per_page.to_f).ceil].max
+  page = [num_pages, [1, page].max].min
+
+  sorted_threads = threads.sort_by {|t| active_thread_ids.index(t.id)}
+  paged_threads = sorted_threads[(page - 1) * per_page, per_page]
+
+  presenter = ThreadListPresenter.new(paged_threads, user, params[:course_id])
   collection = presenter.to_hash
 
   json_output = nil

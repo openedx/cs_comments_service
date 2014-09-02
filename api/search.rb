@@ -71,6 +71,7 @@ get "#{APIPREFIX}/search/threads" do
       CommentThread.in({"_id" => thread_ids.to_a}),
       local_params["user_id"],
       local_params["course_id"],
+      local_params["group_id"],
       value_to_boolean(local_params["flagged"]),
       value_to_boolean(local_params["unread"]),
       value_to_boolean(local_params["unanswered"]),
@@ -88,36 +89,4 @@ get "#{APIPREFIX}/search/threads" do
     end
     result_obj.to_json
   end
-end
-
-get "#{APIPREFIX}/search/threads/more_like_this" do
-  CommentThread.tire.search page: 1, per_page: 5, load: true do |search|
-    search.query do |query|
-      query.more_like_this params["text"], fields: ["title", "body"], min_doc_freq: 1, min_term_freq: 1
-    end
-  end.results.map(&:to_hash).to_json
-end
-
-get "#{APIPREFIX}/search/threads/recent_active" do
-
-  return [].to_json if not params["course_id"]
-
-  follower_id = params["follower_id"]
-  from_time = {
-    "today" => Date.today.to_time,
-    "this_week" => Date.today.to_time - 1.weeks,
-    "this_month" => Date.today.to_time - 1.months,
-  }[params["from_time"] || "this_week"]
-
-  query_params = {}
-  query_params["course_id"] = params["course_id"] if params["course_id"]
-  query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
-
-  comment_threads = if follower_id
-    User.find(follower_id).subscribed_threads
-  else
-    CommentThread.all
-  end
-
-  comment_threads.where(query_params.merge(:last_activity_at => {:$gte => from_time})).order_by(:last_activity_at.desc).limit(5).to_a.map(&:to_hash).to_json
 end

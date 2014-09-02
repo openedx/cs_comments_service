@@ -5,17 +5,12 @@ end
 
 get "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   threads = Content.where({"_type" => "CommentThread", "commentable_id" => commentable_id})
-  if params["group_id"]
-    threads = threads.any_of(
-      {"group_id" => params[:group_id].to_i},
-      {"group_id" => {"$exists" => false}},
-    )
-  end
 
   handle_threads_query(
     threads,
     params["user_id"],
     params["course_id"],
+    params["group_id"],
     value_to_boolean(params["flagged"]),
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),
