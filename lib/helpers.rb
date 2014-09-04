@@ -63,7 +63,9 @@ helpers do
 
   def undo_vote_for(obj)
     raise ArgumentError, t(:user_id_is_required) unless user
-    user.unvote(obj)
+    if user.voted?(obj)
+      user.unvote(obj)
+    end
     obj.reload.to_hash.to_json
   end
   
