@@ -5,6 +5,9 @@ end
 
 get "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   threads = Content.where({"_type" => "CommentThread", "commentable_id" => commentable_id})
+  if params["course_id"]
+    threads = threads.where({"course_id" => params["course_id"]})
+  end
 
   handle_threads_query(
     threads,
