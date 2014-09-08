@@ -32,6 +32,13 @@ describe "app" do
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
       end
+      it "filters by course_id" do
+        course1_threads = thread_result "question_1", course_id: "1"
+        course1_threads.length.should == 1
+        course2_threads = thread_result "question_1", course_id: "2"
+        course2_threads.length.should == 1
+        course1_threads.should_not == course2_threads
+      end
       it "filters by group_id" do
         group_thread = Commentable.find("question_1").comment_threads.first
         threads = thread_result "question_1", group_id: 42
