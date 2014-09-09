@@ -82,3 +82,15 @@ delete "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   thread.destroy
   thread.to_hash.to_json
 end
+
+get "#{APIPREFIX}/courses/*/stats"  do |course_id| # retrieve stats by course
+  begin
+    threads = Content.where(_type: "CommentThread", course_id: course_id)
+    active_threads = threads.where(:last_activity_at.gte => 1.day.ago)
+    course_stats = {
+      "num_threads" => threads.count,
+      "num_active_threads" => active_threads.count
+    }
+    course_stats.to_json
+  end
+end
