@@ -255,14 +255,14 @@ helpers do
     end
   end
 
-  def notifications_by_date_range_and_user_ids start_date_time, end_date_time, user_ids  
+  def notifications_by_date_range_and_user_ids(start_date_time, end_date_time, user_ids)
     #given a date range and a user, find all of the notifiable content
     #key by thread id, and return notification messages for each user
 
     #first, find the subscriptions for the users
     subscriptions = Subscription.where(:subscriber_id.in => user_ids)
 
-    #get the thhread ids
+    #get the thread ids
     thread_ids = subscriptions.collect{|t| t.source_id}.uniq
 
     #find all the comments
@@ -308,6 +308,9 @@ helpers do
               t["content"] = []
               t["title"] = current_thread.title
               t["commentable_id"] = current_thread.commentable_id
+              unless current_thread.group_id.nil?
+                t["group_id"] = current_thread.group_id
+              end
             else
               t = notification_map[u][c.course_id][c.comment_thread_id.to_s]
             end
