@@ -556,12 +556,20 @@ describe "app" do
       
       it "update information of comment thread" do
         thread = CommentThread.first
-        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id"
+        comment = thread.comments.first
+        comment.endorsed = true
+        comment.endorsement = {:user_id => "42", :time => DateTime.now}
+        comment.save
+        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question"
         last_response.should be_ok
         changed_thread = CommentThread.find(thread.id)
         changed_thread.body.should == "new body"
         changed_thread.title.should == "new title"
         changed_thread.commentable_id.should == "new_commentable_id"
+        changed_thread.thread_type.should == "question"
+        comment.reload
+        comment.endorsed.should == false
+        comment.endorsement.should == nil
         check_thread_result_json(nil, changed_thread, parse(last_response.body))
       end
       it "returns 400 when the thread does not exist" do
