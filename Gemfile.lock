@@ -103,10 +103,10 @@ GEM
       tzinfo (~> 0.3.22)
     moped (1.5.1)
     multi_json (1.10.0)
-    newrelic_moped (0.0.6)
+    newrelic_moped (0.0.11)
       moped
-      newrelic_rpm (~> 3.6.0)
-    newrelic_rpm (3.6.8.164)
+      newrelic_rpm (>= 3.7)
+    newrelic_rpm (3.9.5.251)
     nokogiri (1.5.5)
     origin (1.1.0)
     pry (0.9.10)
