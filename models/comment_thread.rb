@@ -53,7 +53,7 @@ class CommentThread < Content
   has_many :comments, dependent: :destroy#, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
   has_many :activities, autosave: true
 
-  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed
+  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type
 
   validates_presence_of :thread_type
   validates_presence_of :title
@@ -64,6 +64,7 @@ class CommentThread < Content
 
   before_create :set_last_activity_at
   before_update :set_last_activity_at, :unless => lambda { closed_changed? }
+  after_update :clear_endorsements
 
   before_destroy :destroy_subscriptions
 
@@ -139,6 +140,18 @@ private
 
   def set_last_activity_at
     self.last_activity_at = Time.now.utc unless last_activity_at_changed?
+  end
+
+  def clear_endorsements
+    if self.thread_type_changed?
+      # We use 'set' instead of 'update_attributes' because the Comment model has a 'before_update' callback that sets
+      # the last activity time on the thread. Therefore the callbacks would be mutually recursive and we end up with a
+      # 'SystemStackError'. The 'set' method skips callbacks and therefore bypasses this issue.
+      self.comments.each do |comment|
+        comment.set :endorsed, false
+        comment.set :endorsement, nil
+      end
+    end
   end
 
   def destroy_subscriptions

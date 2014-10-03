@@ -52,7 +52,7 @@ end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   filter_blocked_content params["body"]
-  thread.update_attributes(params.slice(*%w[title body closed commentable_id group_id]))
+  thread.update_attributes(params.slice(*%w[title body closed commentable_id group_id thread_type]))
 
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
