@@ -100,6 +100,19 @@ describe "app" do
         rs.length.should == 2
       end
 
+      it "filters by group_ids" do
+        @threads["t1"].author = @users["u100"]
+        @threads["t1"].save!
+        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42"
+        rs.length.should == 2
+        @threads["t1"].group_id = 43
+        @threads["t1"].save!
+        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42"
+        rs.length.should == 1
+        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42,43"
+        rs.length.should == 2
+      end
+
       it "does not return threads in which the user has only participated anonymously" do
         @comments["t3 c4"].author = @users["u100"]
         @comments["t3 c4"].anonymous_to_peers = true

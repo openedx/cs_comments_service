@@ -13,7 +13,7 @@ get "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
     threads,
     params["user_id"],
     params["course_id"],
-    params["group_id"],
+    get_group_ids_from_params(params),
     value_to_boolean(params["flagged"]),
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),

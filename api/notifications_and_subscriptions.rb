@@ -7,7 +7,7 @@ get "#{APIPREFIX}/users/:user_id/subscribed_threads" do |user_id|
     user.subscribed_threads.where({"course_id" => params[:course_id]}),
     params["user_id"],
     params["course_id"],
-    params["group_id"],
+    get_group_ids_from_params(params),
     value_to_boolean(params["flagged"]),
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),

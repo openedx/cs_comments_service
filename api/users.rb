@@ -39,11 +39,9 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
 
   threads = CommentThread.in({"_id" => active_thread_ids})
 
-  if params["group_id"]
-    threads = threads.any_of(
-      {"group_id" => params["group_id"].to_i},
-      {"group_id" => {"$exists" => false}}
-    )
+  group_ids = get_group_ids_from_params(params)
+  if not group_ids.empty?
+    threads = get_group_id_criteria(threads, group_ids)
   end
 
   num_pages = [1, (threads.count / per_page.to_f).ceil].max
