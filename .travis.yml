@@ -5,5 +5,5 @@ services:
   - mongodb
   - elasticsearch
 before_install:
-  - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.11.deb && sudo dpkg -i elasticsearch-0.90.11.deb && sudo service elasticsearch restart
+  - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.11.deb && sudo dpkg --force-confnew -i elasticsearch-0.90.11.deb && sudo service elasticsearch restart
 script: bundle exec rspec
