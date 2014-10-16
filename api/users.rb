@@ -13,7 +13,9 @@ end
 
 get "#{APIPREFIX}/users/:user_id" do |user_id|
   begin
-    user.to_hash(complete: bool_complete, course_id: params["course_id"]).to_json
+    # Get any group_ids that may have been specified (will be an empty list if none specified).
+    group_ids = get_group_ids_from_params(params)
+    user.to_hash(complete: bool_complete, course_id: params["course_id"], group_ids: group_ids).to_json
   rescue Mongoid::Errors::DocumentNotFound
     error 404
   end
