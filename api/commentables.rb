@@ -41,6 +41,7 @@ post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
     error 400, thread.errors.full_messages.to_json
   else
     user.subscribe(thread) if bool_auto_subscribe
-    thread.to_hash.to_json
+    presenter = ThreadPresenter.factory(thread, nil)
+    presenter.to_hash.to_json
   end
 end
