@@ -93,6 +93,10 @@ describe "app" do
         old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params
         last_response.should be_ok
+        result = parse(last_response.body)
+        result["read"].should == false
+        result["unread_comments_count"].should == 0
+        result["endorsed"].should == false
         CommentThread.count.should == old_count + 1
         CommentThread.where(title: "Interesting question").first.should_not be_nil
       end
