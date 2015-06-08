@@ -102,6 +102,7 @@ class Comment < Content
                  .merge("depth" => depth)
                  .merge("closed" => comment_thread.nil? ? false : comment_thread.closed) # ditto
                  .merge("thread_id" => comment_thread_id)
+                 .merge("parent_id" => parent_ids[-1])
                  .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id) # ditto
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                  .merge("abuse_flaggers" => abuse_flaggers)
