@@ -25,6 +25,7 @@ describe "app" do
         retrieved["children"].should be_nil
         retrieved["votes"]["point"].should == comment.votes_point
         retrieved["depth"].should == comment.depth
+        retrieved["parent_id"].should == comment.parent_ids[-1]
       end
       it "retrieve information of a single comment with its sub comments" do
         comment = Comment.first
@@ -37,6 +38,7 @@ describe "app" do
         retrieved["votes"]["point"].should == comment.votes_point
         retrieved["children"].length.should == comment.children.length
         retrieved["children"].select{|c| c["body"] == comment.children.first.body}.first.should_not be_nil
+        retrieved["children"].each{|c| c["parent_id"].should == comment.id.to_s}
       end
       it "returns 400 when the comment does not exist" do
         get "/api/v1/comments/does_not_exist"
