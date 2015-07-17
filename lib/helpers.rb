@@ -129,11 +129,17 @@ helpers do
     sort_key,
     sort_order,
     page,
-    per_page
+    per_page,
+    context=:course
   )
 
+    context_threads = comment_threads.any_of({:context.exists => false}, {:context => context})
+
     if not group_ids.empty?
-      comment_threads = get_group_id_criteria(comment_threads, group_ids)
+      group_threads = get_group_id_criteria(comment_threads, group_ids)
+      comment_threads = comment_threads.all_of(context_threads.selector, group_threads.selector)
+    else
+      comment_threads = context_threads
     end
 
     if filter_flagged
