@@ -1,5 +1,3 @@
-require 'new_relic/agent/method_tracer'
-
 post "#{APIPREFIX}/users" do
   user = User.new(external_id: params["id"])
   user.username = params["username"]
