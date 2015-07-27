@@ -1,50 +1,59 @@
+common: &default_session
+  options:
+    write:
+     w: 1
+    read: primary
+    max_retries: <%= ENV['MONGOID_MAX_RETRIES'] || 1 %>
+    retry_interval: <%= ENV['MONGOID_RETRY_INTERVAL'] || 0 %>
+    timeout: <%= ENV['MONGOID_TIMEOUT'] || 0.5 %>
+    ssl: <%= ENV['MONGOID_USE_SSL'] || false %>
+
+common_uri: &default_uri
+  uri: <%= ENV['MONGOHQ_URL'] %>
+
 development:
   sessions:
     default:
+      <<: *default_session
       database: cs_comments_service_development
       hosts:
         - localhost:27017
 test:
   sessions:
     default:
+      <<: *default_session
       database: cs_comments_service_test
       hosts:
         - localhost:27017
 
-common: &default_session
-  uri: <%= ENV['MONGOHQ_URL'] %>
-  options:
-    skip_version_check: true
-    safe: true
-    consistency: strong
-    max_retries: <%= ENV['MONGOID_MAX_RETRIES'] || 1 %>
-    retry_interval: <%= ENV['MONGOID_RETRY_INTERVAL'] || 0 %>
-    timeout: <%= ENV['MONGOID_TIMEOUT'] || 0.5 %>
-    ssl: <%= ENV['MONGOID_USE_SSL'] || false %>
-
 production:
   sessions:
     default:
+      <<: *default_uri
       <<: *default_session
 
 edgeprod:
   sessions:
     default:
+      <<: *default_uri
       <<: *default_session
 
 edgestage:
   sessions:
     default:
+      <<: *default_uri
       <<: *default_session
 
 staging:
   sessions:
     default:
+      <<: *default_uri
       <<: *default_session
 
 loadtest:
   sessions:
     default:
+      <<: *default_uri
       <<: *default_session
 
 defaults: &defaults

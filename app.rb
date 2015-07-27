@@ -100,7 +100,6 @@ end
 if ENV["ENABLE_IDMAP_LOGGING"]
 
   after do
-    idmap = Mongoid::Threaded.identity_map
     vals = {
       "pid" => Process.pid,
       "dyno" => ENV["DYNO"],
@@ -112,12 +111,6 @@ if ENV["ENABLE_IDMAP_LOGGING"]
 
 end
 
-# Enable the identity map. The middleware ensures that the identity map is
-# cleared for every request.
-Mongoid.identity_map_enabled = true
-use Rack::Mongoid::Middleware::IdentityMap
-
-
 # use yajl implementation for to_json.
 # https://github.com/brianmario/yajl-ruby#json-gem-compatibility-api
 #
@@ -128,15 +121,27 @@ require 'yajl/json_gem'
 
 # patch json serialization of ObjectIds to work properly with yajl.
 # See https://groups.google.com/forum/#!topic/mongoid/MaXFVw7D_4s
-module Moped
-  module BSON
-    class ObjectId
-      def to_json
-        self.to_s.to_json
-      end
+# Note that BSON was moved from Moped::BSON::ObjectId to BSON::ObjectId
+module BSON
+  class ObjectId
+    def to_json
+      self.to_s.to_json
     end
   end
 end
+
+
+# Patch json serialization of Time Objects
+class Time
+  # Returns a hash, that will be turned into a JSON object and represent this
+  # object.
+  # Note that this was done to prevent milliseconds from showing up in the JSON response thus breaking
+  # API compatibility for downstream clients.
+  def to_json(*)
+    '"' + utc().strftime("%Y-%m-%dT%H:%M:%SZ") + '"'
+  end
+end
+
 
 
 # these files must be required in order
@@ -170,7 +175,7 @@ error ArgumentError do
   error 400, [env['sinatra.error'].message].to_json
 end
 
-CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).each.map {|d| d["hash"]}
+CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).map {|d| d["hash"]}
 
 def get_db_is_master
   Mongoid::Sessions.default.command(isMaster: 1)

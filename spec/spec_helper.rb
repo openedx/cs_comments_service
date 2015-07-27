@@ -53,7 +53,6 @@ RSpec.configure do |config|
   config.filter_run focus: true
   config.run_all_when_everything_filtered = true
   config.before(:each) do
-    Mongoid::IdentityMap.clear
     DatabaseCleaner.clean
     delete_es_index
     create_es_index
@@ -160,8 +159,9 @@ def init_without_subscriptions
 
   Content.mongo_session[:blocked_hash].insert(hash: Digest::MD5.hexdigest("blocked post"))
   # reload the global holding the blocked hashes
-  CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).each.map {|d| d["hash"]}
-
+  CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).map {|d|
+      d["hash"]
+  }
 end
 
 def init_with_subscriptions

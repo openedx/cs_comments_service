@@ -17,22 +17,22 @@ gem 'yajl-ruby'
 gem 'ampex'
 
 gem 'mongo'
-gem 'moped', "1.5.1"
-gem 'mongoid', "3.0.15"
+gem 'moped', "2.0.5"
+gem 'mongoid', ">=4.0.0"
 gem 'bson_ext'
 
 gem 'delayed_job'
-gem 'delayed_job_mongoid', :git => 'https://github.com/dementrock/delayed_job_mongoid.git'
+gem 'delayed_job_mongoid'#, :git => 'https://github.com/dementrock/delayed_job_mongoid.git', :tag => 'v1.0.8'
 
-gem "enumerize", "~>0.8.0"
+gem "enumerize"#, "~>0.8.0"
 gem 'mongoid-tree', :git => 'https://github.com/dementrock/mongoid-tree.git'
-gem 'voteable_mongo', :git => 'https://github.com/dementrock/voteable_mongo.git'
-gem 'mongoid_magic_counter_cache', :git => 'https://github.com/dementrock/mongoid-magic-counter-cache.git'
+gem 'rs_voteable_mongo', :git => 'https://github.com/rs-pro/voteable_mongo.git'
+gem 'mongoid_magic_counter_cache' #, :git => 'https://github.com/dementrock/mongoid-magic-counter-cache.git'
 
-gem 'kaminari', :require => 'kaminari/sinatra', :git => 'https://github.com/dementrock/kaminari.git'
+# gem 'kaminari', :require => 'kaminari/sinatra'
 
 gem 'faker'
-gem 'will_paginate_mongoid'
+gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
 gem 'nokogiri'
 

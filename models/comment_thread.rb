@@ -5,6 +5,7 @@ require_relative 'content'
 class CommentThread < Content
 
   include Mongoid::Timestamps
+  include Mongoid::Attributes::Dynamic
   extend Enumerize
 
   voteable self, :up => +1, :down => -1
@@ -56,7 +57,9 @@ class CommentThread < Content
   has_many :comments, dependent: :destroy#, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
   has_many :activities, autosave: true
 
-  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type
+  # TODO: Pull in protected_attributes gem to fix this functionality:
+  # https://stackoverflow.com/questions/17135974/mongoid-w-rails-attr-accessible-no-method-found
+  #attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type
 
   validates_presence_of :thread_type
   validates_presence_of :context
@@ -154,8 +157,8 @@ private
       # the last activity time on the thread. Therefore the callbacks would be mutually recursive and we end up with a
       # 'SystemStackError'. The 'set' method skips callbacks and therefore bypasses this issue.
       self.comments.each do |comment|
-        comment.set :endorsed, false
-        comment.set :endorsement, nil
+        comment.set(endorsed: false)
+        comment.set(endorsement: nil)
       end
     end
   end

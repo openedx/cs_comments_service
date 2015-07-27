@@ -43,9 +43,6 @@ describe "app" do
     describe "flag a comment as abusive" do
       it "create or update the abuse_flags on the comment" do
         comment = Comment.first
-        
-        # We get the count rather than just keeping the array, because the array
-        # will update as the Comment updates since the IdentityMap is enabled.
         prev_abuse_flaggers_count = comment.abuse_flaggers.length
         create_comment_flag("#{comment.id}", User.first.id)
 

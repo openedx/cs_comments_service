@@ -14,6 +14,7 @@ class Comment < Content
   field :endorsement, type: Hash
   field :anonymous, type: Boolean, default: false
   field :anonymous_to_peers, type: Boolean, default: false
+  field :commentable_id, type: String
   field :at_position_list, type: Array, default: []
 
   index({author_id: 1, course_id: 1})
@@ -48,7 +49,9 @@ class Comment < Content
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: "User", index: true
 
-  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement
+  # TODO: Pull in protected_attributes gem to fix this functionality:
+  # https://stackoverflow.com/questions/17135974/mongoid-w-rails-attr-accessible-no-method-found
+  #attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement
 
   validates_presence_of :comment_thread, autosave: false
   validates_presence_of :body
@@ -101,10 +104,10 @@ class Comment < Content
                  .merge("user_id" => author_id)
                  .merge("username" => author_username) 
                  .merge("depth" => depth)
-                 .merge("closed" => comment_thread.nil? ? false : comment_thread.closed) # ditto
+                 .merge("closed" => comment_thread.nil? ? false : comment_thread.closed)
                  .merge("thread_id" => comment_thread_id)
                  .merge("parent_id" => parent_ids[-1])
-                 .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id) # ditto
+                 .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id)
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                  .merge("abuse_flaggers" => abuse_flaggers)
                  .merge("type" => "comment")
