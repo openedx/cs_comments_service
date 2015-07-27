@@ -114,6 +114,7 @@ describe "app" do
         comment = Comment.first
         put "/api/v1/comments/#{comment.id}", body: text
         last_response.should be_ok
+        comment = Comment.find(comment.id)
         comment.body.should == text
       end
 

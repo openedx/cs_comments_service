@@ -5,7 +5,9 @@ class Notification
   field :notification_type, type: String
   field :info, type: Hash
 
-  attr_accessible :notification_type, :info
+  # TODO: Pull in protected_attributes gem to fix this functionality:
+  # https://stackoverflow.com/questions/17135974/mongoid-w-rails-attr-accessible-no-method-found
+  #attr_accessible :notification_type, :info
 
   validates_presence_of :notification_type
   validates_presence_of :info

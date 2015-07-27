@@ -8,7 +8,11 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   if params.has_key?("endorsed")
     new_endorsed_val = Boolean.mongoize(params["endorsed"])
     if new_endorsed_val != comment.endorsed
-      endorsement = {:user_id => params["endorsement_user_id"], :time => DateTime.now}
+      if params["endorsement_user_id"].nil?
+        endorsement = nil
+      else
+        endorsement = {:user_id => params["endorsement_user_id"], :time => DateTime.now}
+      end
       updated_content["endorsement"] = new_endorsed_val ? endorsement : nil
     end
   end
