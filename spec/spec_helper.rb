@@ -131,6 +131,13 @@ def init_without_subscriptions
   comment1.comment_thread = thread
   comment1.save!
 
+  thread = CommentThread.new(title: "Our super secret discussion", body: "no one can see us", course_id: "2", commentable_id: commentable.id)
+  thread.thread_type = :discussion
+  thread.context = :standalone
+  thread.author = user
+  thread.save!
+  user.subscribe(thread)
+
   thread = CommentThread.new(title: "I don't know what to say", body: "lol", course_id: "2", commentable_id: "something else")
   thread.thread_type = :discussion
   thread.author = users[1]
@@ -205,7 +212,7 @@ end
 # this method is used to test results produced using the helper function handle_threads_query
 # which is used in multiple areas of the API
 def check_thread_result(user, thread, hash, is_json=false)
-  expected_keys = %w(id thread_type title body course_id commentable_id created_at updated_at)
+  expected_keys = %w(id thread_type title body course_id commentable_id created_at updated_at context)
   expected_keys += %w(anonymous anonymous_to_peers at_position_list closed user_id)
   expected_keys += %w(username votes abuse_flaggers tags type group_id pinned)
   expected_keys += %w(comments_count unread_comments_count read endorsed)
@@ -237,6 +244,7 @@ def check_thread_result(user, thread, hash, is_json=false)
   hash["pinned"].should == thread.pinned?
   hash["endorsed"].should == thread.endorsed?
   hash["comments_count"].should == thread.comments.length
+  hash["context"] = thread.context
 
   if is_json
     hash["id"].should == thread._id.to_s

@@ -29,6 +29,18 @@ describe "app" do
             res["course_id"].should == "abc"
           }
         end
+        it "does not return standalone threads" do
+          [@threads["t1"], @threads["t2"], @threads["t3"]].each do |t|
+            t.course_id = "abc"
+            t.save!
+          end
+          @threads["t2"].context = :standalone
+          @threads["t2"].save!
+          rs = thread_result course_id: "abc", sort_order: "asc"
+          rs.length.should == 2
+          check_thread_result_json(nil, @threads["t1"], rs[0])
+          check_thread_result_json(nil, @threads["t3"], rs[1])
+        end
         it "returns only threads where course id and commentable id match" do
           @threads["t1"].course_id = "course1"
           @threads["t1"].commentable_id = "commentable1"

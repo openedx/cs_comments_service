@@ -32,6 +32,11 @@ describe "app" do
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
       end
+      it "returns standalone threads if explicitly requested" do
+        threads = thread_result "question_1", context: "standalone"
+        threads.length.should == 1
+        threads[0]["body"].should == "no one can see us"
+      end
       it "filters by course_id" do
         course1_threads = thread_result "question_1", course_id: "1"
         course1_threads.length.should == 1
@@ -98,7 +103,17 @@ describe "app" do
         result["unread_comments_count"].should == 0
         result["endorsed"].should == false
         CommentThread.count.should == old_count + 1
-        CommentThread.where(title: "Interesting question").first.should_not be_nil
+        thread = CommentThread.where(title: "Interesting question").first
+        thread.should_not be_nil
+        thread.context.should == "course"
+      end
+      it "can create a standalone thread" do
+        old_count = CommentThread.count
+        post '/api/v1/question_1/threads', default_params.merge(:context => "standalone")
+        CommentThread.count.should == old_count + 1
+        thread = CommentThread.where(title: "Interesting question").first
+        thread.should_not be_nil
+        thread.context.should == "standalone"
       end
       CommentThread.thread_type.values.each do |thread_type|
         it "can create a #{thread_type} thread" do
