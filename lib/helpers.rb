@@ -133,7 +133,7 @@ helpers do
     context=:course
   )
 
-    context_threads = comment_threads.any_of({:context.exists => false}, {:context => context})
+    context_threads = comment_threads.where({:context => context})
 
     if not group_ids.empty?
       group_threads = get_group_id_criteria(comment_threads, group_ids)
