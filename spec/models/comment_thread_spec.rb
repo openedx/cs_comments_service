@@ -6,12 +6,11 @@ describe CommentThread do
     create_test_user(42)
   end
 
+  before (:each) do
+    [Comment, CommentThread, User].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
+  end
+
   context "sorting" do
-
-    before (:each) do
-      [Comment, CommentThread, User].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
-    end
-
     it "indexes comments in hierarchical order" do
 
       author = create_test_user('billy')
@@ -54,6 +53,54 @@ describe CommentThread do
       rs.each.map {|c| seq << c.body}
       seq.should == ["a", "b", "c", "d", "e", "f"]
 
+    end
+  end
+
+  context "scoping" do
+    before(:each) do
+      author = create_test_user('billy')
+
+      # create a course thread
+      course_thread = CommentThread.new(title: "course thread", body: "testing 123", course_id: "foo", commentable_id: "bar")
+      course_thread.thread_type = :discussion
+      course_thread.author = author
+      course_thread.context = :course
+      course_thread.save!
+
+      # create a course thread (using the default context rather than setting it explicitly)
+      course_thread = CommentThread.new(title: "course thread", body: "testing 123", course_id: "foo", commentable_id: "bar")
+      course_thread.thread_type = :discussion
+      course_thread.author = author
+      course_thread.save!
+
+      # create a standalone thread
+      standalone_thread = CommentThread.new(title: "standalone_thread thread", body: "testing 123", course_id: "foo", commentable_id: "bear")
+      standalone_thread.thread_type = :discussion
+      standalone_thread.author = author
+      standalone_thread.context = :standalone
+      standalone_thread.save!
+    end
+    
+    context '#unscoped' do
+      it 'returns all' do
+        expect(CommentThread.count).to eq(3)
+      end
+    end
+
+    context "#course_context" do
+      it 'returns all' do
+        threads = CommentThread.course_context
+        expect(threads.count).to eq(2)
+        expect(threads.first.title).to eq("course thread")
+      end
+    end
+
+    context "#standalone_context" do
+      it 'returns all' do
+        threads = CommentThread.standalone_context
+        expect(threads.count).to eq(1)
+        expect(threads.first.title).to eq("standalone_thread thread")
+      end
     end
   end
 

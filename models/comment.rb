@@ -135,14 +135,15 @@ class Comment < Content
   end
 
   def context
-    if self.comment_thread_id
-      t = CommentThread.find self.comment_thread_id
-      if t
-        t.context
-      end
-    end
-  rescue Mongoid::Errors::DocumentNotFound
-    nil
+    self.comment_thread_id ? self.comment_thread.context : nil
+  end
+
+  def course_context?
+    self.context == 'course'
+  end
+
+  def standalone_context?
+    self.context == 'standalone'
   end
 
   def self.by_date_range_and_thread_ids from_when, to_when, thread_ids
