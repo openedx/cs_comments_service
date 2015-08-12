@@ -39,6 +39,7 @@ class Comment < Content
     indexes :comment_thread_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'comment_thread_id'
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'commentable_id'
     indexes :group_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'group_id'
+    indexes :context, type: :string, index: :not_analyzed, included_in_all: false, as: 'context'
     indexes :created_at, type: :date, included_in_all: false
     indexes :updated_at, type: :date, included_in_all: false
   end
@@ -127,6 +128,17 @@ class Comment < Content
       t = CommentThread.find self.comment_thread_id
       if t
         t.group_id
+      end
+    end
+  rescue Mongoid::Errors::DocumentNotFound
+    nil
+  end
+
+  def context
+    if self.comment_thread_id
+      t = CommentThread.find self.comment_thread_id
+      if t
+        t.context
       end
     end
   rescue Mongoid::Errors::DocumentNotFound

@@ -20,7 +20,8 @@ get "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
     params["sort_key"],
     params["sort_order"],
     params["page"],
-    params["per_page"]
+    params["per_page"],
+    params["context"] ? params["context"] : :course
   ).to_json
 end
 
@@ -33,6 +34,10 @@ post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   
   if params["group_id"]
     thread.group_id = params["group_id"]
+  end
+
+  if params["context"]
+    thread.context = params["context"]
   end
   
   thread.author = user
