@@ -354,10 +354,11 @@ def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil)
 end
 
 # general purpose factory helpers
-def make_thread(author, text, course_id, commentable_id, thread_type=:discussion)
+def make_thread(author, text, course_id, commentable_id, thread_type=:discussion, context=:course)
   thread = CommentThread.new(title: text, body: text, course_id: course_id, commentable_id: commentable_id)
   thread.thread_type = thread_type
   thread.author = author
+  thread.context = context
   thread.save!
   thread
 end
@@ -375,6 +376,27 @@ def make_comment(author, parent, text)
   comment.comment_thread = thread
   comment.save!
   comment
+end
+
+# add standalone threads and comments to the @threads and @comments hashes
+# using the namespace "standalone t#{index}" for threads and "standalone t#{index} c#{i}" for comments
+# takes an index param if used within an iterator, otherwise will namespace using 0 for thread index
+# AKA this will overwrite "standalone t0" each time it is called. 
+def make_standalone_thread_with_comments(author, index=0)
+  thread = make_thread(
+    author,
+    "standalone thread #{index}",
+    DFLT_COURSE_ID,
+    "pdq",
+    :discussion,
+    :standalone
+  )
+
+  3.times do |i|
+    @comments["standalone t#{index} c#{i}"] = make_comment(author, thread, "stand alone comment #{i}")
+  end
+
+  @threads["standalone t#{index}"] = thread
 end
 
 DFLT_COURSE_ID = "xyz"

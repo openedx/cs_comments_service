@@ -73,6 +73,8 @@ class CommentThread < Content
   before_destroy :destroy_subscriptions
 
   scope :active_since, ->(from_time) { where(:last_activity_at => {:$gte => from_time}) }
+  scope :standalone_context, ->() { where(:context => :standalone) }
+  scope :course_context, ->() { where(:context => :course) }
 
   def self.new_dumb_thread(options={})
     c = self.new
