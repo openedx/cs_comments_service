@@ -198,6 +198,3 @@ DEPENDENCIES
   unicorn
   will_paginate_mongoid (~> 2.0)
   yajl-ruby
-
-BUNDLED WITH
-   1.10.5
