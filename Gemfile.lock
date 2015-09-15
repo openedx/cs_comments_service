@@ -1,9 +1,9 @@
 GIT
-  remote: https://github.com/dementrock/mongoid-tree.git
-  revision: 5aa7a4ee16cd90dbbcac3ad702446d2119e971df
+  remote: https://github.com/macdiesel/mongoid-tree
+  revision: b6aecc3cb34b6386d8118852538e840875037373
   specs:
     mongoid-tree (1.0.0)
-      mongoid (>= 3.0, <= 4.0)
+      mongoid (>= 4.0, <= 5.0)
 
 GIT
   remote: https://github.com/rack/rack-contrib.git
@@ -23,10 +23,10 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (4.2.3)
-      activesupport (= 4.2.3)
+    activemodel (4.2.4)
+      activesupport (= 4.2.4)
       builder (~> 3.1)
-    activesupport (4.2.3)
+    activesupport (4.2.4)
       i18n (~> 0.7)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
@@ -69,10 +69,10 @@ GEM
     listen (0.5.0)
     method_source (0.8)
     mime-types (2.6.1)
-    minitest (5.7.0)
+    minitest (5.8.0)
     mongo (2.0.6)
       bson (~> 3.0)
-    mongoid (4.0.0)
+    mongoid (4.0.2)
       activemodel (~> 4.0)
       moped (~> 2.0.0)
       origin (~> 2.1)
@@ -174,7 +174,7 @@ DEPENDENCIES
   guard-unicorn
   i18n
   mongo
-  mongoid (>= 4.0.0)
+  mongoid (>= 4.0.2)
   mongoid-tree!
   mongoid_magic_counter_cache
   moped (= 2.0.5)

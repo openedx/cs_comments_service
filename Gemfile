@@ -18,14 +18,14 @@ gem 'ampex'
 
 gem 'mongo'
 gem 'moped', "2.0.5"
-gem 'mongoid', ">=4.0.0"
+gem 'mongoid', ">=4.0.2"
 gem 'bson_ext'
 
 gem 'delayed_job'
 gem 'delayed_job_mongoid'#, :git => 'https://github.com/dementrock/delayed_job_mongoid.git', :tag => 'v1.0.8'
 
 gem "enumerize"#, "~>0.8.0"
-gem 'mongoid-tree', :git => 'https://github.com/dementrock/mongoid-tree.git'
+gem 'mongoid-tree', :git => 'https://github.com/macdiesel/mongoid-tree'
 gem 'rs_voteable_mongo', :git => 'https://github.com/rs-pro/voteable_mongo.git'
 gem 'mongoid_magic_counter_cache' #, :git => 'https://github.com/dementrock/mongoid-magic-counter-cache.git'
 
