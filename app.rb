@@ -2,6 +2,12 @@ require 'rubygems'
 require 'bundler'
 require 'erb'
 
+class Hash
+  def convert_key(key)
+    key.kind_of?(Symbol) ? key.to_s : key
+  end
+end
+
 Bundler.setup
 Bundler.require
 
@@ -175,7 +181,7 @@ error ArgumentError do
   error 400, [env['sinatra.error'].message].to_json
 end
 
-CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).map {|d| d["hash"]}
+CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(hash: 1).map {|d| d["hash"]}
 
 def get_db_is_master
   Mongoid::Sessions.default.command(isMaster: 1)

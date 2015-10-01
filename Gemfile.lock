@@ -6,19 +6,19 @@ GIT
       mongoid (>= 4.0, <= 5.0)
 
 GIT
+  remote: https://github.com/navneet35371/voteable_mongo.git
+  revision: 55fcfe76705ab5da1c9e5670594331b33954c545
+  specs:
+    rs_voteable_mongo (1.0.2)
+      mongoid (>= 3.0, <= 5.0)
+
+GIT
   remote: https://github.com/rack/rack-contrib.git
   revision: 6ff3ca2b2d988911ca52a2712f6a7da5e064aa27
   ref: 6ff3ca2b2d988911ca52a2712f6a7da5e064aa27
   specs:
     rack-contrib (1.2.0)
       rack (>= 0.9.1)
-
-GIT
-  remote: https://github.com/rs-pro/voteable_mongo.git
-  revision: f1947754cb805bb230df2711206eecae19ca2c9f
-  specs:
-    rs_voteable_mongo (1.0.2)
-      mongoid (>= 3.0, < 5.0)
 
 GEM
   remote: https://rubygems.org/
@@ -43,11 +43,12 @@ GEM
     connection_pool (2.2.0)
     dalli (2.1.0)
     database_cleaner (1.2.0)
-    delayed_job (4.0.6)
+    delayed_job (4.1.1)
       activesupport (>= 3.0, < 5.0)
-    delayed_job_mongoid (2.1.0)
+    delayed_job_mongoid (2.2.0)
       delayed_job (>= 3.0, < 5)
-      mongoid (>= 3.0, < 5)
+      mongoid (>= 3.0, < 6)
+      mongoid-compatibility
     diff-lcs (1.1.3)
     domain_name (0.5.24)
       unf (>= 0.0.5, < 1.0.0)
@@ -69,14 +70,17 @@ GEM
     listen (0.5.0)
     method_source (0.8)
     mime-types (2.6.1)
-    minitest (5.8.0)
-    mongo (2.0.6)
+    minitest (5.8.1)
+    mongo (2.1.1)
       bson (~> 3.0)
-    mongoid (4.0.2)
+    mongoid (5.0.0)
       activemodel (~> 4.0)
-      moped (~> 2.0.0)
+      mongo (~> 2.1)
       origin (~> 2.1)
       tzinfo (>= 0.3.37)
+    mongoid-compatibility (0.3.1)
+      activesupport
+      mongoid (>= 2.0)
     mongoid_magic_counter_cache (1.1.1)
       mongoid
       rake
@@ -173,8 +177,8 @@ DEPENDENCIES
   guard
   guard-unicorn
   i18n
-  mongo
-  mongoid (>= 4.0.2)
+  mongo (~> 2.1)
+  mongoid (~> 5.0)
   mongoid-tree!
   mongoid_magic_counter_cache
   moped (= 2.0.5)
