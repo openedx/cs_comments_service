@@ -36,11 +36,10 @@ GEM
       blankslate
     ansi (1.5.0)
     blankslate (2.1.2.4)
-    bson (3.0.4)
+    bson (3.2.4)
     bson_ext (1.5.1)
     builder (3.2.2)
     coderay (1.0.7)
-    connection_pool (2.2.0)
     dalli (2.1.0)
     database_cleaner (1.2.0)
     delayed_job (4.1.1)
@@ -84,18 +83,13 @@ GEM
     mongoid_magic_counter_cache (1.1.1)
       mongoid
       rake
-    moped (2.0.5)
-      bson (~> 3.0.4)
-      connection_pool (~> 2.0)
-      optionable (~> 0.2.0)
     multi_json (1.11.2)
     netrc (0.10.3)
-    newrelic_moped (1.0.0)
-      moped
-      newrelic_rpm (>= 3.7)
+    newrelic_mongodb (0.1.2)
+      mongo (>= 2.1.0.beta, < 3)
+      newrelic_rpm (~> 3.11)
     newrelic_rpm (3.11.2.286)
     nokogiri (1.5.5)
-    optionable (0.2.0)
     origin (2.1.1)
     pry (0.9.10)
       coderay (~> 1.0.5)
@@ -166,6 +160,7 @@ PLATFORMS
 
 DEPENDENCIES
   ampex
+  bson (~> 3.1)
   bson_ext
   bundler
   dalli
@@ -181,8 +176,7 @@ DEPENDENCIES
   mongoid (~> 5.0)
   mongoid-tree!
   mongoid_magic_counter_cache
-  moped (= 2.0.5)
-  newrelic_moped
+  newrelic_mongodb (= 0.1.2)
   newrelic_rpm
   nokogiri
   pry

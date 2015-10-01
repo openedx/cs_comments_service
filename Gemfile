@@ -17,8 +17,8 @@ gem 'yajl-ruby'
 gem 'ampex'
 
 gem 'mongo', '~>2.1'
-gem 'moped', "2.0.5"
 gem 'mongoid', "~>5.0"
+gem 'bson', '~>3.1'
 gem 'bson_ext'
 
 gem 'delayed_job'
@@ -53,7 +53,7 @@ group :test do
 end
 
 gem 'newrelic_rpm'
-gem 'newrelic_moped'
+gem 'newrelic_mongodb', '0.1.2'
 gem 'unicorn'
 gem "rack-timeout", "0.1.0beta3"
 gem "i18n"
