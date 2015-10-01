@@ -159,7 +159,7 @@ namespace :db do
   task :seed_fast => :environment do
     ADDITIONAL_COMMENTS_PER_THREAD = 20
 
-    config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["sessions"]["default"]
+    config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["clients"]["default"]
     connnection = Mongo::Connection.new(config["hosts"][0].split(":")[0], config["hosts"][0].split(":")[1])
     db = Mongo::Connection.new.db(config["database"])
     coll = db.collection("contents")
