@@ -12,14 +12,15 @@ common_uri: &default_uri
   uri: <%= ENV['MONGOHQ_URL'] %>
 
 development:
-  sessions:
+  clients:
     default:
-      <<: *default_session
+      <<: *default_client
       database: cs_comments_service_development
       hosts:
         - localhost:27017
+
 test:
-  sessions:
+  clients:
     default:
       <<: *default_session
       database: cs_comments_service_test
@@ -27,31 +28,31 @@ test:
         - localhost:27017
 
 production:
-  sessions:
+  clients:
     default:
       <<: *default_uri
       <<: *default_session
 
 edgeprod:
-  sessions:
+  clients:
     default:
       <<: *default_uri
       <<: *default_session
 
 edgestage:
-  sessions:
+  clients:
     default:
       <<: *default_uri
       <<: *default_session
 
 staging:
-  sessions:
+  clients:
     default:
       <<: *default_uri
       <<: *default_session
 
 loadtest:
-  sessions:
+  clients:
     default:
       <<: *default_uri
       <<: *default_session
