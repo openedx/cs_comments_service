@@ -14,9 +14,6 @@ gem 'sinatra'
 gem 'yajl-ruby'
 
 
-gem 'ampex'
-
-gem 'mongo', '~>2.1'
 gem 'mongoid', "~>5.0"
 gem 'bson', '~>3.1'
 gem 'bson_ext'
@@ -29,8 +26,6 @@ gem "enumerize"
 gem 'mongoid-tree', :git => 'https://github.com/macdiesel/mongoid-tree'
 gem 'rs_voteable_mongo', :git => 'https://github.com/navneet35371/voteable_mongo.git'
 gem 'mongoid_magic_counter_cache'
-
-# gem 'kaminari', :require => 'kaminari/sinatra'
 
 gem 'faker'
 gem 'will_paginate_mongoid', "~>2.0"
@@ -50,13 +45,15 @@ group :test do
   gem 'guard'
   gem 'guard-unicorn'
   gem 'simplecov', :require => false
-  gem 'database_cleaner'
+  # database_cleaner 1.5.1 which is compatible with Mongoid 5 has not been released
+  # to rubygems yet, so pull it from github.
+  gem 'database_cleaner', :git =>  'https://github.com/DatabaseCleaner/database_cleaner', :ref => 'b87f00320f8aa0f7e499d183128f05ce29cedc33'
 end
 
 gem 'newrelic_rpm'
 gem 'newrelic_mongodb', '0.1.2'
 gem 'unicorn'
-gem "rack-timeout", "0.1.0beta3"
+gem "rack-timeout"
 gem "i18n"
 gem "rack-contrib", :git => 'https://github.com/rack/rack-contrib.git', :ref => '6ff3ca2b2d988911ca52a2712f6a7da5e064aa27'
 
