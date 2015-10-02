@@ -42,9 +42,10 @@ describe "app" do
 
         sleep 3
 
-        comment = Comment.new(body: random_string, course_id: "1", commentable_id: commentable.id)
+        comment = Comment.new(body: random_string, course_id: "1")
         comment.author = author
         comment.comment_thread = thread
+        comment.commentable_id = commentable.id
         comment.save!
 
         sleep 1

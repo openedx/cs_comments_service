@@ -7,38 +7,48 @@ describe "app" do
 
   describe "comments" do
     before(:each) { init_without_subscriptions }
+
     describe "GET /api/v1/comments/:comment_id" do
       it "returns JSON" do
-        comment = Comment.first
-        get "/api/v1/comments/#{comment.id}"
-        last_response.should be_ok
-        last_response.content_type.should == "application/json;charset=utf-8"
+        Comment.each do |comment|
+          get "/api/v1/comments/#{comment.id}"
+          last_response.should be_ok
+          last_response.content_type.should == "application/json;charset=utf-8"
+        end
       end
       it "retrieve information of a single comment" do
-        comment = Comment.first
-        get "/api/v1/comments/#{comment.id}"
-        last_response.should be_ok
-        retrieved = parse last_response.body
-        retrieved["body"].should == comment.body
-        retrieved["endorsed"].should == comment.endorsed
-        retrieved["id"].should == comment.id.to_s
-        retrieved["children"].should be_nil
-        retrieved["votes"]["point"].should == comment.votes_point
-        retrieved["depth"].should == comment.depth
-        retrieved["parent_id"].should == comment.parent_ids[-1]
+        Comment.each do |comment|
+          get "/api/v1/comments/#{comment.id}"
+          last_response.should be_ok
+          retrieved = parse last_response.body
+          retrieved["body"].should == comment.body
+          retrieved["endorsed"].should == comment.endorsed
+          retrieved["id"].should == comment.id.to_s
+          retrieved["children"].should be_nil
+          retrieved["votes"]["point"].should == comment.votes_point
+          retrieved["depth"].should == comment.depth
+          if comment.parent_ids.length > 0
+            retrieved["parent_id"].should == comment.parent_ids[-1].to_s
+          else
+            retrieved["parent_id"].should be_nil
+          end
+        end
       end
       it "retrieve information of a single comment with its sub comments" do
-        comment = Comment.first
-        get "/api/v1/comments/#{comment.id}", recursive: true
-        last_response.should be_ok
-        retrieved = parse last_response.body
-        retrieved["body"].should == comment.body
-        retrieved["endorsed"].should == comment.endorsed
-        retrieved["id"].should == comment.id.to_s
-        retrieved["votes"]["point"].should == comment.votes_point
-        retrieved["children"].length.should == comment.children.length
-        retrieved["children"].select{|c| c["body"] == comment.children.first.body}.first.should_not be_nil
-        retrieved["children"].each{|c| c["parent_id"].should == comment.id.to_s}
+        Comment.each do |comment|
+          get "/api/v1/comments/#{comment.id}", recursive: true
+          last_response.should be_ok
+          retrieved = parse last_response.body
+          retrieved["body"].should == comment.body
+          retrieved["endorsed"].should == comment.endorsed
+          retrieved["id"].should == comment.id.to_s
+          retrieved["votes"]["point"].should == comment.votes_point
+          retrieved["children"].length.should == comment.children.length
+          if comment.children.length > 0
+            retrieved["children"].select{|c| c["body"] == comment.children.first.body}.first.should_not be_nil
+            retrieved["children"].each{|c| c["parent_id"].should == comment.id.to_s}
+          end
+        end
       end
       it "returns 400 when the comment does not exist" do
         get "/api/v1/comments/does_not_exist"
@@ -56,6 +66,7 @@ describe "app" do
 
       include_examples "unicode data"
     end
+
     describe "PUT /api/v1/comments/:comment_id" do
       def test_update_endorsed(true_val, false_val)
         comment = Comment.first
@@ -120,6 +131,7 @@ describe "app" do
 
       include_examples "unicode data"
     end
+
     describe "POST /api/v1/comments/:comment_id" do
       it "create a sub comment to the comment" do
         comment = Comment.first.to_hash(recursive: true)
@@ -155,6 +167,7 @@ describe "app" do
 
       include_examples "unicode data"
     end
+
     describe "DELETE /api/v1/comments/:comment_id" do
       it "delete the comment and its sub comments" do
         comment = Comment.first

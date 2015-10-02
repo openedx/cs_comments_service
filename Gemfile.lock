@@ -1,8 +1,15 @@
 GIT
-  remote: https://github.com/macdiesel/mongoid-tree
-  revision: b6aecc3cb34b6386d8118852538e840875037373
+  remote: https://github.com/DatabaseCleaner/database_cleaner
+  revision: b87f00320f8aa0f7e499d183128f05ce29cedc33
+  ref: b87f00320f8aa0f7e499d183128f05ce29cedc33
   specs:
-    mongoid-tree (1.0.0)
+    database_cleaner (1.5.1)
+
+GIT
+  remote: https://github.com/macdiesel/mongoid-tree
+  revision: b381dd56f1b3b061df8f4b4181d5440dea1602d1
+  specs:
+    mongoid-tree (2.0.0)
       mongoid (>= 4.0, <= 5.0)
 
 GIT
@@ -32,16 +39,11 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
-    ampex (2.0.0)
-      blankslate
     ansi (1.5.0)
-    blankslate (2.1.2.4)
     bson (3.2.4)
-    bson_ext (1.5.1)
     builder (3.2.2)
     coderay (1.0.7)
     dalli (2.1.0)
-    database_cleaner (1.2.0)
     delayed_job (4.1.1)
       activesupport (>= 3.0, < 5.0)
     delayed_job_mongoid (2.2.0)
@@ -65,7 +67,7 @@ GEM
       domain_name (~> 0.5)
     i18n (0.7.0)
     json (1.8.3)
-    kgio (2.7.4)
+    kgio (2.10.0)
     listen (0.5.0)
     method_source (0.8)
     mime-types (2.6.1)
@@ -91,19 +93,21 @@ GEM
     newrelic_rpm (3.11.2.286)
     nokogiri (1.5.5)
     origin (2.1.1)
+    protected_attributes (1.1.3)
+      activemodel (>= 4.0.1, < 5.0)
     pry (0.9.10)
       coderay (~> 1.0.5)
       method_source (~> 0.8)
       slop (~> 3.3.1)
     pry-nav (0.2.2)
       pry (~> 0.9.10)
-    rack (1.4.1)
+    rack (1.6.4)
     rack-protection (1.2.0)
       rack
-    rack-test (0.6.1)
+    rack-test (0.6.3)
       rack (>= 1.0)
-    rack-timeout (0.1.0beta3)
-    raindrops (0.10.0)
+    rack-timeout (0.3.2)
+    raindrops (0.15.0)
     rake (10.4.2)
     rdiscount (1.6.8)
     rest-client (1.8.0)
@@ -145,7 +149,7 @@ GEM
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.1)
-    unicorn (4.3.1)
+    unicorn (4.9.0)
       kgio (~> 2.6)
       rack
       raindrops (~> 0.7)
@@ -153,18 +157,15 @@ GEM
     will_paginate_mongoid (2.0.1)
       mongoid
       will_paginate (~> 3.0)
-    yajl-ruby (1.1.0)
+    yajl-ruby (1.2.1)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  ampex
-  bson (~> 3.1)
-  bson_ext
   bundler
   dalli
-  database_cleaner
+  database_cleaner!
   delayed_job
   delayed_job_mongoid
   enumerize
@@ -172,18 +173,18 @@ DEPENDENCIES
   guard
   guard-unicorn
   i18n
-  mongo (~> 2.1)
   mongoid (~> 5.0)
   mongoid-tree!
   mongoid_magic_counter_cache
   newrelic_mongodb (= 0.1.2)
   newrelic_rpm
   nokogiri
+  protected_attributes
   pry
   pry-nav
   rack-contrib!
   rack-test
-  rack-timeout (= 0.1.0beta3)
+  rack-timeout
   rake
   rdiscount
   rest-client

@@ -5,7 +5,8 @@ class Comment < Content
   include Mongoid::Tree
   include Mongoid::Timestamps
   include Mongoid::MagicCounterCache
-  
+  include ActiveModel::MassAssignmentSecurity
+
   voteable self, :up => +1, :down => -1
 
   field :course_id, type: String
@@ -49,9 +50,7 @@ class Comment < Content
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: "User", index: true
 
-  # TODO: Pull in protected_attributes gem to fix this functionality:
-  # https://stackoverflow.com/questions/17135974/mongoid-w-rails-attr-accessible-no-method-found
-  #attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement
+  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement
 
   validates_presence_of :comment_thread, autosave: false
   validates_presence_of :body
@@ -159,7 +158,8 @@ class Comment < Content
 private
 
   def set_thread_last_activity_at
-    self.comment_thread.update_attributes!(last_activity_at: Time.now.utc)
+    self.comment_thread.last_activity_at = Time.now.utc
+    self.comment_thread.save!
   end
 
 end

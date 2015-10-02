@@ -15,6 +15,9 @@ set :run, false
 set :raise_errors, true
 set :logging, false
 
+Mongoid.logger.level = Logger::WARN
+Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Logger::WARN
+
 Delayed::Worker.delay_jobs = false
 
 def app
@@ -72,12 +75,6 @@ def create_test_user(id)
 end
 
 def init_without_subscriptions
-
-  [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
-  Content.mongo_session[:blocked_hash].drop
-  delete_es_index
-  create_es_index
-  
   commentable = Commentable.new("question_1")
 
   users = (1..10).map{|id| create_test_user(id)}
@@ -157,19 +154,14 @@ def init_without_subscriptions
     users[2,9].each {|user| user.vote(c, [:up, :down].sample)}
   end
 
-  Content.mongo_session[:blocked_hash].insert(hash: Digest::MD5.hexdigest("blocked post"))
+  Content.mongo_client[:blocked_hash].insert_one(hash: Digest::MD5.hexdigest("blocked post"))
   # reload the global holding the blocked hashes
-  CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).map {|d|
+  CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(nil, projection: {hash: 1}).map do |d|
       d["hash"]
-  }
+  end
 end
 
 def init_with_subscriptions
-  [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:delete_all).each(&:remove_indexes).each(&:create_indexes)
-
-  delete_es_index
-  create_es_index
-
   user1 = create_test_user(1)
   user2 = create_test_user(2)
 

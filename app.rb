@@ -38,6 +38,7 @@ Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Log
 # set up i18n
 I18n.load_path += Dir[File.join(File.dirname(__FILE__), 'locale', '*.yml').to_s]
 I18n.default_locale = CommentService.config[:default_locale]
+I18n.enforce_available_locales = false
 I18n::Backend::Simple.send(:include, I18n::Backend::Fallbacks)
 use Rack::Locale
 
@@ -72,20 +73,6 @@ end
 
 before do
   content_type "application/json"
-end
-
-if ENV["ENABLE_IDMAP_LOGGING"]
-
-  after do
-    vals = {
-      "pid" => Process.pid,
-      "dyno" => ENV["DYNO"],
-      "request_id" => params[:request_id]
-    }
-    idmap.each {|k, v| vals["idmap_count_#{k.to_s}"] = v.size }
-    logger.info vals.map{|e| e.join("=") }.join(" ")
-  end
-
 end
 
 # use yajl implementation for to_json.
@@ -152,7 +139,7 @@ error ArgumentError do
   error 400, [env['sinatra.error'].message].to_json
 end
 
-CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(hash: 1).map {|d| d["hash"]}
+CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(nil, projection: {hash: 1}).map {|d| d["hash"]}
 
 def get_db_is_master
   Mongoid::Clients.default.command(isMaster: 1)
@@ -168,7 +155,7 @@ get '/heartbeat' do
   db_ok = false
   begin
     res = get_db_is_master
-    db_ok = ( res["ismaster"] == true and Integer(res["ok"]) == 1 )
+    db_ok = res.ok? && res.documents.first['ismaster'] == true
   rescue
   end
   error 500, JSON.generate({"OK" => false, "check" => "db"}) unless db_ok

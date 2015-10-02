@@ -14,10 +14,9 @@ describe "app" do
       # Returns the created CommentThread.
 
       commentable = Commentable.new("question_1")
-      random_string = (0...8).map{ ('a'..'z').to_a[rand(26)] }.join
       thread = CommentThread.new(
         title: "Test title", body: "elephant otter", course_id: "1",
-        commentable_id: commentable.id, comments_text_dummy: random_string
+        commentable_id: commentable.id
       )
       thread.thread_type = :discussion
       thread.author = user
@@ -94,8 +93,9 @@ describe "app" do
 
         subscription = Subscription.create({:subscriber_id => user._id.to_s, :source_id => thread._id.to_s})
 
-        comment = Comment.new(body: "dummy body text", course_id: "1", commentable_id: commentable.id)
+        comment = Comment.new(body: "dummy body text", course_id: "1")
         comment.author = user
+        comment.commentable_id = commentable.id
         comment.comment_thread = thread
         comment.save!
 
