@@ -49,7 +49,6 @@ group :test do
 end
 
 gem 'newrelic_rpm'
-gem 'newrelic_mongodb', '0.1.2'
 gem 'unicorn'
 gem "rack-timeout"
 gem "i18n"
