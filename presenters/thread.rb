@@ -71,12 +71,13 @@ class ThreadPresenter
   #   response_count
   #     The total number of responses
   def get_paged_merged_responses(thread_id, responses, skip, limit)
-    response_ids = responses.only(:_id).sort({"sk" => 1}).to_a.map{|doc| doc["_id"]}
-    paged_response_ids = limit.nil? ? response_ids.drop(skip) : response_ids.drop(skip).take(limit)
+    responses = responses.only(:_id).sort({"sk" => 1}).limit(limit).skip(skip)
+    paged_response_ids = responses.to_a.map{|doc| doc["_id"]}
+    response_count = responses.limit(nil).skip(nil).count()
     content = Comment.where(comment_thread_id: thread_id).
       or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
       sort({"sk" => 1})
-    {"responses" => merge_response_content(content), "response_count" => response_ids.length}
+    {"responses" => merge_response_content(content), "response_count" => response_count}
   end
 
   # Takes content output from Mongoid in a depth-first traversal order and
