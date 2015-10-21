@@ -47,6 +47,8 @@ post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   else
     user.subscribe(thread) if bool_auto_subscribe
     presenter = ThreadPresenter.factory(thread, nil)
-    presenter.to_hash.to_json
+    thread = presenter.to_hash
+    thread["resp_total"] = 0
+    thread.to_json
   end
 end

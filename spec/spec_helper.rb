@@ -341,6 +341,9 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
   hash["non_endorsed_responses"].each_with_index do |response_hash, i|
     check_comment(expected_non_endorsed_responses[i], response_hash, is_json)
   end
+  total_responses = endorsed_responses.length + non_endorsed_responses.length
+  hash["resp_total"].should == total_responses
+
   hash["resp_skip"].to_i.should == resp_skip
   if resp_limit.nil?
     hash["resp_limit"].should be_nil
