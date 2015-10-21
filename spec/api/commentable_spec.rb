@@ -102,6 +102,7 @@ describe "app" do
         result["read"].should == false
         result["unread_comments_count"].should == 0
         result["endorsed"].should == false
+        result["resp_total"].should == 0
         CommentThread.count.should == old_count + 1
         thread = CommentThread.where(title: "Interesting question").first
         thread.should_not be_nil
