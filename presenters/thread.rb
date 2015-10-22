@@ -73,7 +73,7 @@ class ThreadPresenter
   def get_paged_merged_responses(thread_id, responses, skip, limit)
     responses = responses.only(:_id).sort({"sk" => 1}).limit(limit).skip(skip)
     paged_response_ids = responses.to_a.map{|doc| doc["_id"]}
-    response_count = responses.limit(nil).skip(nil).count()
+#    response_count = responses.limit(nil).skip(nil).count()
     content = Comment.where(comment_thread_id: thread_id).
       or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
       sort({"sk" => 1})
