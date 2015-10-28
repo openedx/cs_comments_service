@@ -51,6 +51,7 @@ class ThreadPresenter
           h["endorsed_responses"] = endorsed_response_info["responses"]
           h["non_endorsed_responses"] = non_endorsed_response_info["responses"]
           h["non_endorsed_resp_total"] = non_endorsed_response_info["response_count"]
+          h["resp_total"] = non_endorsed_response_info["response_count"] + endorsed_response_info["response_count"]
         when "discussion"
           response_info = get_paged_merged_responses(@thread._id, responses, resp_skip, resp_limit)
           h["children"] = response_info["responses"]
