@@ -544,28 +544,28 @@ describe "app" do
         it "returns all responses when no skip/limit params given" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {}
-            check_thread_response_paging_json thread, res
+            check_thread_response_paging_json thread, res, 0, nil, false
           end 
         end
 
         it "skips the specified number of responses" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {:resp_skip => 1}
-            check_thread_response_paging_json thread, res, 1, nil
+            check_thread_response_paging_json thread, res, 1, nil, false
           end 
         end
 
         it "limits the specified number of responses" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {:resp_limit => 2}
-            check_thread_response_paging_json thread, res, 0, 2
+            check_thread_response_paging_json thread, res, 0, 2, false
           end 
         end
 
         it "skips and limits responses" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {:resp_skip => 3, :resp_limit => 5}
-            check_thread_response_paging_json thread, res, 3, 5
+            check_thread_response_paging_json thread, res, 3, 5, false
           end 
         end
 

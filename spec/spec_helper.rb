@@ -282,30 +282,33 @@ def check_thread_result_json(user, thread, json_response)
   check_thread_result(user, thread, json_response, true)
 end
 
-def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false)
+def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
   case thread.thread_type
   when "discussion"
-    check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json)
+    check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive)
   when "question"
-    check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json)
+    check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive)
   end
 end
 
-def check_comment(comment, hash, is_json)
+def check_comment(comment, hash, is_json, recursive=false)
   hash["id"].should == (is_json ? comment.id.to_s : comment.id) # Convert from ObjectId if necessary
   hash["body"].should == comment.body
   hash["user_id"].should == comment.author_id
   hash["username"].should == comment.author_username
   hash["endorsed"].should == comment.endorsed
   hash["endorsement"].should == comment.endorsement
-  children = Comment.where({"parent_id" => comment.id}).sort({"sk" => 1}).to_a
-  hash["children"].length.should == children.length
-  hash["children"].each_with_index do |child_hash, i|
-    check_comment(children[i], child_hash, is_json)
+  if recursive
+    children = Comment.where({"parent_id" => comment.id}).sort({"sk" => 1}).to_a
+    hash["children"].length.should == children.length
+    hash["children"].each_with_index do |child_hash, i|
+      check_comment(children[i], child_hash, is_json)
+    end
   end
 end
 
-def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false)
+
+def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
   all_responses = thread.root_comments.sort({"sk" => 1}).to_a
   total_responses = all_responses.length
   hash["resp_total"].should == total_responses
@@ -313,8 +316,9 @@ def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, 
     all_responses.drop(resp_skip) :
     all_responses.drop(resp_skip).take(resp_limit)
   hash["children"].length.should == expected_responses.length
+
   hash["children"].each_with_index do |response_hash, i|
-    check_comment(expected_responses[i], response_hash, is_json)
+    check_comment(expected_responses[i], response_hash, is_json, recursive)
   end
   hash["resp_skip"].to_i.should == resp_skip
   if resp_limit.nil?
@@ -324,13 +328,13 @@ def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, 
   end
 end
 
-def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false)
+def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
   all_responses = thread.root_comments.sort({"sk" => 1}).to_a
   endorsed_responses, non_endorsed_responses = all_responses.partition { |resp| resp.endorsed }
 
   hash["endorsed_responses"].length.should == endorsed_responses.length
   hash["endorsed_responses"].each_with_index do |response_hash, i|
-    check_comment(endorsed_responses[i], response_hash, is_json)
+    check_comment(endorsed_responses[i], response_hash, is_json, recursive)
   end
 
   hash["non_endorsed_resp_total"] == non_endorsed_responses.length
@@ -339,7 +343,7 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
     non_endorsed_responses.drop(resp_skip).take(resp_limit)
   hash["non_endorsed_responses"].length.should == expected_non_endorsed_responses.length
   hash["non_endorsed_responses"].each_with_index do |response_hash, i|
-    check_comment(expected_non_endorsed_responses[i], response_hash, is_json)
+    check_comment(expected_non_endorsed_responses[i], response_hash, is_json, recursive)
   end
   total_responses = endorsed_responses.length + non_endorsed_responses.length
   hash["resp_total"].should == total_responses
@@ -352,8 +356,8 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
   end
 end
 
-def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil)
-  check_thread_response_paging(thread, hash, resp_skip, resp_limit, true)
+def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil, recursive=false)
+  check_thread_response_paging(thread, hash, resp_skip, resp_limit, true, recursive)
 end
 
 # general purpose factory helpers

@@ -47,7 +47,7 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   else
     resp_limit = nil
   end
-  presenter.to_hash(true, resp_skip, resp_limit).to_json
+  presenter.to_hash(true, resp_skip, resp_limit, bool_recursive).to_json
 end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
