@@ -274,6 +274,12 @@ def check_thread_result_json(user, thread, json_response)
   check_thread_result(user, thread, json_response, true)
 end
 
+def check_unread_thread_result_json(thread, json_response)
+  # when thread is unread we do not check if thread matches the user read states data
+  # and explicitly asserts `read` to false; hence pass user=nil
+  check_thread_result(nil, thread, json_response, true)
+end
+
 def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
   case thread.thread_type
   when "discussion"
