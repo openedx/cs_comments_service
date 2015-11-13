@@ -54,10 +54,15 @@ put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   filter_blocked_content params["body"]
   thread.update_attributes(params.slice(*%w[title body pinned closed commentable_id group_id thread_type]))
 
+  if params["user_id"] and value_to_boolean(params["read"])
+    user = User.only([:id, :username, :read_states]).find_by(external_id: params["user_id"])
+    user.mark_as_read(thread) if user
+  end
+
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
   else
-    presenter = ThreadPresenter.factory(thread, nil)
+    presenter = ThreadPresenter.factory(thread, user || nil)
     presenter.to_hash.to_json
   end
 end
