@@ -576,7 +576,7 @@ describe "app" do
 
       before(:each) { init_without_subscriptions }
       
-      it "update information of comment thread" do
+      it "update information of comment thread and don't mark thread as read" do
         thread = CommentThread.first
         comment = thread.comments.first
         comment.endorsed = true
@@ -592,7 +592,22 @@ describe "app" do
         comment.reload
         comment.endorsed.should == false
         comment.endorsement.should == nil
-        check_thread_result_json(nil, changed_thread, parse(last_response.body))
+        check_unread_thread_result_json(changed_thread, parse(last_response.body))
+      end
+      it "update information of comment thread and mark thread as read" do
+        thread = CommentThread.first
+        user = create_test_user(42)
+        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question", read: true, user_id: user.id
+        last_response.should be_ok
+        changed_thread = CommentThread.find(thread.id)
+        changed_thread.body.should == "new body"
+        changed_thread.title.should == "new title"
+        changed_thread.commentable_id.should == "new_commentable_id"
+        changed_thread.thread_type.should == "question"
+        user = User.find_by(external_id: user.id)
+        json_response = parse(last_response.body)
+        check_thread_result_json(user, changed_thread, json_response)
+        json_response["read"].should == true
       end
       it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
