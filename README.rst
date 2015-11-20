@@ -41,7 +41,12 @@ all edX projects into this directory.
 
 DOCKER_DATA_ROOT=/var/docker DOCKER_EDX_ROOT=/home/me/git/edx ~/bin/docker-compose --x-networking up
 
+Shell into the running container and provision the seed data
 
+docker exec -ti $(docker ps --filter="name=forums" -q) /bin/bash
+source /edx/app/forum/forum_env
+cd /edx/app/forum/cs_comments_service/
+rake db:seed
 
 Running Tests
 ----
