@@ -26,6 +26,23 @@ service management on your behalf.
 __ https://github.com/edx/edx-platform
 __ https://github.com/edx/configuration/wiki/edX-Developer-Stack
 
+Runing with Docker Compose
+----
+Need docker > 1.9 
+Need docker-compose > 1.5.1
+
+sudo docker daemon --dns 8.8.8.8
+
+DOCKER_DATA_ROOT is the directory that stores data for persistence services like MySQL or MongoDB.  The
+data will survive container restarts and allow continuity during development.
+
+DOCKER_EDX_ROOT is the directory into which you checkout edX source code.  We recommend that you checkout
+all edX projects into this directory.
+
+DOCKER_DATA_ROOT=/var/docker DOCKER_EDX_ROOT=/home/me/git/edx ~/bin/docker-compose --x-networking up
+
+
+
 Running Tests
 ----
 To run tests, do ``bundle exec rspec``.  Append ``--help`` or see rspec documentation
