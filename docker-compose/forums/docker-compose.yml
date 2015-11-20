@@ -10,9 +10,18 @@ es:
   volumes:
     - ${DOCKER_DATA_ROOT}/elasticsearch/data:/es-data
 
+
+# db.createUser(
+#    {
+#      user: "cs_comments_service",
+#      pwd: "password",
+#      roles: [ "readWrite", "dbAdmin" ]
+#    }
+# )
+  
 forums:
   container_name: forums
-  image: edxops/forums:opencraft
+  image: edxops/forums:opencraft-v2
   ports:
     - 4567:4567
   volumes:
