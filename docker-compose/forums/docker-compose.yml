@@ -15,6 +15,8 @@ forums:
   image: edxops/forums:opencraft
   ports:
     - 4567:4567
+  volumes:
+    - ${DOCKER_EDX_ROOT}/cs_comments_service:/edx/app/forum/cs_comments_service
 
 #
 # TODO
