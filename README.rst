@@ -41,12 +41,34 @@ all edX projects into this directory.
 
 ``DOCKER_DATA_ROOT=/var/docker DOCKER_EDX_ROOT=/home/me/git/edx ~/bin/docker-compose --x-networking up``
 
+Ensure that the MongoDB user has been created on the MongoDB container.  This will be automated
+
+```
+docker exec -ti $(docker ps --filter="name=mongo" -q) /bin/bash
+mongo
+use cs_comments_service
+db.createUser(
+   {
+     user: "cs_comments_service",
+     pwd: "password",
+     roles: [ "readWrite", "dbAdmin" ]
+   }
+)
+quit()
+
+```
+
 Shell into the running container and provision the seed data
 
-``docker exec -ti $(docker ps --filter="name=forums" -q) /bin/bash``
-``source /edx/app/forum/forum_env``
-``cd /edx/app/forum/cs_comments_service/``
-``rake db:seed``
+```
+docker exec -ti $(docker ps --filter="name=forums" -q) /bin/bash
+source /edx/app/forum/forum_env
+cd /edx/app/forum/cs_comments_service/
+bundle install
+bundle exec rake db:seed
+/edx/app/supervisor/venvs/supervisor/bin/supervisorctl -c /edx/app/supervisor/supervisord.conf start forum
+
+```
 
 From the host verify that the service is functional
 
