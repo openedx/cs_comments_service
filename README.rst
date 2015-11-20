@@ -39,14 +39,18 @@ data will survive container restarts and allow continuity during development.
 DOCKER_EDX_ROOT is the directory into which you checkout edX source code.  We recommend that you checkout
 all edX projects into this directory.
 
-DOCKER_DATA_ROOT=/var/docker DOCKER_EDX_ROOT=/home/me/git/edx ~/bin/docker-compose --x-networking up
+``DOCKER_DATA_ROOT=/var/docker DOCKER_EDX_ROOT=/home/me/git/edx ~/bin/docker-compose --x-networking up``
 
 Shell into the running container and provision the seed data
 
-docker exec -ti $(docker ps --filter="name=forums" -q) /bin/bash
-source /edx/app/forum/forum_env
-cd /edx/app/forum/cs_comments_service/
-rake db:seed
+``docker exec -ti $(docker ps --filter="name=forums" -q) /bin/bash``
+``source /edx/app/forum/forum_env``
+``cd /edx/app/forum/cs_comments_service/``
+``rake db:seed``
+
+From the host verify that the service is functional
+
+``curl -X GET 'http://localhost:4567/api/v1/users/1?api_key=password&complete=True' | python -mjson.tool``
 
 Running Tests
 ----
