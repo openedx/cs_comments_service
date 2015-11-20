@@ -9,15 +9,6 @@ es:
   image: edxops/elasticsearch:v1
   volumes:
     - ${DOCKER_DATA_ROOT}/elasticsearch/data:/es-data
-
-
-# db.createUser(
-#    {
-#      user: "cs_comments_service",
-#      pwd: "password",
-#      roles: [ "readWrite", "dbAdmin" ]
-#    }
-# )
   
 forums:
   container_name: forums
@@ -32,5 +23,3 @@ forums:
 #
 #nginx:
 #  build: ../build/nginx
-
-
