@@ -5,10 +5,10 @@ module ThreadUtils
     # only threads which are endorsed will have entries, value will always be true.
     endorsed_threads = {}
     thread_ids = threads.collect {|t| t._id}
-    Comment.collection.aggregate(
+    Comment.collection.aggregate([
       {"$match" => {"comment_thread_id" => {"$in" => thread_ids}, "endorsed" => true}},
       {"$group" => {"_id" => "$comment_thread_id"}}
-    ).each do |res| 
+    ]).each do |res|
       endorsed_threads[res["_id"].to_s] = true
     end
     endorsed_threads
@@ -26,7 +26,7 @@ module ThreadUtils
           thread_key = t._id.to_s
           if read_dates.has_key? thread_key
             is_read = read_dates[thread_key] >= t.updated_at
-            unread_comment_count = Comment.collection.where(
+            unread_comment_count = Comment.collection.find(
               :comment_thread_id => t._id,
               :author_id => {"$ne" => user.id},
               :updated_at => {"$gte" => read_dates[thread_key]}

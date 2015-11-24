@@ -455,6 +455,8 @@ describe "app" do
         last_response.should be_ok
         response_thread = parse last_response.body
         response_thread["endorsed"].should == true
+        # re-request the thread from the database before checking it.
+        thread = CommentThread.find(thread.id)
         check_thread_result_json(nil, thread, response_thread)
       end
 
@@ -463,16 +465,11 @@ describe "app" do
       # regression in which we used User.only(:id, :read_states). This worked
       # before we included the identity map, but afterwards, the user was
       # missing the username and was not refetched.
+      # BBEGGS - Note 8/4/2015: Identify map has been removed during the mongoid 4.x upgrade.
+      # Should no longer be an issue.
       it "includes the username even if the thread is being marked as read for the thread author" do
         thread = CommentThread.first
         expected_username = thread.author.username
-
-        # We need to clear the IdentityMap after getting the expected data to
-        # ensure that this spec fails when it should. If we don't do this, then
-        # in the cases where the User is fetched without its username, the spec
-        # won't fail because the User will already be in the identity map. 
-        Mongoid::IdentityMap.clear
-
         get "/api/v1/threads/#{thread.id}", {:user_id => thread.author_id, :mark_as_read => true}
         last_response.should be_ok
         response_thread = parse last_response.body
@@ -631,6 +628,7 @@ describe "app" do
         thread = CommentThread.first
         put "/api/v1/threads/#{thread.id}", body: text, title: text
         last_response.should be_ok
+        thread = CommentThread.find(thread.id)
         thread.body.should == text
         thread.title.should == text
       end

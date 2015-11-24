@@ -26,6 +26,54 @@ service management on your behalf.
 __ https://github.com/edx/edx-platform
 __ https://github.com/edx/configuration/wiki/edX-Developer-Stack
 
+Runing with Docker Compose
+----
+Need docker > 1.9 
+Need docker-compose > 1.5.1
+
+sudo docker daemon --dns 8.8.8.8
+
+DOCKER_DATA_ROOT is the directory that stores data for persistence services like MySQL or MongoDB.  The
+data will survive container restarts and allow continuity during development.
+
+DOCKER_EDX_ROOT is the directory into which you checkout edX source code.  We recommend that you checkout
+all edX projects into this directory.
+
+``DOCKER_DATA_ROOT=/var/docker DOCKER_EDX_ROOT=/home/me/git/edx ~/bin/docker-compose --x-networking up``
+
+Ensure that the MongoDB user has been created on the MongoDB container.  This will be automated
+
+```
+docker exec -ti $(docker ps --filter="name=mongo" -q) /bin/bash
+mongo
+use cs_comments_service
+db.createUser(
+   {
+     user: "cs_comments_service",
+     pwd: "password",
+     roles: [ "readWrite", "dbAdmin" ]
+   }
+)
+quit()
+
+```
+
+Shell into the running container and provision the seed data
+
+```
+docker exec -ti $(docker ps --filter="name=forums" -q) /bin/bash
+source /edx/app/forum/forum_env
+cd /edx/app/forum/cs_comments_service/
+bundle install
+bundle exec rake db:seed
+/edx/app/supervisor/venvs/supervisor/bin/supervisorctl -c /edx/app/supervisor/supervisord.conf start forum
+
+```
+
+From the host verify that the service is functional
+
+``curl -X GET 'http://localhost:4567/api/v1/users/1?api_key=password&complete=True' | python -mjson.tool``
+
 Running Tests
 ----
 To run tests, do ``bundle exec rspec``.  Append ``--help`` or see rspec documentation

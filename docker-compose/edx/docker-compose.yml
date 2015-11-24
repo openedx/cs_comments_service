@@ -1,0 +1,25 @@
+mongo:
+  container_name: mongo
+  image: edxops/mongo:v2
+  volumes: 
+    - ${DOCKER_DATA_ROOT}/mongo/data:/data
+
+es:
+  container_name: es
+  image: edxops/elasticsearch:v1
+  volumes:
+    - ${DOCKER_DATA_ROOT}/elasticsearch/data:/es-data
+  
+forums:
+  container_name: forums
+  image: edxops/forums:opencraft-v2
+  ports:
+    - 4567:4567
+  volumes:
+    - ${DOCKER_EDX_ROOT}/cs_comments_service:/edx/app/forum/cs_comments_service
+
+#
+# TODO
+#
+#nginx:
+#  build: ../build/nginx

@@ -159,7 +159,7 @@ namespace :db do
   task :seed_fast => :environment do
     ADDITIONAL_COMMENTS_PER_THREAD = 20
 
-    config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["sessions"]["default"]
+    config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["clients"]["default"]
     connnection = Mongo::Connection.new(config["hosts"][0].split(":")[0], config["hosts"][0].split(":")[1])
     db = Mongo::Connection.new.db(config["database"])
     coll = db.collection("contents")
@@ -248,7 +248,6 @@ namespace :search do
   end
 
   def import_from_cursor(cursor, index, opts)
-    Mongoid.identity_map_enabled = true
     tot = cursor.count
     cnt = 0
     t = Time.now
@@ -259,7 +258,6 @@ namespace :search do
         LOG.info "#{index.name}: imported #{cnt} of #{tot} (#{pct_complete}% complete after #{elapsed_secs} seconds)"
       end
       cnt += documents.length
-      Mongoid::IdentityMap.clear
       sleep opts[:sleep_time]
       documents
     end

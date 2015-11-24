@@ -5,7 +5,8 @@ class Comment < Content
   include Mongoid::Tree
   include Mongoid::Timestamps
   include Mongoid::MagicCounterCache
-  
+  include ActiveModel::MassAssignmentSecurity
+
   voteable self, :up => +1, :down => -1
 
   field :course_id, type: String
@@ -14,6 +15,7 @@ class Comment < Content
   field :endorsement, type: Hash
   field :anonymous, type: Boolean, default: false
   field :anonymous_to_peers, type: Boolean, default: false
+  field :commentable_id, type: String
   field :at_position_list, type: Array, default: []
 
   index({author_id: 1, course_id: 1})
@@ -101,10 +103,10 @@ class Comment < Content
                  .merge("user_id" => author_id)
                  .merge("username" => author_username) 
                  .merge("depth" => depth)
-                 .merge("closed" => comment_thread.nil? ? false : comment_thread.closed) # ditto
+                 .merge("closed" => comment_thread.nil? ? false : comment_thread.closed)
                  .merge("thread_id" => comment_thread_id)
                  .merge("parent_id" => parent_ids[-1])
-                 .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id) # ditto
+                 .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id)
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                  .merge("abuse_flaggers" => abuse_flaggers)
                  .merge("type" => "comment")
@@ -156,7 +158,8 @@ class Comment < Content
 private
 
   def set_thread_last_activity_at
-    self.comment_thread.update_attributes!(last_activity_at: Time.now.utc)
+    self.comment_thread.last_activity_at = Time.now.utc
+    self.comment_thread.save!
   end
 
 end

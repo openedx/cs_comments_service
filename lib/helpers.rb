@@ -190,24 +190,21 @@ helpers do
         to_skip = (page - 1) * per_page
         has_more = false
         # batch_size is used to cap the number of documents we might load into memory at any given time
-        # TODO: starting with Mongoid 3.1, you can just do comment_threads.batch_size(size).each()
-        comment_threads.query.batch_size(CommentService.config["manual_pagination_batch_size"].to_i)
-        Mongoid.unit_of_work(disable: :current) do # this is to prevent Mongoid from memoizing every document we look at
-          comment_threads.each do |thread|
-            thread_key = thread._id.to_s
-            if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
-              if skipped >= to_skip
-                if threads.length == per_page
-                  has_more = true
-                  break
-                end
-                threads << thread
-              else
-                skipped += 1
+        comment_threads.batch_size(CommentService.config["manual_pagination_batch_size"].to_i).each do |thread|
+         thread_key = thread._id.to_s
+          if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
+            if skipped >= to_skip
+              if threads.length == per_page
+                has_more = true
+                break
               end
+              threads << thread
+            else
+              skipped += 1
             end
           end
         end
+
         # The following trick makes frontend pagers work without recalculating
         # the number of all unread threads per user on every request (since the number
         # of threads in a course could be tens or hundreds of thousands).  It has the 
@@ -219,7 +216,7 @@ helpers do
         # let the installed paginator library handle pagination
         num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
         page = [1, page].max
-        threads = comment_threads.page(page).per(per_page).to_a
+        threads = comment_threads.paginate(:page => page, :per_page => per_page).to_a
       end
       
       if threads.length == 0
@@ -368,7 +365,7 @@ helpers do
     rescue
       # body was nil, or the hash function failed somehow - never mind
       return
-    end  
+    end
     if CommentService.blocked_hashes.include? hash then
       msg = t(:blocked_content_with_body_hash, :hash => hash) 
       logger.warn msg

@@ -5,6 +5,8 @@ require_relative 'content'
 class CommentThread < Content
 
   include Mongoid::Timestamps
+  include Mongoid::Attributes::Dynamic
+  include ActiveModel::MassAssignmentSecurity
   extend Enumerize
 
   voteable self, :up => +1, :down => -1
@@ -154,8 +156,8 @@ private
       # the last activity time on the thread. Therefore the callbacks would be mutually recursive and we end up with a
       # 'SystemStackError'. The 'set' method skips callbacks and therefore bypasses this issue.
       self.comments.each do |comment|
-        comment.set :endorsed, false
-        comment.set :endorsement, nil
+        comment.set(endorsed: false)
+        comment.set(endorsement: nil)
       end
     end
   end
