@@ -498,6 +498,18 @@ describe "app" do
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
 
+      it "marks thread as read and confirms its value on returned response" do
+        user = create_test_user(123)
+        thread = CommentThread.first
+        user.mark_as_read(thread)
+        get "/api/v1/threads/#{thread.id}", user_id: user.id
+        last_response.should be_ok
+        json_response = parse(last_response.body)
+        changed_thread = CommentThread.find(thread.id)
+        check_thread_result_json(user, changed_thread, json_response)
+        json_response["read"].should == true
+      end
+
       def test_unicode_data(text)
         thread = make_thread(User.first, text, "unicode_course", "unicode_commentable")
         make_comment(User.first, thread, text)

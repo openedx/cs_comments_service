@@ -27,9 +27,12 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
     error 404, [t(:requested_object_not_found)].to_json
   end
 
-  if params["user_id"] and bool_mark_as_read
+  # user is required to return user-specific fields, such as "read" (even if bool_mark_as_read is False)
+  if params["user_id"]
     user = User.only([:id, :username, :read_states]).find_by(external_id: params["user_id"])
-    user.mark_as_read(thread) if user
+  end
+  if user and bool_mark_as_read
+    user.mark_as_read(thread)
   end
 
   presenter = ThreadPresenter.factory(thread, user || nil)
