@@ -20,14 +20,15 @@ gem 'mongo'
 gem 'moped', "2.0.5"
 gem 'mongoid', ">=4.0.2"
 gem 'bson_ext'
+gem 'protected_attributes'
 
 gem 'delayed_job'
-gem 'delayed_job_mongoid'#, :git => 'https://github.com/dementrock/delayed_job_mongoid.git', :tag => 'v1.0.8'
+gem 'delayed_job_mongoid'
 
-gem "enumerize"#, "~>0.8.0"
+gem "enumerize"
 gem 'mongoid-tree', :git => 'https://github.com/macdiesel/mongoid-tree'
 gem 'rs_voteable_mongo', :git => 'https://github.com/rs-pro/voteable_mongo.git'
-gem 'mongoid_magic_counter_cache' #, :git => 'https://github.com/dementrock/mongoid-magic-counter-cache.git'
+gem 'mongoid_magic_counter_cache'
 
 # gem 'kaminari', :require => 'kaminari/sinatra'
 
@@ -58,3 +59,4 @@ gem 'unicorn'
 gem "rack-timeout", "0.1.0beta3"
 gem "i18n"
 gem "rack-contrib", :git => 'https://github.com/rack/rack-contrib.git', :ref => '6ff3ca2b2d988911ca52a2712f6a7da5e064aa27'
+

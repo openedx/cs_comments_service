@@ -130,7 +130,6 @@ module BSON
   end
 end
 
-
 # Patch json serialization of Time Objects
 class Time
   # Returns a hash, that will be turned into a JSON object and represent this
