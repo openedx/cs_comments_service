@@ -265,7 +265,7 @@ def check_thread_result(user, thread, hash, is_json=false)
       read_date = read_states.first.last_read_times[thread.id.to_s]
       if read_date
         thread.comments.each do |c|
-          if c.author != user and c.updated_at < read_date
+          if c.updated_at < read_date
             expected_unread_cnt -= 1
           end
         end
