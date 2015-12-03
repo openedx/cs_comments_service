@@ -606,10 +606,24 @@ describe "app" do
         comment.endorsement.should == nil
         check_unread_thread_result_json(changed_thread, parse(last_response.body))
       end
-      it "update information of comment thread and mark thread as read" do
+      it "update information of comment thread and mark thread as read for owner user" do
+        thread = CommentThread.first
+        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question", read: true, requested_user_id: thread.author.id
+        last_response.should be_ok
+        changed_thread = CommentThread.find(thread.id)
+        changed_thread.body.should == "new body"
+        changed_thread.title.should == "new title"
+        changed_thread.commentable_id.should == "new_commentable_id"
+        changed_thread.thread_type.should == "question"
+        user = User.find_by(external_id: thread.author.id)
+        json_response = parse(last_response.body)
+        check_thread_result_json(user, changed_thread, json_response)
+        json_response["read"].should == true
+      end
+      it "update information of comment thread and mark thread as read for non-owner user" do
         thread = CommentThread.first
         user = create_test_user(42)
-        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question", read: true, user_id: user.id
+        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question", read: true, requested_user_id: user.id
         last_response.should be_ok
         changed_thread = CommentThread.find(thread.id)
         changed_thread.body.should == "new body"
