@@ -142,6 +142,8 @@ helpers do
       comment_threads = context_threads
     end
 
+
+
     if filter_flagged
       self.class.trace_execution_scoped(['Custom/handle_threads_query/find_flagged']) do
         # TODO replace with aggregate query?
@@ -179,42 +181,44 @@ helpers do
       if request_user and filter_unread
         # Filter and paginate based on user read state.  Requires joining a subdocument of the
         # user object with documents in the contents collection, which has to be done in memory.
-        read_dates = {}
-        read_state = request_user.read_states.where(:course_id => course_id).first
-        if read_state
-          read_dates = read_state["last_read_times"].to_hash
-        end
+        self.class.trace_execution_scoped(['Custom/handle_threads_query/filter_unread']) do
+          read_dates = {}
+          read_state = request_user.read_states.where(:course_id => course_id).first
+          if read_state
+            read_dates = read_state["last_read_times"].to_hash
+          end
 
-        threads = []
-        skipped = 0
-        to_skip = (page - 1) * per_page
-        has_more = false
-        # batch_size is used to cap the number of documents we might load into memory at any given time
-        # TODO: starting with Mongoid 3.1, you can just do comment_threads.batch_size(size).each()
-        comment_threads.query.batch_size(CommentService.config["manual_pagination_batch_size"].to_i)
-        Mongoid.unit_of_work(disable: :current) do # this is to prevent Mongoid from memoizing every document we look at
-          comment_threads.each do |thread|
-            thread_key = thread._id.to_s
-            if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
-              if skipped >= to_skip
-                if threads.length == per_page
-                  has_more = true
-                  break
+          threads = []
+          skipped = 0
+          to_skip = (page - 1) * per_page
+          has_more = false
+          # batch_size is used to cap the number of documents we might load into memory at any given time
+          # TODO: starting with Mongoid 3.1, you can just do comment_threads.batch_size(size).each()
+          comment_threads.query.batch_size(CommentService.config["manual_pagination_batch_size"].to_i)
+          Mongoid.unit_of_work(disable: :current) do # this is to prevent Mongoid from memoizing every document we look at
+            comment_threads.each do |thread|
+              thread_key = thread._id.to_s
+              if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
+                if skipped >= to_skip
+                  if threads.length == per_page
+                    has_more = true
+                    break
+                  end
+                  threads << thread
+                else
+                  skipped += 1
                 end
-                threads << thread
-              else
-                skipped += 1
               end
             end
           end
+          # The following trick makes frontend pagers work without recalculating
+          # the number of all unread threads per user on every request (since the number
+          # of threads in a course could be tens or hundreds of thousands).  It has the
+          # effect of showing that there's always just one more page of results, until
+          # there definitely are no more pages.  This is really only acceptable for pagers
+          # that don't actually reveal the total number of pages to the user onscreen.
+          num_pages = has_more ? page + 1 : page
         end
-        # The following trick makes frontend pagers work without recalculating
-        # the number of all unread threads per user on every request (since the number
-        # of threads in a course could be tens or hundreds of thousands).  It has the 
-        # effect of showing that there's always just one more page of results, until
-        # there definitely are no more pages.  This is really only acceptable for pagers
-        # that don't actually reveal the total number of pages to the user onscreen.
-        num_pages = has_more ? page + 1 : page
       else
         # let the installed paginator library handle pagination
         num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
