@@ -19,6 +19,16 @@ helpers do
     @comment ||= Comment.find(params[:comment_id])
   end
 
+  def verify_or_fix_cached_comment_count(comment, comment_hash)
+    # if child count cached value gets stale; re-calculate and update it
+    unless comment_hash["children"].nil?
+      if comment_hash["child_count"] != comment_hash["children"].length
+        comment.update_cached_child_count
+        comment_hash["child_count"] = comment.get_cached_child_count
+      end
+    end
+  end
+
   def source
     @source ||= case params["source_type"]
     when "user"

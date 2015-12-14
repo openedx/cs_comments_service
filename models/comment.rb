@@ -20,6 +20,7 @@ class Comment < Content
   field :commentable_id, type: String
   field :at_position_list, type: Array, default: []
   field :sk, type: String, default: nil
+  field :child_count, type: Integer
 
   index({author_id: 1, course_id: 1})
   index({_type: 1, comment_thread_id: 1, author_id: 1, updated_at: 1})
@@ -91,18 +92,29 @@ class Comment < Content
       self.class.hash_tree(subtree_hash).first
     else
       as_document.slice(*%w[body course_id endorsed endorsement anonymous anonymous_to_peers created_at updated_at at_position_list])
-          .merge('id' => _id)
-          .merge('user_id' => author_id)
-          .merge('username' => author_username)
-          .merge('depth' => depth)
-          .merge('closed' => comment_thread.nil? ? false : comment_thread.closed)
-          .merge('thread_id' => comment_thread_id)
-          .merge('parent_id' => parent_ids[-1])
-          .merge('commentable_id' => comment_thread.nil? ? nil : comment_thread.commentable_id)
-          .merge('votes' => votes.slice(*%w[count up_count down_count point]))
-          .merge('abuse_flaggers' => abuse_flaggers)
-          .merge('type' => 'comment')
+          .merge("id" => _id)
+          .merge("user_id" => author_id)
+          .merge("username" => author_username)
+          .merge("depth" => depth)
+          .merge("closed" => comment_thread.nil? ? false : comment_thread.closed)
+          .merge("thread_id" => comment_thread_id)
+          .merge("parent_id" => parent_ids[-1])
+          .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id)
+          .merge("votes" => votes.slice(*%w[count up_count down_count point]))
+          .merge("abuse_flaggers" => abuse_flaggers)
+          .merge("type" => "comment")
+          .merge("child_count" => get_cached_child_count)
     end
+  end
+
+  def get_cached_child_count
+    update_cached_child_count if self.child_count.nil?
+    self.child_count
+  end
+
+  def update_cached_child_count
+    child_comments_count = Comment.where({"parent_id" => self._id}).count()
+    self.set(child_count: child_comments_count)
   end
 
   def commentable_id

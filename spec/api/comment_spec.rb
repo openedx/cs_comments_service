@@ -15,7 +15,7 @@ describe 'Comment API' do
       last_response.content_type.should == 'application/json;charset=utf-8'
     end
 
-    it 'retrieve information of a single comment' do
+    it 'retrieves information of a single comment' do
       comment = thread.comments.first
       get "/api/v1/comments/#{comment.id}"
       last_response.should be_ok
@@ -27,9 +27,10 @@ describe 'Comment API' do
       retrieved['votes']['point'].should == comment.votes_point
       retrieved['depth'].should == comment.depth
       retrieved['parent_id'].should == comment.parent_ids.map(&:to_s)[-1]
+      retrieved["child_count"].should == comment.children.length
     end
 
-    it 'retrieve information of a single comment with its sub comments' do
+    it 'retrieves information of a single comment with its sub comments' do
       comment = thread.comments.first
       get "/api/v1/comments/#{comment.id}", recursive: true
       last_response.should be_ok
@@ -41,10 +42,28 @@ describe 'Comment API' do
 
       retrieved_children = retrieved['children']
       retrieved_children.length.should == comment.children.length
+      retrieved["child_count"].should == comment.children.length
 
       comment.children.each_with_index do |child, index|
         expect(retrieved_children[index]).to include('body' => child.body, 'parent_id' => comment.id.to_s)
       end
+    end
+
+    it 'retrieves information of a single comment and fixes incorrect child count' do
+      comment = thread.comments.first
+      comment.set(child_count: 2000)
+      comment_hash = comment.to_hash(recursive: true)
+      comment_hash["child_count"].should == 2000
+      get "/api/v1/comments/#{comment.id}", recursive: true
+      last_response.should be_ok
+      retrieved = parse last_response.body
+      retrieved["child_count"].should == comment.children.length
+
+      comment.set(child_count: nil)
+      get "/api/v1/comments/#{comment.id}"
+      last_response.should be_ok
+      retrieved = parse last_response.body
+      retrieved["child_count"].should == comment.children.length
     end
 
     it 'returns 400 when the comment does not exist' do
@@ -147,10 +166,12 @@ describe 'Comment API' do
 
       comment.reload
       comment.children.length.should == previous_child_count + 1
+      comment.child_count.should == previous_child_count + 1
       sub_comment = comment.children.order_by(created_at: :desc).first
       sub_comment.body.should == body
       sub_comment.course_id.should == course_id
       sub_comment.author.should == user
+      sub_comment.child_count.should == 0
     end
 
     it 'returns 400 when the comment does not exist' do
@@ -180,7 +201,7 @@ describe 'Comment API' do
   end
 
   describe 'DELETE /api/v1/comments/:comment_id' do
-    it 'delete the comment and its sub comments' do
+    it 'deletes the comment and its sub comments' do
       comment = thread.comments.first
       cnt_comments = comment.descendants_and_self.length
       prev_count = Comment.count
