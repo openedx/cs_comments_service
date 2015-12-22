@@ -4,6 +4,7 @@ rvm:
 services:
   - elasticsearch
 before_install:
+  - gem install bundler
   - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.11.deb && sudo dpkg --force-confnew -i elasticsearch-0.90.11.deb && sudo service elasticsearch restart
   # Install mongo 2.6.4 according to http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
   # TODO: This won't be necessary when travis switches to 2.6 by default - see https://github.com/travis-ci/travis-ci/issues/2246
