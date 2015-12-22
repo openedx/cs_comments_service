@@ -1,11 +1,4 @@
 GIT
-  remote: https://github.com/DatabaseCleaner/database_cleaner
-  revision: b87f00320f8aa0f7e499d183128f05ce29cedc33
-  ref: b87f00320f8aa0f7e499d183128f05ce29cedc33
-  specs:
-    database_cleaner (1.5.1)
-
-GIT
   remote: https://github.com/macdiesel/mongoid-tree
   revision: b381dd56f1b3b061df8f4b4181d5440dea1602d1
   specs:
@@ -45,6 +38,7 @@ GEM
     builder (3.2.2)
     coderay (1.0.7)
     dalli (2.1.0)
+    database_cleaner (1.5.1)
     delayed_job (4.1.1)
       activesupport (>= 3.0, < 5.0)
     delayed_job_mongoid (2.2.0)
@@ -167,7 +161,7 @@ DEPENDENCIES
   bson_ext
   bundler
   dalli
-  database_cleaner!
+  database_cleaner (~> 1.5.1)
   delayed_job
   delayed_job_mongoid
   enumerize
