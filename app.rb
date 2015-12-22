@@ -19,29 +19,6 @@ module CommentService
   API_PREFIX = "/api/#{API_VERSION}"
 end
 
-if ["staging", "production", "loadtest", "edgestage","edgeprod"].include? environment
-  require 'newrelic_rpm'
-  require 'new_relic/agent/method_tracer'
-  Moped::Session.class_eval do
-    include NewRelic::Agent::MethodTracer
-    add_method_tracer :new
-    add_method_tracer :use
-    add_method_tracer :login
-  end
-  Moped::Cluster.class_eval do
-    include NewRelic::Agent::MethodTracer
-    add_method_tracer :with_primary
-    add_method_tracer :nodes
-  end
-  Moped::Node.class_eval do
-    include NewRelic::Agent::MethodTracer
-    add_method_tracer :command
-    add_method_tracer :connect
-    add_method_tracer :flush
-    add_method_tracer :refresh
-  end
-end
-
 if ENV["ENABLE_GC_PROFILER"]
   GC::Profiler.enable
 end
@@ -56,11 +33,12 @@ end
 
 Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
-Moped.logger.level = ENV["ENABLE_MOPED_DEBUGGING"] ? Logger::DEBUG : Logger::INFO
+Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Logger::INFO
 
 # set up i18n
 I18n.load_path += Dir[File.join(File.dirname(__FILE__), 'locale', '*.yml').to_s]
 I18n.default_locale = CommentService.config[:default_locale]
+I18n.enforce_available_locales = false
 I18n::Backend::Simple.send(:include, I18n::Backend::Fallbacks)
 use Rack::Locale
 
@@ -97,27 +75,6 @@ before do
   content_type "application/json"
 end
 
-if ENV["ENABLE_IDMAP_LOGGING"]
-
-  after do
-    idmap = Mongoid::Threaded.identity_map
-    vals = {
-      "pid" => Process.pid,
-      "dyno" => ENV["DYNO"],
-      "request_id" => params[:request_id]
-    }
-    idmap.each {|k, v| vals["idmap_count_#{k.to_s}"] = v.size }
-    logger.info vals.map{|e| e.join("=") }.join(" ")
-  end
-
-end
-
-# Enable the identity map. The middleware ensures that the identity map is
-# cleared for every request.
-Mongoid.identity_map_enabled = true
-use Rack::Mongoid::Middleware::IdentityMap
-
-
 # use yajl implementation for to_json.
 # https://github.com/brianmario/yajl-ruby#json-gem-compatibility-api
 #
@@ -128,15 +85,26 @@ require 'yajl/json_gem'
 
 # patch json serialization of ObjectIds to work properly with yajl.
 # See https://groups.google.com/forum/#!topic/mongoid/MaXFVw7D_4s
-module Moped
-  module BSON
-    class ObjectId
-      def to_json
-        self.to_s.to_json
-      end
+# Note that BSON was moved from Moped::BSON::ObjectId to BSON::ObjectId
+module BSON
+  class ObjectId
+    def to_json
+      self.to_s.to_json
     end
   end
 end
+
+# Patch json serialization of Time Objects
+class Time
+  # Returns a hash, that will be turned into a JSON object and represent this
+  # object.
+  # Note that this was done to prevent milliseconds from showing up in the JSON response thus breaking
+  # API compatibility for downstream clients.
+  def to_json(*)
+    '"' + utc().strftime("%Y-%m-%dT%H:%M:%SZ") + '"'
+  end
+end
+
 
 
 # these files must be required in order
@@ -158,7 +126,7 @@ if RACK_ENV.to_s == "development"
   end
 end
 
-error Moped::Errors::InvalidObjectId do
+error Mongo::Error::InvalidDocument do
   error 400, [t(:requested_object_not_found)].to_json
 end
 
@@ -170,10 +138,10 @@ error ArgumentError do
   error 400, [env['sinatra.error'].message].to_json
 end
 
-CommentService.blocked_hashes = Content.mongo_session[:blocked_hash].find.select(hash: 1).each.map {|d| d["hash"]}
+CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(nil, projection: {hash: 1}).map {|d| d["hash"]}
 
 def get_db_is_master
-  Mongoid::Sessions.default.command(isMaster: 1)
+  Mongoid::Clients.default.command(isMaster: 1)
 end
 
 def get_es_status
@@ -186,7 +154,7 @@ get '/heartbeat' do
   db_ok = false
   begin
     res = get_db_is_master
-    db_ok = ( res["ismaster"] == true and Integer(res["ok"]) == 1 )
+    db_ok = res.ok? && res.documents.first['ismaster'] == true
   rescue
   end
   error 500, JSON.generate({"OK" => false, "check" => "db"}) unless db_ok

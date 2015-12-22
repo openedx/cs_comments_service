@@ -45,8 +45,11 @@ describe "app" do
     context "db check" do
       def test_db_check(response, is_success)
         db = double("db")
-        stub_const("Mongoid::Sessions", Class.new).stub(:default).and_return(db)
-        db.should_receive(:command).with({:isMaster => 1}).and_return(response)
+        stub_const("Mongoid::Clients", Class.new).stub(:default).and_return(db)
+        result = double('result')
+        result.stub(:ok?).and_return(response['ok'] == 1)
+        result.stub(:documents).and_return([response])
+        db.should_receive(:command).with({:isMaster => 1}).and_return(result)
         get "/heartbeat"
         if is_success
           last_response.status.should == 200
@@ -75,7 +78,7 @@ describe "app" do
 
       it "reports failure when db command raises an error" do
         db = double("db")
-        stub_const("Mongoid::Sessions", Class.new).stub(:default).and_return(db)
+        stub_const("Mongoid::Clients", Class.new).stub(:default).and_return(db)
         db.should_receive(:command).with({:isMaster => 1}).and_raise(StandardError)
         get "/heartbeat"
         last_response.status.should == 500

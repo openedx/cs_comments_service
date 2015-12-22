@@ -1,5 +1,3 @@
-require 'new_relic/agent/method_tracer'
-
 get "#{APIPREFIX}/search/threads" do
   local_params = params # Necessary for params to be available inside blocks
   group_ids = get_group_ids_from_params(local_params)

@@ -45,7 +45,7 @@ describe "app" do
         course1_threads.should_not == course2_threads
       end
       it "filters by group_id" do
-        group_thread = Commentable.find("question_1").comment_threads.first
+        group_thread = Commentable.find("question_1").comment_threads.sort(_id: 1).first
         threads = thread_result "question_1", group_id: 42
         threads.length.should == 2
         group_thread.group_id = 43
@@ -58,7 +58,7 @@ describe "app" do
         threads.length.should == 2
       end
       it "filters by group_ids" do
-        group_thread = Commentable.find("question_1").comment_threads.first
+        group_thread = Commentable.find("question_1").comment_threads.sort(_id: 1).first
         group_thread.group_id = 42
         group_thread.save!
         threads = thread_result "question_1", group_ids: "42,43"

@@ -7,6 +7,7 @@ describe "app" do
 
   describe "comments" do
     before(:each) { init_without_subscriptions }
+
     describe "GET /api/v1/comments/:comment_id" do
       it "returns JSON" do
         comment = Comment.first
@@ -25,10 +26,10 @@ describe "app" do
         retrieved["children"].should be_nil
         retrieved["votes"]["point"].should == comment.votes_point
         retrieved["depth"].should == comment.depth
-        retrieved["parent_id"].should == comment.parent_ids[-1]
+        retrieved["parent_id"].should == comment.parent_ids.map(&:to_s)[-1]
       end
       it "retrieve information of a single comment with its sub comments" do
-        comment = Comment.first
+        comment = Comment.order_by(_id: 'asc').first
         get "/api/v1/comments/#{comment.id}", recursive: true
         last_response.should be_ok
         retrieved = parse last_response.body
@@ -56,6 +57,7 @@ describe "app" do
 
       include_examples "unicode data"
     end
+
     describe "PUT /api/v1/comments/:comment_id" do
       def test_update_endorsed(true_val, false_val)
         comment = Comment.first
@@ -114,11 +116,13 @@ describe "app" do
         comment = Comment.first
         put "/api/v1/comments/#{comment.id}", body: text
         last_response.should be_ok
+        comment = Comment.find(comment.id)
         comment.body.should == text
       end
 
       include_examples "unicode data"
     end
+
     describe "POST /api/v1/comments/:comment_id" do
       it "create a sub comment to the comment" do
         comment = Comment.first.to_hash(recursive: true)
@@ -154,6 +158,7 @@ describe "app" do
 
       include_examples "unicode data"
     end
+
     describe "DELETE /api/v1/comments/:comment_id" do
       it "delete the comment and its sub comments" do
         comment = Comment.first
