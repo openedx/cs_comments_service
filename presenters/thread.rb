@@ -3,23 +3,23 @@ require 'new_relic/agent/method_tracer'
 
 class ThreadPresenter
 
-  @@map = %Q{
-    function() {
-      emit(this.parent_id, {child_count: 1});
-    }
-  }
+  #@@map = %Q{
+  #  function() {
+  #    emit(this.parent_id, {child_count: 1});
+  #  }
+  #}
 
-  @@reduce = %Q{
-    function(key, values) {
-      var sum = 0;
-      if (key != null) {
-        values.forEach(function(value) {
-          sum += 1;
-        });
-      }
-      return {child_count: sum};
-    }
-  }
+  #@@reduce = %Q{
+  #  function(key, values) {
+  #    var sum = 0;
+  #    if (key != null) {
+  #      values.forEach(function(value) {
+  #        sum += 1;
+  #      });
+  #    }
+  #    return {child_count: sum};
+  #  }
+  #}
 
   def self.factory(thread, user)
     # use when working with one thread at a time.  fetches extended / 
@@ -112,19 +112,33 @@ class ThreadPresenter
   # returns an array of first-level response hashes with content represented
   # hierarchically, with a comment's list of children in the key "children"
   # and count of children comment in "child_count"
+  # Note: For performance reasons, at certain depths the children array may
+  # not be filled (i.e. will be empty), but the child_count will still be set
+  # correctly for that comment.
   def merge_response_content(content, thread_id)
-    parent_child_maps = Comment.where(comment_thread_id: thread_id).map_reduce(@@map, @@reduce).out(inline: true)
-    parent_child_hash = {}
-    parent_child_maps.each do |map|
-       parent_child_hash[map["_id"]] = map["value"]["child_count"] unless map["_id"].nil?
+    @match = {comment_thread_id: thread_id, parent_id: {:$exists => true}}
+    @group = {_id: "$parent_id", count: {:$sum => 1} }
+    parent_child_counts_view = Comment.collection.aggregate([{:$match => @match}, {:$group => @group}])
+    parent_child_counts_hash = {}
+    parent_child_counts_view.each do |row|
+       parent_child_counts_hash[row["_id"]] = row["count"]
     end
+
+    # another implementation with map reduce; remove it (and corresponding @@map and @@reduce) once design
+    # gets finalized keeping in mind performance
+    # http://blog.mongodb.org/post/62900213496/qaing-new-code-with-mms-mapreduce-vs
+    # parent_child_maps = Comment.where(comment_thread_id: thread_id).map_reduce(@@map, @@reduce).out(inline: true)
+    # parent_child_hash = {}
+    # parent_child_maps.each do |map|
+    #    parent_child_hash[map["_id"]] = map["value"]["child_count"] unless map["_id"].nil?
+    # end
 
     top_level = []
     ancestry = []
     content.each do |item|
       item_hash = item.to_hash.merge({"children" => [], "child_count" => 0})
-      if parent_child_hash.has_key?(item_hash["id"])
-        item_hash["child_count"] = parent_child_hash[item_hash["id"]].to_i
+      if parent_child_counts_hash.has_key?(item_hash["id"])
+        item_hash["child_count"] = parent_child_counts_hash[item_hash["id"]]
       end
 
       if item.parent_id.nil?
