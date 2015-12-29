@@ -33,3 +33,4 @@ log/
 #redcar
 .redcar/
 /nbproject
+.idea/
