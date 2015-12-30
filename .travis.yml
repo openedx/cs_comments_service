@@ -1,8 +1,13 @@
 language: ruby
+
 rvm:
   - "1.9.3"
+
+cache: bundler
+
 services:
   - elasticsearch
+
 before_install:
   - gem update bundler # Ensure we use the latest version of bundler. Travis' default version of outdated.
   - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.11.deb && sudo dpkg --force-confnew -i elasticsearch-0.90.11.deb && sudo service elasticsearch restart
@@ -13,4 +18,5 @@ before_install:
   - sudo apt-get update -q
   - sudo apt-get install -y mongodb-org=2.6.4 mongodb-org-server=2.6.4 mongodb-org-shell=2.6.4 mongodb-org-mongos=2.6.4 mongodb-org-tools=2.6.4
   - mongo --version
+
 script: bundle exec rspec
