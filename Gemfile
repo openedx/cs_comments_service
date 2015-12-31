@@ -44,7 +44,7 @@ group :test do
   gem 'rack-test', :require => "rack/test"
   gem 'guard'
   gem 'guard-unicorn'
-  gem 'simplecov', :require => false
+  gem 'codecov', :require => false
   # database_cleaner 1.5.1 which is compatible with Mongoid 5 has not been released
   # to rubygems yet, so pull it from github.
   gem 'database_cleaner', :git =>  'https://github.com/DatabaseCleaner/database_cleaner', :ref => 'b87f00320f8aa0f7e499d183128f05ce29cedc33'
