@@ -14,7 +14,7 @@ gem 'sinatra'
 gem 'yajl-ruby'
 
 
-gem 'mongoid', "~>5.0"
+gem 'mongoid', '~> 5.0.0'
 gem 'bson', '~>3.1'
 gem 'bson_ext'
 gem 'protected_attributes'
@@ -27,7 +27,6 @@ gem 'mongoid-tree', :git => 'https://github.com/macdiesel/mongoid-tree'
 gem 'rs_voteable_mongo', :git => 'https://github.com/navneet35371/voteable_mongo.git'
 gem 'mongoid_magic_counter_cache'
 
-gem 'faker'
 gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
 gem 'nokogiri', "~>1.6.7.1"
@@ -40,12 +39,14 @@ gem 'dalli'
 gem 'rest-client'
 
 group :test do
-  gem 'rspec'
-  gem 'rack-test', :require => "rack/test"
+  gem 'codecov', :require => false
+  gem 'database_cleaner', '~> 1.5.1'
+  gem 'factory_girl', '~> 4.0'
+  gem 'faker', '~> 1.6'
   gem 'guard'
   gem 'guard-unicorn'
-  gem 'codecov', :require => false
-  gem 'database_cleaner', "~>1.5.1" 
+  gem 'rack-test', :require => 'rack/test'
+  gem 'rspec', '~> 2.11.0'
 end
 
 gem 'newrelic_rpm'

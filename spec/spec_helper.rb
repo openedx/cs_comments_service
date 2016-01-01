@@ -9,13 +9,13 @@ end
 
 require File.join(File.dirname(__FILE__), '..', 'app')
 
-require 'sinatra'
 require 'rack/test'
+require 'sinatra'
 require 'yajl'
-require 'database_cleaner'
 
 require 'support/database_cleaner'
 require 'support/elasticsearch'
+require 'support/factory_girl'
 
 # setup test environment
 set :environment, :test
