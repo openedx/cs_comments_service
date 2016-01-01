@@ -14,6 +14,9 @@ require 'rack/test'
 require 'yajl'
 require 'database_cleaner'
 
+require 'support/database_cleaner'
+require 'support/elasticsearch'
+
 # setup test environment
 set :environment, :test
 set :run, false
@@ -36,35 +39,13 @@ def set_api_key_header
   current_session.header "X-Edx-Api-Key", TEST_API_KEY
 end
 
-def delete_es_index
-  Tire.index Content::ES_INDEX_NAME do delete end
-end
 
-def create_es_index
-  new_index = Tire.index Content::ES_INDEX_NAME
-  new_index.create
-  [CommentThread, Comment].each do |klass|
-    klass.put_search_index_mapping
-  end
-end
-
-def refresh_es_index
-  # we are using the same index for two types, which is against the
-  # grain of Tire's design.  This is why this method works for both
-  # comment_threads and comments.
-  CommentThread.tire.index.refresh
-end
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.filter_run focus: true
   config.run_all_when_everything_filtered = true
-  config.before(:each) do
-    DatabaseCleaner.clean
-    delete_es_index
-    create_es_index
-  end
 end
 
 Mongoid.configure do |config|
