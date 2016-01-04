@@ -60,5 +60,4 @@ delete "#{APIPREFIX}/comments/:comment_id" do |comment_id|
       pass
     end
   end
-  comment.to_hash.to_json
 end

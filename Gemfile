@@ -31,8 +31,8 @@ gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
 gem 'nokogiri', "~>1.6.7.2"
 
-gem 'tire', "0.6.2"
-gem 'tire-contrib'
+gem 'elasticsearch', '~> 0.4'
+gem 'elasticsearch-model', '~> 0.1.8'
 
 gem 'dalli'
 
@@ -47,6 +47,7 @@ group :test do
   gem 'guard-unicorn'
   gem 'rack-test', :require => 'rack/test'
   gem 'rspec', '~> 2.11.0'
+  gem 'webmock', '~> 1.22'
 end
 
 gem 'newrelic_rpm'

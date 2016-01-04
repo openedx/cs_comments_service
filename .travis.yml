@@ -23,4 +23,6 @@ before_install:
   - mkdir -p ./mongo/log
   - mongod --fork --dbpath ./mongo/db --logpath ./mongo/log/mongodb.log
 
-script: bundle exec rspec
+script:
+  - bin/rake search:initialize
+  - bin/rspec

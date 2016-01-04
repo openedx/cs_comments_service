@@ -1,22 +1,22 @@
 get "#{APIPREFIX}/threads" do # retrieve threads by course
-  
+
   threads = Content.where({"_type" => "CommentThread", "course_id" => params["course_id"]})
   if params[:commentable_ids]
     threads = threads.in({"commentable_id" => params[:commentable_ids].split(",")})
   end
 
   handle_threads_query(
-    threads,
-    params["user_id"],
-    params["course_id"],
-    get_group_ids_from_params(params),
-    value_to_boolean(params["flagged"]),
-    value_to_boolean(params["unread"]),
-    value_to_boolean(params["unanswered"]),
-    params["sort_key"],
-    params["sort_order"],
-    params["page"],
-    params["per_page"]
+      threads,
+      params['user_id'],
+      params['course_id'],
+      get_group_ids_from_params(params),
+      value_to_boolean(params['flagged']),
+      value_to_boolean(params['unread']),
+      value_to_boolean(params['unanswered']),
+      params['sort_key'],
+      params['sort_order'],
+      params['page'],
+      params['per_page']
   ).to_json
 end
 
@@ -89,6 +89,12 @@ post "#{APIPREFIX}/threads/:thread_id/comments" do |thread_id|
 end
 
 delete "#{APIPREFIX}/threads/:thread_id" do |thread_id|
-  thread.destroy
+  begin
+    thread.destroy
+  rescue Elasticsearch::Transport::Transport::Errors::NotFound
+    # If the thread is not in the index, that's actually a good thing given that we just removed it.
+    # Note that this exception will probably only be encountered for tests that don't wait for the index
+    # to be refreshed before attempting to destroy a newly-recreated thread.
+  end
   thread.to_hash.to_json
 end

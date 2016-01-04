@@ -32,7 +32,7 @@ GEM
       minitest (~> 5.1)
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
-    ansi (1.5.0)
+    addressable (2.4.0)
     bson (3.2.4)
     bson_ext (1.5.1)
     builder (3.2.2)
@@ -41,6 +41,8 @@ GEM
       simplecov
       url
     coderay (1.0.7)
+    crack (0.4.3)
+      safe_yaml (~> 1.0.0)
     dalli (2.1.0)
     database_cleaner (1.5.1)
     delayed_job (4.1.1)
@@ -53,18 +55,33 @@ GEM
     docile (1.1.5)
     domain_name (0.5.24)
       unf (>= 0.0.5, < 1.0.0)
+    elasticsearch (0.4.11)
+      elasticsearch-api (= 0.4.11)
+      elasticsearch-transport (= 0.4.11)
+    elasticsearch-api (0.4.11)
+      multi_json
+    elasticsearch-model (0.1.8)
+      activesupport (> 3)
+      elasticsearch (> 0.4)
+      hashie
+    elasticsearch-transport (0.4.11)
+      faraday
+      multi_json
     enumerize (0.11.0)
       activesupport (>= 3.2)
     factory_girl (4.5.0)
       activesupport (>= 3.0.0)
     faker (1.6.1)
       i18n (~> 0.5)
+    faraday (0.9.2)
+      multipart-post (>= 1.2, < 3)
     guard (1.3.2)
       listen (>= 0.4.2)
       thor (>= 0.14.6)
     guard-unicorn (0.0.7)
       guard (>= 1.1)
-    hashr (0.0.22)
+    hashdiff (0.2.3)
+    hashie (3.4.3)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
     i18n (0.7.0)
@@ -89,6 +106,7 @@ GEM
       mongoid
       rake
     multi_json (1.11.2)
+    multipart-post (2.0.0)
     netrc (0.10.3)
     newrelic_rpm (3.15.0.314)
     nokogiri (1.6.7.2)
@@ -123,6 +141,7 @@ GEM
     rspec-expectations (2.11.2)
       diff-lcs (~> 1.1.3)
     rspec-mocks (2.11.2)
+    safe_yaml (1.0.4)
     simplecov (0.11.1)
       docile (~> 1.1.0)
       json (~> 1.8)
@@ -136,16 +155,6 @@ GEM
     thor (0.16.0)
     thread_safe (0.3.5)
     tilt (1.3.3)
-    tire (0.6.2)
-      activemodel (>= 3.0)
-      activesupport
-      ansi
-      hashr (~> 0.0.19)
-      multi_json (~> 1.3)
-      rake
-      rest-client (~> 1.6)
-    tire-contrib (0.1.1)
-      tire
     tzinfo (1.2.2)
       thread_safe (~> 0.1)
     unf (0.1.4)
@@ -156,6 +165,10 @@ GEM
       rack
       raindrops (~> 0.7)
     url (0.3.2)
+    webmock (1.22.3)
+      addressable (>= 2.3.6)
+      crack (>= 0.3.2)
+      hashdiff
     will_paginate (3.0.7)
     will_paginate_mongoid (2.0.1)
       mongoid
@@ -174,6 +187,8 @@ DEPENDENCIES
   database_cleaner (~> 1.5.1)
   delayed_job
   delayed_job_mongoid
+  elasticsearch (~> 0.4)
+  elasticsearch-model (~> 0.1.8)
   enumerize
   factory_girl (~> 4.0)
   faker (~> 1.6)
@@ -197,9 +212,8 @@ DEPENDENCIES
   rs_voteable_mongo!
   rspec (~> 2.11.0)
   sinatra
-  tire (= 0.6.2)
-  tire-contrib
   unicorn
+  webmock (~> 1.22)
   will_paginate_mongoid (~> 2.0)
   yajl-ruby
 
