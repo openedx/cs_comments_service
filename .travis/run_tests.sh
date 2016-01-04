@@ -6,4 +6,5 @@ cd /edx/app/forum/cs_comments_service
 
 bundle install
 
+bundle exec rake search:initialize
 bundle exec rspec

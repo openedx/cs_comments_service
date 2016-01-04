@@ -24,8 +24,8 @@ task :environment do
   require File.dirname(__FILE__) + '/app.rb'
 end
 
-Dir.glob('lib/tasks/*.rake').each { |r| import r }
-
 task :console => :environment do
   binding.pry
 end
+
+Dir.glob('lib/tasks/*.rake').each { |r| import r }
