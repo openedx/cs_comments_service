@@ -16,15 +16,18 @@ end
 
 LOG = Logger.new(STDERR)
 
+RAKE_SEARCH_INITIALIZE = (Rake.application.top_level_tasks.include? 'search:initialize')
+
 desc 'Load the environment'
 task :environment do
-  # Load all of app.rb, because it is too easy to introduce bugs otherwise where Rake
-  # does not have a fix or config that is added to app.rb.
+  # Load all of app.rb to keep rake and the app as similar as possible.
+  # Without this, we had run into bugs where certain overriding fixes in app.rb
+  # were not used from the rake tasks.
   require File.dirname(__FILE__) + '/app.rb'
 end
-
-Dir.glob('lib/tasks/*.rake').each { |r| import r }
 
 task :console => :environment do
   binding.pry
 end
+
+Dir.glob('lib/tasks/*.rake').each { |r| import r }

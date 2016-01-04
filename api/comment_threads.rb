@@ -1,5 +1,6 @@
 
 get "#{APIPREFIX}/threads" do # retrieve threads by course
+
   threads = CommentThread.where({"course_id" => params["course_id"]})
   if params[:commentable_ids]
     threads = threads.in({"commentable_id" => params[:commentable_ids].split(",")})

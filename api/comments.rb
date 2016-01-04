@@ -53,6 +53,7 @@ end
 
 delete "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   parent_id = comment.parent_id
+  comment_as_json = comment.to_hash.to_json
   comment.destroy
   unless parent_id.nil?
     begin
@@ -62,5 +63,5 @@ delete "#{APIPREFIX}/comments/:comment_id" do |comment_id|
       pass
     end
   end
-  comment.to_hash.to_json
+  comment_as_json
 end
