@@ -30,7 +30,7 @@ gem 'mongoid_magic_counter_cache'
 gem 'faker'
 gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
-gem 'nokogiri'
+gem 'nokogiri', '~>1.6.7.1'
 
 gem 'tire', "0.6.2"
 gem 'tire-contrib'
