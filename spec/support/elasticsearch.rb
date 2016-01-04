@@ -1,27 +1,27 @@
-def delete_es_index
-  Tire.index Content::ES_INDEX_NAME do
-    delete
-  end
-end
-
-def create_es_index
-  new_index = Tire.index Content::ES_INDEX_NAME
-  new_index.create
-  [CommentThread, Comment].each do |klass|
-    klass.put_search_index_mapping
-  end
-end
+require 'task_helpers'
 
 def refresh_es_index
-  es_index_name = Content::ES_INDEX_NAME
-  Tire.index es_index_name do
-    refresh
+  TaskHelpers::ElasticsearchHelper.refresh_index(Content::ES_INDEX_NAME)
+end
+
+
+RSpec.shared_context 'search_enabled' do
+  before(:all) do
+    CommentService.config[:enable_search] = true
+  end
+
+  before(:each) do
+    index = TaskHelpers::ElasticsearchHelper.create_index
+    TaskHelpers::ElasticsearchHelper.move_alias(Content::ES_INDEX_NAME, index)
+  end
+
+  after(:each) do
+    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
   end
 end
 
 RSpec.configure do |config|
-  config.before(:each) do
-    delete_es_index
-    create_es_index
+  config.before(:suite) do
+    CommentService.config[:enable_search] = false
   end
 end
