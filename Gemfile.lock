@@ -54,16 +54,16 @@ GEM
     docile (1.1.5)
     domain_name (0.5.24)
       unf (>= 0.0.5, < 1.0.0)
-    elasticsearch (0.4.11)
-      elasticsearch-api (= 0.4.11)
-      elasticsearch-transport (= 0.4.11)
-    elasticsearch-api (0.4.11)
+    elasticsearch (1.0.15)
+      elasticsearch-api (= 1.0.15)
+      elasticsearch-transport (= 1.0.15)
+    elasticsearch-api (1.0.15)
       multi_json
     elasticsearch-model (0.1.8)
       activesupport (> 3)
       elasticsearch (> 0.4)
       hashie
-    elasticsearch-transport (0.4.11)
+    elasticsearch-transport (1.0.15)
       faraday
       multi_json
     enumerize (0.11.0)
@@ -191,7 +191,7 @@ DEPENDENCIES
   dalli
   delayed_job
   delayed_job_mongoid
-  elasticsearch (~> 0.4)
+  elasticsearch (~> 1.0)
   elasticsearch-model (~> 0.1.8)
   enumerize
   factory_girl (~> 4.0)

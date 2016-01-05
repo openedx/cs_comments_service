@@ -34,7 +34,7 @@ gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
 gem 'nokogiri', "~>1.6.8"
 
-gem 'elasticsearch', '~> 0.4'
+gem 'elasticsearch', '~> 1.0'
 gem 'elasticsearch-model', '~> 0.1.8'
 
 gem 'dalli'
