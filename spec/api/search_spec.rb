@@ -1,38 +1,40 @@
 require 'spec_helper'
 require 'unicode_shared_examples'
 
-describe "app" do
-  describe "search" do
+describe 'app' do
+  describe 'search' do
     include_context 'search_enabled'
 
     before (:each) { set_api_key_header }
-    let(:author) { create_test_user(42) }
-    let(:course_id) { "test/course/id" }
+    let(:author) { create(:user) }
+    let(:course_id) { 'test/course/id' }
 
     def get_result_ids(result)
-      result["collection"].map { |t| t["id"] }
+      result['collection'].map { |t| t['id'] }
     end
 
     describe "GET /api/v1/search/threads" do
-      def assert_empty_response
-        last_response.should be_ok
-        result = parse(last_response.body)
-        result.should == {}
+      shared_examples_for 'response for invalid request' do
+        before (:each) { refresh_es_index }
+        subject { get '/api/v1/search/threads', {course_id: course_id}.merge!(parameters) }
+
+        it { should be_ok }
+        it { should be_an_empty_response }
       end
 
-      it "returns an empty result if text parameter is missing" do
-        get "/api/v1/search/threads", course_id: course_id
-        assert_empty_response
+      context 'without text parameter' do
+        let(:parameters) { {} }
+        it_behaves_like 'response for invalid request'
       end
 
-      it "returns an empty result if sort key is invalid" do
-        get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "invalid", sort_order: "desc"
-        assert_empty_response
+      context 'with an invalid sort key' do
+        let(:parameters) { {text: 'foobar', sort_key: 'invalid', sort_order: 'desc'} }
+        it_behaves_like 'response for invalid request'
       end
 
-      it "returns an empty result if sort order is invalid" do
-        get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "date", sort_order: "invalid"
-        assert_empty_response
+      context 'with an invalid sort order' do
+        let(:parameters) { {text: 'foobar', sort_key: 'date', sort_order: 'invalid'} }
+        it_behaves_like 'response for invalid request'
       end
 
       describe "filtering works" do
@@ -325,21 +327,21 @@ describe "app" do
       def test_unicode_data(text)
         # Elasticsearch may not be able to handle searching for non-ASCII text,
         # so prepend the text with an ASCII term we can search for.
-        search_term = "artichoke"
-        course_id = "unicode/course"
-        thread = make_thread(author, "#{search_term} #{text}", course_id, "unicode_commentable")
-        make_comment(author, thread, text)
-        # Elasticsearch does not necessarily make newly indexed content
-        # available immediately, so we must explicitly refresh the index
+        search_term = 'artichoke'
+
+        thread = create(:comment_thread, body: "#{search_term} #{text}")
+        create(:comment, comment_thread: thread, body: text)
         refresh_es_index
-        get "/api/v1/search/threads", course_id: course_id, text: search_term
-        last_response.should be_ok
-        result = parse(last_response.body)["collection"]
-        result.length.should == 1
-        check_thread_result_json(nil, thread, result.first)
+
+        get '/api/v1/search/threads', course_id: thread.course_id, text: search_term
+
+        expect(last_response).to be_ok
+        json = parse(last_response.body)['collection']
+        expect(json.length).to eq 1
+        check_thread_result_json(nil, thread, json.first)
       end
 
-      include_examples "unicode data"
+      include_examples 'unicode data'
     end
   end
 end

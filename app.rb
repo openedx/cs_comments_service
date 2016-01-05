@@ -30,6 +30,9 @@ end
 application_yaml = ERB.new(File.read("config/application.yml")).result()
 CommentService.config = YAML.load(application_yaml).with_indifferent_access
 
+# Raise sinatra-param exceptions so that we can process, and respond to, them appropriately
+set :raise_sinatra_param_exceptions, true
+
 Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
 Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Logger::INFO
