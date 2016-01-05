@@ -12,10 +12,12 @@ def get_thread_ids(context, group_ids, local_params, search_text)
   unless group_ids.empty?
     filters.push(
         {
-            or: [
-                {:not => {:exists => {:field => :group_id}}},
-                {:terms => {:group_id => group_ids}}
-            ]
+            bool: {
+                should: [
+                    {:not => {:exists => {:field => :group_id}}},
+                    {:terms => {:group_id => group_ids}}
+                ]
+            }
         }
     )
   end
@@ -27,14 +29,18 @@ def get_thread_ids(context, group_ids, local_params, search_text)
             {updated_at: :desc}
         ],
         query: {
-            multi_match: {
-                query: search_text,
-                fields: [:title, :body],
-                operator: :AND
-            },
             filtered: {
+                query: {
+                    multi_match: {
+                        query: search_text,
+                        fields: [:title, :body],
+                        operator: :AND
+                    }
+                },
                 filter: {
-                    and: filters
+                    bool: {
+                        must: filters
+                    }
                 }
             }
         }

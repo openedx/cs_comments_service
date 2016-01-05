@@ -11,9 +11,9 @@ before_install:
   - gem update bundler # Ensure we use the latest version of bundler. Travis' default version of outdated.
 
   # Run Elasticsearch as a daemon
-  - curl -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-0.90.13.zip
-  - unzip elasticsearch-0.90.13.zip
-  - elasticsearch-0.90.13/bin/elasticsearch
+  - curl -O https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.5.2.zip
+  - unzip elasticsearch-1.5.2.zip
+  - elasticsearch-1.5.2/bin/elasticsearch -d
 
   # Run MongoDB as a daemon
   - curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-2.6.11.tgz
