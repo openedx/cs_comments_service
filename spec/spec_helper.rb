@@ -40,7 +40,6 @@ def set_api_key_header
 end
 
 
-
 RSpec.configure do |config|
   config.include Rack::Test::Methods
   config.treat_symbols_as_metadata_keys_with_true_values = true
@@ -63,7 +62,7 @@ end
 def init_without_subscriptions
   commentable = Commentable.new("question_1")
 
-  users = (1..10).map{|id| create_test_user(id)}
+  users = (1..10).map { |id| create_test_user(id) }
   user = users.first
 
   thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: commentable.id)
@@ -132,59 +131,19 @@ def init_without_subscriptions
 
   Comment.all.each do |c|
     user.vote(c, :up) # make the first user always vote up for convenience
-    users[2,9].each {|user| user.vote(c, [:up, :down].sample)}
+    users[2, 9].each { |user| user.vote(c, [:up, :down].sample) }
   end
 
   CommentThread.all.each do |c|
     user.vote(c, :up) # make the first user always vote up for convenience
-    users[2,9].each {|user| user.vote(c, [:up, :down].sample)}
+    users[2, 9].each { |user| user.vote(c, [:up, :down].sample) }
   end
 
   Content.mongo_client[:blocked_hash].insert_one(hash: Digest::MD5.hexdigest("blocked post"))
   # reload the global holding the blocked hashes
   CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(nil, projection: {hash: 1}).map do |d|
-      d["hash"]
+    d["hash"]
   end
-end
-
-def init_with_subscriptions
-  user1 = create_test_user(1)
-  user2 = create_test_user(2)
-
-  user2.subscribe(user1)
-
-  commentable = Commentable.new("question_1")
-  user1.subscribe(commentable)
-  user2.subscribe(commentable)
-
-  thread = CommentThread.new(title: "I can't solve this problem", body: "can anyone help me?", course_id: "1", commentable_id: commentable.id)
-  thread.author = user1
-  user1.subscribe(thread)
-  user2.subscribe(thread)
-  thread.save!
-
-  thread = thread.reload
-
-  comment = thread.comments.new(body: "this problem is so easy", course_id: "1")
-  comment.author = user2
-  comment.save!
-  comment1 = comment.children.new(body: "not for me!", course_id: "1")
-  comment1.author = user1
-  comment1.comment_thread = thread
-  comment1.save!
-  comment2 = comment1.children.new(body: "not for me neither!", course_id: "1")
-  comment2.author = user2
-  comment2.comment_thread = thread
-  comment2.save!
-
-  thread = CommentThread.new(title: "This problem is wrong", body: "it is unsolvable", course_id: "2", commentable_id: commentable.id)
-  thread.author = user2
-  user2.subscribe(thread)
-  thread.save!
-
-  thread = CommentThread.new(title: "I don't know what to say", body: "lol", course_id: "2", commentable_id: "something else")
-  thread.author = user1
-  thread.save!
 end
 
 # this method is used to test results produced using the helper function handle_threads_query
@@ -196,25 +155,25 @@ def check_thread_result(user, thread, hash, is_json=false)
   expected_keys += %w(comments_count unread_comments_count read endorsed)
   # these keys are checked separately, when desired, using check_thread_response_paging.
   actual_keys = hash.keys - [
-    "children", "endorsed_responses", "non_endorsed_responses", "resp_skip",
-    "resp_limit", "resp_total", "non_endorsed_resp_total"
+      "children", "endorsed_responses", "non_endorsed_responses", "resp_skip",
+      "resp_limit", "resp_total", "non_endorsed_resp_total"
   ]
   actual_keys.sort.should == expected_keys.sort
 
   hash["title"].should == thread.title
   hash["body"].should == thread.body
-  hash["course_id"].should == thread.course_id 
-  hash["anonymous"].should == thread.anonymous 
-  hash["anonymous_to_peers"].should == thread.anonymous_to_peers 
-  hash["commentable_id"].should == thread.commentable_id 
-  hash["at_position_list"].should == thread.at_position_list 
-  hash["closed"].should == thread.closed 
+  hash["course_id"].should == thread.course_id
+  hash["anonymous"].should == thread.anonymous
+  hash["anonymous_to_peers"].should == thread.anonymous_to_peers
+  hash["commentable_id"].should == thread.commentable_id
+  hash["at_position_list"].should == thread.at_position_list
+  hash["closed"].should == thread.closed
   hash["user_id"].should == thread.author.id
   hash["username"].should == thread.author.username
-  hash["votes"]["point"].should == thread.votes["point"] 
-  hash["votes"]["count"].should == thread.votes["count"] 
-  hash["votes"]["up_count"].should == thread.votes["up_count"] 
-  hash["votes"]["down_count"].should == thread.votes["down_count"] 
+  hash["votes"]["point"].should == thread.votes["point"]
+  hash["votes"]["count"].should == thread.votes["count"]
+  hash["votes"]["up_count"].should == thread.votes["up_count"]
+  hash["votes"]["down_count"].should == thread.votes["down_count"]
   hash["abuse_flaggers"].should == thread.abuse_flaggers
   hash["tags"].should == []
   hash["type"].should == "thread"
@@ -227,7 +186,7 @@ def check_thread_result(user, thread, hash, is_json=false)
   if is_json
     hash["id"].should == thread._id.to_s
     hash["created_at"].should == thread.created_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    hash["updated_at"].should == thread.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ") 
+    hash["updated_at"].should == thread.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
   else
     hash["created_at"].should == thread.created_at
     hash["updated_at"].should == thread.updated_at
@@ -235,7 +194,7 @@ def check_thread_result(user, thread, hash, is_json=false)
 
   if user.nil?
     hash["unread_comments_count"].should == thread.comments.length
-    hash["read"].should == false 
+    hash["read"].should == false
   else
     expected_unread_cnt = thread.comments.length # initially assume nothing has been read
     read_states = user.read_states.where(course_id: thread.course_id).to_a
@@ -268,10 +227,10 @@ end
 
 def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
   case thread.thread_type
-  when "discussion"
-    check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive)
-  when "question"
-    check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive)
+    when "discussion"
+      check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive)
+    when "question"
+      check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive)
   end
 end
 
@@ -297,8 +256,8 @@ def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, 
   total_responses = all_responses.length
   hash["resp_total"].should == total_responses
   expected_responses = resp_limit.nil? ?
-    all_responses.drop(resp_skip) :
-    all_responses.drop(resp_skip).take(resp_limit)
+      all_responses.drop(resp_skip) :
+      all_responses.drop(resp_skip).take(resp_limit)
   hash["children"].length.should == expected_responses.length
 
   hash["children"].each_with_index do |response_hash, i|
@@ -323,8 +282,8 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
 
   hash["non_endorsed_resp_total"] == non_endorsed_responses.length
   expected_non_endorsed_responses = resp_limit.nil? ?
-    non_endorsed_responses.drop(resp_skip) :
-    non_endorsed_responses.drop(resp_skip).take(resp_limit)
+      non_endorsed_responses.drop(resp_skip) :
+      non_endorsed_responses.drop(resp_skip).take(resp_limit)
   hash["non_endorsed_responses"].length.should == expected_non_endorsed_responses.length
   hash["non_endorsed_responses"].each_with_index do |response_hash, i|
     check_comment(expected_non_endorsed_responses[i], response_hash, is_json, recursive)
@@ -375,12 +334,12 @@ end
 # AKA this will overwrite "standalone t0" each time it is called. 
 def make_standalone_thread_with_comments(author, index=0)
   thread = make_thread(
-    author,
-    "standalone thread #{index}",
-    DFLT_COURSE_ID,
-    "pdq",
-    :discussion,
-    :standalone
+      author,
+      "standalone thread #{index}",
+      DFLT_COURSE_ID,
+      "pdq",
+      :discussion,
+      :standalone
   )
 
   3.times do |i|
@@ -409,5 +368,5 @@ def setup_10_threads
       @comments["t#{i} c#{j}"] = comment
     end
   end
-  @default_order = 10.times.map {|i| "t#{i}"}.reverse
+  @default_order = 10.times.map { |i| "t#{i}" }.reverse
 end
