@@ -126,16 +126,22 @@ def get_threads(context, group_ids, local_params, search_text)
   result_obj.to_json
 end
 
+error Sinatra::Param::InvalidParameterError do
+  # NOTE (CCB): The current behavior of the service is to return a seemingly positive response
+  # for an invalid request. In the future the API's contract should be modified so that HTTP 400
+  # is returned. This informs the client that the request was invalid, rather than having to guess
+  # about an empty response body.
+  [200, '{}']
+end
+
 get "#{APIPREFIX}/search/threads" do
+  param :text, String, required: true
+  param :context, String, default: 'course'
+  param :sort_order, String, in: %w(asc desc), transform: :downcase
+  param :sort_key, String, in: %w(activity comments date votes), transform: :downcase
+
   local_params = params # Necessary for params to be available inside blocks
   group_ids = get_group_ids_from_params(local_params)
-  context = local_params["context"] ? local_params["context"] : "course"
-  search_text = local_params["text"]
-  if !search_text
-    '{}'
-  else
 
-
-    get_threads(context, group_ids, local_params, search_text)
-  end
+  get_threads(params[:context], group_ids, local_params, params[:text])
 end

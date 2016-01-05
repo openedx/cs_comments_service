@@ -11,6 +11,7 @@ RSpec.shared_context 'search_enabled' do
   end
 
   before(:each) do
+    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
     index = TaskHelpers::ElasticsearchHelper.create_index
     TaskHelpers::ElasticsearchHelper.move_alias(Content::ES_INDEX_NAME, index)
   end
