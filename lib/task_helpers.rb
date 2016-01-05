@@ -175,7 +175,7 @@ module TaskHelpers
         fail "Alias '#{alias_name}' does not exist."
       end
 
-      actual_mapping = Elasticsearch::Model.client.indices.get_mapping(index: alias_name).values[0]
+      actual_mapping = Elasticsearch::Model.client.indices.get_mapping(index: alias_name).values[0]['mappings']
       expected_mapping = {}
       [CommentThread, Comment].each do |model|
         expected_mapping.merge! model.mappings.to_hash
