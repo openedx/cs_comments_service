@@ -12,6 +12,7 @@ gem 'bundler'
 gem 'rake'
 
 gem 'sinatra'
+gem 'sinatra-param', '~> 1.4'
 
 gem 'yajl-ruby'
 
