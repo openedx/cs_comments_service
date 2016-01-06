@@ -17,48 +17,45 @@ rescue LoadError
   # no rspec available
 end
 
-Tire.configure do
-  url YAML.load(application_yaml)['elasticsearch_server']
-end
-
 LOG = Logger.new(STDERR)
 
-desc "Load the environment"
+desc 'Load the environment'
 task :environment do
-  environment = ENV["SINATRA_ENV"] || "development"
+  environment = ENV['SINATRA_ENV'] || 'development'
   Sinatra::Base.environment = environment
-  Mongoid.load!("config/mongoid.yml")
+
+  Mongoid.load!('config/mongoid.yml')
   Mongoid.logger.level = Logger::INFO
+
   module CommentService
-    class << self; attr_accessor :config; end
+    class << self;
+      attr_accessor :config;
+    end
   end
 
   CommentService.config = YAML.load(application_yaml)
 
-  Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
-  Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
-  #Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
+  Tire.configure do
+    url YAML.load(application_yaml)['elasticsearch_server']
+  end
 
-  #Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
-  #Mongoid.instantiate_observers
-
+  Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each { |file| require file }
+  Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
 end
-
-def create_test_user(id)
-  User.create!(external_id: id, username: "user#{id}")
-end
-
-Dir.glob('lib/tasks/*.rake').each { |r| import r }
 
 task :console => :environment do
   binding.pry
 end
 
+Dir.glob('lib/tasks/*.rake').each { |r| import r }
+
+require 'factory_girl'
+
 namespace :db do
   task :init => :environment do
-    puts "recreating indexes..."
+    puts 'recreating indexes...'
     [Comment, CommentThread, User, Notification, Subscription, Activity, Delayed::Backend::Mongoid::Job].each(&:remove_indexes).each(&:create_indexes)
-    puts "finished"
+    puts 'finished'
   end
 
   task :clean => :environment do
@@ -73,10 +70,10 @@ namespace :db do
   TOP_COMMENTS_PER_THREAD = 3
   ADDITIONAL_COMMENTS_PER_THREAD = 5
 
-  COURSE_ID = "MITx/6.002x/2012_Fall"
+  COURSE_ID = 'MITx/6.002x/2012_Fall'
 
   def generate_comments_for(commentable_id, num_threads=THREADS_PER_COMMENTABLE, num_top_comments=TOP_COMMENTS_PER_THREAD, num_subcomments=ADDITIONAL_COMMENTS_PER_THREAD)
-    level_limit = CommentService.config["level_limit"]
+    level_limit = CommentService.config['level_limit']
 
 
     users = User.all.to_a
@@ -95,7 +92,7 @@ namespace :db do
       comment_thread.course_id = COURSE_ID
       comment_thread.save!
       threads << comment_thread
-      users.sample(3).each {|user| user.subscribe(comment_thread)}
+      users.sample(3).each { |user| user.subscribe(comment_thread) }
       (1 + rand(num_top_comments)).times do
         comment = comment_thread.comments.new(body: Faker::Lorem.paragraph(2))
         comment.author = users.sample
@@ -123,43 +120,61 @@ namespace :db do
       end
     end
 
-    puts "voting"
+    puts 'voting'
 
     (threads + top_comments + additional_comments).each do |c|
       users.each do |user|
         user.vote(c, [:up, :down].sample)
       end
     end
-    puts "finished"
+    puts 'finished'
   end
 
 
   task :generate_comments, [:commentable_id, :num_threads, :num_top_comments, :num_subcomments] => :environment do |t, args|
     args.with_defaults(:num_threads => THREADS_PER_COMMENTABLE,
-                       :num_top_comments=>TOP_COMMENTS_PER_THREAD,
-                       :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
+                       :num_top_comments => TOP_COMMENTS_PER_THREAD,
+                       :num_subcomments => ADDITIONAL_COMMENTS_PER_THREAD)
     generate_comments_for(args[:commentable_id], args[:num_threads], args[:num_top_comments], args[:num_subcomments])
 
   end
 
   task :bulk_seed, [:num] => :environment do |t, args|
+    db_name = 'cs_comments_service_bulk_test'
     Mongoid.configure do |config|
-      config.connect_to("cs_comments_service_bulk_test")
+      config.connect_to(db_name)
     end
-    connnection = Mongo::Connection.new("127.0.0.1", "27017")
-    db = Mongo::Connection.new.db("cs_comments_service_bulk_test")
+    connnection = Mongo::Connection.new('127.0.0.1', '27017')
+    db = Mongo::Connection.new.db(db_name)
 
     CommentThread.create_indexes
     Comment.create_indexes
     Content.delete_all
-    coll = db.collection("contents")
+    coll = db.collection('contents')
     args[:num].to_i.times do
-      doc = {"_type" => "CommentThread", "anonymous" => [true, false].sample, "at_position_list" => [],
-        "tags_array" => [],
-        "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
-        "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
-        "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
-        "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+      doc = {'_type' => 'CommentThread',
+             'anonymous' => [true, false].sample,
+             'at_position_list' => [],
+             'tags_array' => [],
+             'comment_count' => 0,
+             'title' => Faker::Lorem.sentence(6),
+             'author_id' => rand(1..10).to_s,
+             'body' => Faker::Lorem.paragraphs.join('\n\n'),
+             'course_id' => COURSE_ID,
+             'created_at' => Time.now,
+             'commentable_id' => COURSE_ID,
+             'closed' => [true, false].sample,
+             'updated_at' => Time.now,
+             'last_activity_at' => Time.now,
+             'votes' => {
+                 'count' => 0,
+                 'down' => [],
+                 'down_count' => 0,
+                 'point' => 0,
+                 'up' => [],
+                 'up_count' => []
+             }
+      }
       coll.insert(doc)
     end
     Tire.index('comment_threads').delete
@@ -170,50 +185,60 @@ namespace :db do
   task :seed_fast => :environment do
     ADDITIONAL_COMMENTS_PER_THREAD = 20
 
-    config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["clients"]["default"]
-    connnection = Mongo::Connection.new(config["hosts"][0].split(":")[0], config["hosts"][0].split(":")[1])
-    db = Mongo::Connection.new.db(config["database"])
-    coll = db.collection("contents")
+    config = YAML.load_file('config/mongoid.yml')[Sinatra::Base.environment]['clients']['default']
+    connnection = Mongo::Connection.new(config['hosts'][0].split(':')[0], config['hosts'][0].split(':')[1])
+    db = Mongo::Connection.new.db(config['database'])
+    coll = db.collection('contents')
     Comment.delete_all
     CommentThread.each do |thread|
       ADDITIONAL_COMMENTS_PER_THREAD.times do
-        doc = {"_type" => "Comment", "anonymous" => false, "at_position_list" => [],
-          "author_id" => rand(1..10).to_s, "body" => Faker::Lorem.paragraphs.join("\n\n"),
-          "comment_thread_id" => BSON::ObjectId.from_string(thread.id.to_s), "course_id" => COURSE_ID,
-          "created_at" => Time.now,
-          "endorsed" => [true, false].sample, "parent_ids" => [], "updated_at" => Time.now,
-          "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
+        doc = {
+            '_type' => 'Comment',
+            'anonymous' => false,
+            'at_position_list' => [],
+            'author_id' => rand(1..10).to_s,
+            'body' => Faker::Lorem.paragraphs.join('\n\n'),
+            'comment_thread_id' => BSON::ObjectId.from_string(thread.id.to_s),
+            'course_id' => COURSE_ID,
+            'created_at' => Time.now,
+            'endorsed' => [true, false].sample,
+            'parent_ids' => [],
+            'updated_at' => Time.now,
+            'votes' => {
+                'count' => 0,
+                'down' => [],
+                'down_count' => 0,
+                'point' => 0,
+                'up' => [],
+                'up_count' => []
+            }
+        }
         coll.insert(doc)
       end
     end
   end
 
   task :seed => :environment do
+    include FactoryGirl::Syntax::Methods
+    FactoryGirl.find_definitions
 
     Comment.delete_all
     CommentThread.delete_all
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
-    Tire.index 'comment_threads' do delete end
+    Tire.index 'comment_threads' do
+      delete
+    end
     CommentThread.create_elasticsearch_index
 
     beginning_time = Time.now
 
-    users = (1..10).map {|id| create_test_user(id)}
-    # 3.times do
-    #   other_user = users[1..9].sample
-    #   users.first.subscribe(other_user)
-    # end
+    create_list(:user, 10)
 
-    # 10.times do
-    #   user = users.sample
-    #   other_user = users.select{|u| u != user}.sample
-    #   user.subscribe(other_user)
-    # end
-    generate_comments_for("video_1")
-    generate_comments_for("lab_1")
-    generate_comments_for("lab_2")
+    generate_comments_for('video_1')
+    generate_comments_for('lab_1')
+    generate_comments_for('lab_2')
 
     end_time = Time.now
 
@@ -225,15 +250,12 @@ namespace :db do
   end
 
   task :add_anonymous_to_peers => :environment do
-    Content.collection.find(:anonymous_to_peers=>nil).update_all({"$set" => {'anonymous_to_peers' => false}})
+    Content.collection.find(:anonymous_to_peers => nil).update_all({'$set' => {'anonymous_to_peers' => false}})
   end
-
 end
 
-
 namespace :search do
-
-  def get_es_index
+  def get_index
     # we are using the same index for two types, which is against the
     # grain of Tire's design.  This is why this method works for both
     # comment_threads and comments.
@@ -243,10 +265,10 @@ namespace :search do
   def get_number_of_primary_shards(index_name)
     res = Tire::Configuration.client.get "#{Tire::Configuration.url}/#{index_name}/_status"
     status = JSON.parse res.body
-    status["indices"].first[1]["shards"].size
+    status['indices'].first[1]['shards'].size
   end
 
-  def create_es_index
+  def create_index
     # create the new index with a unique name
     new_index = Tire.index "#{Content::ES_INDEX_NAME}_#{Time.now.strftime('%Y%m%d%H%M%S')}"
     new_index.create
@@ -306,7 +328,7 @@ namespace :search do
 
     start_time = Time.now
     # create the new index with a unique name
-    new_index = create_es_index
+    new_index = create_index
     # unless the user is forcing a rebuild, or the index does not yet exist, we
     # can do a Tire api reindex which is much faster than reimporting documents
     # from mongo.
@@ -315,7 +337,7 @@ namespace :search do
     # for the model class when the app loaded if one did not already exist.  However,
     # it won't create an alias, which is what our app uses.  So if the index exists
     # but not the alias, we know that it's auto-created.
-    old_index = get_es_index
+    old_index = get_index
     alias_name = old_index.name
     alias_ = Tire::Alias.find alias_name
     if alias_.nil? then
@@ -323,7 +345,7 @@ namespace :search do
       # the alias doesn't exist, so we know the index was auto-created.
       # We will delete it and replace it with an alias.
       raise RuntimeError, 'Cannot reindex in-place, no valid source index' if in_place
-      LOG.warn "deleting auto-created index to make room for the alias"
+      LOG.warn 'deleting auto-created index to make room for the alias'
       old_index.delete
       # NOTE on the small chance that another process re-auto-creates the index
       # we just deleted before we have a chance to create the alias, this next
@@ -331,17 +353,17 @@ namespace :search do
       move_alias_to(Content::ES_INDEX_NAME, new_index)
     end
 
-    op = in_place ? "reindex" : "(re)build index" 
+    op = in_place ? 'reindex' : '(re)build index'
     LOG.info "preparing to #{op}"
 
     if in_place then
       # reindex, moving source documents directly from old index to new
-      LOG.info "copying documents from original index (this may take a while!)"
+      LOG.info 'copying documents from original index (this may take a while!)'
       old_index.reindex new_index.name
-      LOG.info "done copying!"
+      LOG.info 'done copying!'
     else
       # fetch all the documents ever, up til start_time
-      cursor = Content.where(:_type.in => ["Comment", "CommentThread"], :updated_at.lte => start_time)
+      cursor = Content.where(:_type.in => ['Comment', 'CommentThread'], :updated_at.lte => start_time)
       # import them to the new index
       import_from_cursor(cursor, new_index, opts)
     end
@@ -352,40 +374,40 @@ namespace :search do
     if did_alias_move then
       #  Reimport any source documents that got updated since start_time,
       #  while the alias still pointed to the old index.
-      #  Elasticsearch understands our document ids, so re-indexing the same 
+      #  Elasticsearch understands our document ids, so re-indexing the same
       #  document won't create duplicates.
       LOG.info "importing any documents that changed between #{start_time} and now"
-      cursor = Content.where(:_type.in => ["Comment", "CommentThread"], :updated_at.gte => start_time)
+      cursor = Content.where(:_type.in => ['Comment', 'CommentThread'], :updated_at.gte => start_time)
       import_from_cursor(cursor, new_index, opts)
     end
   end
 
-  desc "Copies contents of MongoDB into Elasticsearch if updated in the last N minutes."
+  desc 'Copies contents of MongoDB into Elasticsearch if updated in the last N minutes.'
   task :catchup, [:minutes, :batch_size, :sleep_time] => :environment do |t, args|
     opts = batch_opts args
-    the_index = get_es_index
+    the_index = get_index
     alias_ = Tire::Alias.find the_index.name
     # this check makes sure we are working with the index to which
     # the desired model's alias presently points.
-    raise RuntimeError, "could not find live index" if alias_.nil?
+    raise RuntimeError, 'could not find live index' if alias_.nil?
     start_time = Time.now - (args[:minutes].to_i * 60)
-    cursor = Content.where(:_type.in => ["Comment", "CommentThread"], :updated_at.gte => start_time)
+    cursor = Content.where(:_type.in => ['Comment', 'CommentThread'], :updated_at.gte => start_time)
     import_from_cursor(cursor, the_index, opts)
   end
 
   def batch_opts(args)
     args = args.to_hash
-    { :batch_size => args[:batch_size].nil? ? 500 : args[:batch_size].to_i,
-      :sleep_time => args[:sleep_time].nil? ? 0 : args[:sleep_time].to_i }
+    {:batch_size => args[:batch_size].nil? ? 500 : args[:batch_size].to_i,
+     :sleep_time => args[:sleep_time].nil? ? 0 : args[:sleep_time].to_i}
   end
 
-  desc "Removes any data from Elasticsearch that no longer exists in MongoDB."
+  desc 'Removes any data from Elasticsearch that no longer exists in MongoDB.'
   task :prune, [:batch_size, :sleep_time] => :environment do |t, args|
     opts = batch_opts args
-    the_index = get_es_index
+    the_index = get_index
     puts "pruning #{the_index.name}"
     alias_ = Tire::Alias.find the_index.name
-    raise RuntimeError, "could not find live index" if alias_.nil?
+    raise RuntimeError, 'could not find live index' if alias_.nil?
     scan_size = opts[:batch_size] / get_number_of_primary_shards(the_index.name)
     cnt = 0
     [CommentThread, Comment].each do |klass|
@@ -395,12 +417,12 @@ namespace :search do
       search = Tire::Search::Scan.new the_index.name, {size: scan_size, type: doc_type}
       search.each do |results|
         es_ids = results.map(&:id)
-        mongo_ids = klass.where(:id.in => es_ids).map {|d| d.id.to_s}
+        mongo_ids = klass.where(:id.in => es_ids).map { |d| d.id.to_s }
         to_delete = es_ids - mongo_ids
         if to_delete.size > 0
           cnt += to_delete.size
           puts "deleting #{to_delete.size} orphaned #{doc_type} documents from elasticsearch"
-          the_index.bulk_delete (to_delete).map {|v| {"type" => doc_type, "id" => v}}
+          the_index.bulk_delete (to_delete).map { |v| {'type' => doc_type, 'id' => v} }
         end
         puts "#{the_index.name}/#{doc_type}: processed #{search.seen} of #{search.total}"
         sleep opts[:sleep_time]
@@ -409,54 +431,57 @@ namespace :search do
     puts "done pruning #{the_index.name}, deleted a total of #{cnt} orphaned documents"
   end
 
-  desc "Rebuild the content index from MongoDB data."
+  desc 'Rebuild the content index from MongoDB data.'
   task :rebuild, [:batch_size, :sleep_time] => :environment do |t, args|
     do_reindex(batch_opts(args))
   end
 
-  desc "Rebuild the content index from already-indexed data (in place)."
+  desc 'Rebuild the content index from already-indexed data (in place).'
   task :reindex, [:batch_size, :sleep_time] => :environment do |t, args|
     do_reindex(batch_opts(args), true)
   end
 
-  desc "Generate a new, empty physical index, without bringing it online."
+  desc 'Generate a new, empty physical index, without bringing it online.'
   task :create_index => :environment do
-    create_es_index
+    create_index
   end
-
 end
 
 namespace :jobs do
-  desc "Clear the delayed_job queue."
+  desc 'Clear the delayed_job queue.'
   task :clear => :environment do
     Delayed::Job.delete_all
   end
 
-  desc "Start a delayed_job worker."
+  desc 'Start a delayed_job worker.'
   task :work => :environment do
-    Delayed::Worker.new(:min_priority => ENV['MIN_PRIORITY'], :max_priority => ENV['MAX_PRIORITY'], :queues => (ENV['QUEUES'] || ENV['QUEUE'] || '').split(','), :quiet => false).start
+    Delayed::Worker.new(
+        min_priority: ENV['MIN_PRIORITY'],
+        max_priority: ENV['MAX_PRIORITY'],
+        queues: (ENV['QUEUES'] || ENV['QUEUE'] || '').split(','),
+        quiet: false).start
   end
 end
 
 namespace :i18n do
-  desc "Push source strings to Transifex for translation"
+  desc 'Push source strings to Transifex for translation'
   task :push do
-    sh("tx push -s")
+    sh('tx push -s')
   end
 
-  desc "Pull translated strings from Transifex"
+  desc 'Pull translated strings from Transifex'
   task :pull do
-    sh("tx pull --mode=reviewed --all --minimum-perc=1")
+    sh('tx pull --mode=reviewed --all --minimum-perc=1')
   end
 
-  desc "Clean the locale directory"
+  desc 'Clean the locale directory'
   task :clean do
-    sh("git clean -f locale/")
+    sh('git clean -f locale/')
   end
 
-  desc "Commit translated strings to the repository"
-  task :commit => ["i18n:clean", "i18n:pull"] do
-    sh("git add locale")
+  desc 'Commit translated strings to the repository'
+  task :commit => %w(i18n:clean i18n:pull) do
+    sh('git add locale')
     sh("git commit -m 'Updated translations (autogenerated message)'")
   end
 end
