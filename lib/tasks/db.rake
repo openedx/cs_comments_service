@@ -43,7 +43,7 @@ namespace :db do
       comment_thread.course_id = COURSE_ID
       comment_thread.save!
       threads << comment_thread
-      users.sample(3).each {|user| user.subscribe(comment_thread)}
+      users.sample(3).each { |user| user.subscribe(comment_thread) }
       (1 + rand(num_top_comments)).times do
         comment = comment_thread.comments.new(body: Faker::Lorem.paragraph(2))
         comment.author = users.sample
@@ -83,57 +83,11 @@ namespace :db do
 
 
   task :generate_comments, [:commentable_id, :num_threads, :num_top_comments, :num_subcomments] => :environment do |t, args|
-    args.with_defaults(:num_threads => THREADS_PER_COMMENTABLE,
-                       :num_top_comments=>TOP_COMMENTS_PER_THREAD,
-                       :num_subcomments=> ADDITIONAL_COMMENTS_PER_THREAD)
+    args.with_defaults(num_threads: THREADS_PER_COMMENTABLE,
+                       num_top_comments: TOP_COMMENTS_PER_THREAD,
+                       num_subcomments: ADDITIONAL_COMMENTS_PER_THREAD)
     generate_comments_for(args[:commentable_id], args[:num_threads], args[:num_top_comments], args[:num_subcomments])
 
-  end
-
-  task :bulk_seed, [:num] => :environment do |t, args|
-    Mongoid.configure do |config|
-      config.connect_to("cs_comments_service_bulk_test")
-    end
-    connnection = Mongo::Connection.new("127.0.0.1", "27017")
-    db = Mongo::Connection.new.db("cs_comments_service_bulk_test")
-
-    CommentThread.create_indexes
-    Comment.create_indexes
-    Content.delete_all
-    coll = db.collection("contents")
-    args[:num].to_i.times do
-      doc = {"_type" => "CommentThread", "anonymous" => [true, false].sample, "at_position_list" => [],
-             "tags_array" => [],
-             "comment_count" => 0, "title" => Faker::Lorem.sentence(6), "author_id" => rand(1..10).to_s,
-             "body" => Faker::Lorem.paragraphs.join("\n\n"), "course_id" => COURSE_ID, "created_at" => Time.now,
-             "commentable_id" => COURSE_ID, "closed" => [true, false].sample, "updated_at" => Time.now, "last_activity_at" => Time.now,
-             "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
-      coll.insert(doc)
-    end
-    Tire.index('comment_threads').delete
-    CommentThread.create_elasticsearch_index
-    Tire.index('comment_threads') { import CommentThread.all }
-  end
-
-  task :seed_fast => :environment do
-    ADDITIONAL_COMMENTS_PER_THREAD = 20
-
-    config = YAML.load_file("config/mongoid.yml")[Sinatra::Base.environment]["clients"]["default"]
-    connnection = Mongo::Connection.new(config["hosts"][0].split(":")[0], config["hosts"][0].split(":")[1])
-    db = Mongo::Connection.new.db(config["database"])
-    coll = db.collection("contents")
-    Comment.delete_all
-    CommentThread.each do |thread|
-      ADDITIONAL_COMMENTS_PER_THREAD.times do
-        doc = {"_type" => "Comment", "anonymous" => false, "at_position_list" => [],
-               "author_id" => rand(1..10).to_s, "body" => Faker::Lorem.paragraphs.join("\n\n"),
-               "comment_thread_id" => BSON::ObjectId.from_string(thread.id.to_s), "course_id" => COURSE_ID,
-               "created_at" => Time.now,
-               "endorsed" => [true, false].sample, "parent_ids" => [], "updated_at" => Time.now,
-               "votes" => {"count" => 0, "down" => [], "down_count" => 0, "point" => 0, "up" => [], "up_count" => []}}
-        coll.insert(doc)
-      end
-    end
   end
 
   task :seed => :environment do
@@ -143,22 +97,14 @@ namespace :db do
     User.delete_all
     Notification.delete_all
     Subscription.delete_all
-    Tire.index 'comment_threads' do delete end
+    Tire.index 'comment_threads' do
+      delete
+    end
     CommentThread.create_elasticsearch_index
 
     beginning_time = Time.now
 
-    users = (1..10).map {|id| create_test_user(id)}
-    # 3.times do
-    #   other_user = users[1..9].sample
-    #   users.first.subscribe(other_user)
-    # end
-
-    # 10.times do
-    #   user = users.sample
-    #   other_user = users.select{|u| u != user}.sample
-    #   user.subscribe(other_user)
-    # end
+    (1..10).map { |id| create_test_user(id) }
     generate_comments_for("video_1")
     generate_comments_for("lab_1")
     generate_comments_for("lab_2")
@@ -173,7 +119,7 @@ namespace :db do
   end
 
   task :add_anonymous_to_peers => :environment do
-    Content.collection.find(:anonymous_to_peers=>nil).update_all({"$set" => {'anonymous_to_peers' => false}})
+    Content.collection.find(:anonymous_to_peers => nil).update_all({"$set" => {'anonymous_to_peers' => false}})
   end
 
 end
