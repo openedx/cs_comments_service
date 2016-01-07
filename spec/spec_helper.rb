@@ -9,13 +9,13 @@ end
 
 require File.join(File.dirname(__FILE__), '..', 'app')
 
-require 'sinatra'
 require 'rack/test'
+require 'sinatra'
 require 'yajl'
-require 'database_cleaner'
 
 require 'support/database_cleaner'
 require 'support/elasticsearch'
+require 'support/factory_girl'
 
 # setup test environment
 set :environment, :test
@@ -57,6 +57,20 @@ end
 
 def create_test_user(id)
   User.create!(external_id: id.to_s, username: "user#{id}")
+end
+
+# Add the given body of text to the list of blocked texts/hashes.
+def block_post_body(body='blocked post')
+  body = body.strip.downcase.gsub(/[^a-z ]/, '').gsub(/\s+/, ' ')
+  blocked_hash = Digest::MD5.hexdigest(body)
+  Content.mongo_client[:blocked_hash].insert_one(hash: blocked_hash)
+
+  # reload the global holding the blocked hashes
+  CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(nil, projection: {hash: 1}).map do |d|
+    d['hash']
+  end
+
+  blocked_hash
 end
 
 def init_without_subscriptions
@@ -139,11 +153,7 @@ def init_without_subscriptions
     users[2, 9].each { |user| user.vote(c, [:up, :down].sample) }
   end
 
-  Content.mongo_client[:blocked_hash].insert_one(hash: Digest::MD5.hexdigest("blocked post"))
-  # reload the global holding the blocked hashes
-  CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(nil, projection: {hash: 1}).map do |d|
-    d["hash"]
-  end
+  block_post_body
 end
 
 # this method is used to test results produced using the helper function handle_threads_query
@@ -369,4 +379,17 @@ def setup_10_threads
     end
   end
   @default_order = 10.times.map { |i| "t#{i}" }.reverse
+end
+
+# Creates a CommentThread with a Comment, and nested child Comment.
+# The author of the thread is subscribed to the thread.
+def create_comment_thread_and_comments
+  # Create a new comment thread, and subscribe the author to the thread
+  thread = create(:comment_thread, :subscribe_author)
+
+  # Create a comment along with a nested child comment
+  comment = create(:comment, comment_thread: thread)
+  create(:comment, parent: comment)
+
+  thread
 end
