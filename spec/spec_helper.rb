@@ -241,8 +241,10 @@ def check_comment(comment, hash, is_json, recursive=false)
   hash["username"].should == comment.author_username
   hash["endorsed"].should == comment.endorsed
   hash["endorsement"].should == comment.endorsement
+  children = Comment.where({"parent_id" => comment.id}).sort({"sk" => 1}).to_a
+  hash["child_count"].should == children.length
+
   if recursive
-    children = Comment.where({"parent_id" => comment.id}).sort({"sk" => 1}).to_a
     hash["children"].length.should == children.length
     hash["children"].each_with_index do |child_hash, i|
       check_comment(children[i], child_hash, is_json)
