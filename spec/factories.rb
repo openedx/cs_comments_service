@@ -40,5 +40,6 @@ FactoryGirl.define do
     body { Faker::Lorem.paragraph }
     course_id { comment_thread.course_id }
     commentable_id { comment_thread.commentable_id }
+    endorsed false
   end
 end

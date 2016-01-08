@@ -4,7 +4,7 @@ require 'bundler'
 Bundler.setup
 Bundler.require
 
-application_yaml = ERB.new(File.read("config/application.yml")).result()
+application_yaml = ERB.new(File.read('config/application.yml')).result()
 
 
 begin
@@ -23,25 +23,22 @@ end
 
 LOG = Logger.new(STDERR)
 
-desc "Load the environment"
+desc 'Load the environment'
 task :environment do
-  environment = ENV["SINATRA_ENV"] || "development"
+  environment = ENV['SINATRA_ENV'] || 'development'
   Sinatra::Base.environment = environment
-  Mongoid.load!("config/mongoid.yml")
+  Mongoid.load!('config/mongoid.yml')
   Mongoid.logger.level = Logger::INFO
   module CommentService
-    class << self; attr_accessor :config; end
+    class << self;
+      attr_accessor :config;
+    end
   end
 
   CommentService.config = YAML.load(application_yaml)
 
-  Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each {|file| require file}
-  Dir[File.dirname(__FILE__) + '/models/*.rb'].each {|file| require file}
-  #Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
-
-  #Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
-  #Mongoid.instantiate_observers
-
+  Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each { |file| require file }
+  Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
 end
 
 Dir.glob('lib/tasks/*.rake').each { |r| import r }
