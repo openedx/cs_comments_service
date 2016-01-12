@@ -27,17 +27,34 @@ if ENV["ENABLE_GC_PROFILER"]
   GC::Profiler.enable
 end
 
+def get_logger(progname, threshold=nil)
+  logger = Logger.new(STDERR)
+  logger.progname = progname
+  logger.level = threshold || Logger::INFO
+  logger
+end
+
 application_yaml = ERB.new(File.read("config/application.yml")).result()
 CommentService.config = YAML.load(application_yaml).with_indifferent_access
 
 # Raise sinatra-param exceptions so that we can process, and respond to, them appropriately
 set :raise_sinatra_param_exceptions, true
 
+# Setup Mongo
 Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
 Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Logger::INFO
 
-# set up i18n
+# Setup Elasticsearch
+# NOTE (CCB): If you want to see all data sent to Elasticsearch (e.g. for debugging purposes), set the tracer argument
+# to the value of a logger.
+# Example: Elascisearch.Client.new(tracer: get_logger('elasticsearch.tracer'))
+Elasticsearch::Model.client = Elasticsearch::Client.new(
+    host: CommentService.config[:elasticsearch_server],
+    logger: get_logger('elasticsearch', Logger::WARN)
+)
+
+# Setup i18n
 I18n.load_path += Dir[File.join(File.dirname(__FILE__), 'locale', '*.yml').to_s]
 I18n.default_locale = CommentService.config[:default_locale]
 I18n.enforce_available_locales = false
@@ -54,16 +71,6 @@ Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each { |file| require file }
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
 Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each { |file| require file }
 
-Elasticsearch::Model.client = Elasticsearch::Client.new(host: CommentService.config[:elasticsearch_server], log: false)
-
-# Ensure Elasticsearch index mappings exist.
-Comment.put_search_index_mapping
-CommentThread.put_search_index_mapping
-
-# Comment out observers until notifications are actually set up properly.
-#Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
-#Mongoid.observers = PostReplyObserver, PostTopicObserver, AtUserObserver
-#Mongoid.instantiate_observers
 
 APIPREFIX = CommentService::API_PREFIX
 DEFAULT_PAGE = 1
