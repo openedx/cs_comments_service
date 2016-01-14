@@ -225,7 +225,7 @@ helpers do
         pres_threads = ThreadListPresenter.new(threads, request_user, course_id)
         collection = pres_threads.to_hash
       end
-      {collection: collection, num_pages: num_pages, page: page}
+      {collection: collection, num_pages: num_pages, page: page, thread_count: comment_threads.count}
     end
   end
 
