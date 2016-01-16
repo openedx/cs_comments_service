@@ -18,12 +18,12 @@ describe "app" do
 
       context "when filtering by course" do
         it "returns only threads with matching course id" do
-          [@threads["t1"], @threads["t2"]].each do |t| 
+          [@threads["t1"], @threads["t2"]].each do |t|
             t.course_id = "abc"
-            t.save! 
-          end 
+            t.save!
+          end
           rs = thread_result course_id: "abc", sort_order: "asc"
-          rs.length.should == 2 
+          rs.length.should == 2
           rs.each_with_index { |res, i|
             check_thread_result_json(nil, @threads["t#{i+1}"], res)
             res["course_id"].should == "abc"
@@ -89,7 +89,7 @@ describe "app" do
           @threads["t3"].group_id = 100
           @threads["t3"].save!
           rs = thread_result course_id: "omg", group_id: 100, sort_order: "asc"
-          rs.length.should == 2 
+          rs.length.should == 2
           rs.each_with_index { |res, i|
             check_thread_result_json(nil, @threads["t#{i+1}"], res)
             res["course_id"].should == "omg"
@@ -97,32 +97,32 @@ describe "app" do
         end
         it "returns an empty result when no threads match course_id" do
           rs = thread_result course_id: 99
-          rs.length.should == 0 
+          rs.length.should == 0
         end
         it "returns only group-less threads when no threads have matching group id" do
           @threads["t1"].group_id = 123
           @threads["t1"].save!
           rs = thread_result course_id: DFLT_COURSE_ID, group_id: 321
-          rs.each.map {|res| res["group_id"].should be_nil }
+          rs.each.map { |res| res["group_id"].should be_nil }
         end
         context "when filtering flagged posts" do
           it "returns threads that are flagged" do
             @threads["t1"].abuse_flaggers = [1]
             @threads["t1"].save!
             rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
-            rs.length.should == 1 
+            rs.length.should == 1
             check_thread_result_json(nil, @threads["t1"], rs.first)
           end
           it "returns threads that have flagged comments" do
-            @comments["t2 c3"].abuse_flaggers = [1]            
+            @comments["t2 c3"].abuse_flaggers = [1]
             @comments["t2 c3"].save!
             rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
-            rs.length.should == 1 
+            rs.length.should == 1
             check_thread_result_json(nil, @threads["t2"], rs.first)
           end
           it "returns an empty result when no posts were flagged" do
             rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
-            rs.length.should == 0 
+            rs.length.should == 0
           end
         end
         it "filters unread posts" do
@@ -180,12 +180,12 @@ describe "app" do
         end
         it "correctly considers read state" do
           user = create_test_user(123)
-          [@threads["t1"], @threads["t2"]].each do |t| 
+          [@threads["t1"], @threads["t2"]].each do |t|
             t.course_id = "abc"
-            t.save! 
-          end 
+            t.save!
+          end
           rs = thread_result course_id: "abc", user_id: "123", sort_order: "asc"
-          rs.length.should == 2 
+          rs.length.should == 2
           rs.each_with_index { |result, i|
             check_thread_result_json(user, @threads["t#{i+1}"], result)
             result["course_id"].should == "abc"
@@ -230,20 +230,20 @@ describe "app" do
         context "sorting" do
           def thread_result_order (sort_key, sort_order)
             results = thread_result course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order
-            results.length.should == 10 
-            results.map {|t| t["title"]}
+            results.length.should == 10
+            results.map { |t| t["title"] }
           end
 
           def move_to_end(ary, *vals)
             vals.each do |val|
-              ary = ary.select {|v| v!=val } << val
+              ary = ary.select { |v| v!=val } << val
             end
             ary
           end
 
           def move_to_front(ary, *vals)
             vals.reverse.each do |val|
-              ary = ary.select {|v| v!=val }.insert(0, val)
+              ary = ary.select { |v| v!=val }.insert(0, val)
             end
             ary
           end
@@ -263,7 +263,7 @@ describe "app" do
             t5c.update(body: "changed!")
             t5c.save!
             actual_order = thread_result_order("activity", "desc")
-            expected_order = move_to_front(@default_order, "t5") 
+            expected_order = move_to_front(@default_order, "t5")
             actual_order.should == expected_order
           end
           it "sorts using last activity / ascending" do
@@ -271,7 +271,7 @@ describe "app" do
             t5c.update(body: "changed!")
             t5c.save!
             actual_order = thread_result_order("activity", "asc")
-            expected_order = move_to_end(@default_order.reverse, "t5") 
+            expected_order = move_to_end(@default_order.reverse, "t5")
             actual_order.should == expected_order
           end
           it "sorts using vote count / descending" do
@@ -280,7 +280,7 @@ describe "app" do
             user.vote(t5, :up)
             t5.save!
             actual_order = thread_result_order("votes", "desc")
-            expected_order = move_to_front(@default_order, "t5") 
+            expected_order = move_to_front(@default_order, "t5")
             actual_order.should == expected_order
           end
           it "sorts using vote count / ascending" do
@@ -289,19 +289,19 @@ describe "app" do
             user.vote(t5, :up)
             t5.save!
             actual_order = thread_result_order("votes", "asc")
-            expected_order = move_to_end(@default_order, "t5") 
+            expected_order = move_to_end(@default_order, "t5")
             actual_order.should == expected_order
           end
           it "sorts using comment count / descending" do
             make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
             actual_order = thread_result_order("comments", "desc")
-            expected_order = move_to_front(@default_order, "t5") 
+            expected_order = move_to_front(@default_order, "t5")
             actual_order.should == expected_order
           end
           it "sorts using comment count / ascending" do
             make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
             actual_order = thread_result_order("comments", "asc")
-            expected_order = move_to_end(@default_order, "t5") 
+            expected_order = move_to_end(@default_order, "t5")
             actual_order.should == expected_order
           end
           it "sorts pinned items first" do
@@ -332,7 +332,7 @@ describe "app" do
             expected_order = move_to_front(@default_order.reverse, "t7", "t8")
             actual_order.should == expected_order
           end
-          
+
           context "pagination" do
             def thread_result_page (sort_key, sort_order, page, per_page, user_id=nil, unread=false)
               get "/api/v1/threads", course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order, page: page, per_page: per_page, user_id: user_id, unread: unread
@@ -368,12 +368,12 @@ describe "app" do
               num_pages.times do |i|
                 page = i + 1
                 result = thread_result_page(
-                  sort_spec['sort_key'],
-                  sort_spec['sort_dir'],
-                  page,
-                  per_page,
-                  user_id,
-                  filter_spec.include?("unread")
+                    sort_spec['sort_key'],
+                    sort_spec['sort_dir'],
+                    page,
+                    per_page,
+                    user_id,
+                    filter_spec.include?("unread")
                 )
                 result["collection"].length.should == (page * per_page <= expected_order.length ? per_page : expected_order.length % per_page)
                 if filter_spec.include?("unread")
@@ -383,7 +383,7 @@ describe "app" do
                   result["num_pages"].should == num_pages
                 end
                 result["page"].should == page
-                actual_order += result["collection"].map {|v| v["title"]}
+                actual_order += result["collection"].map { |v| v["title"] }
               end
               actual_order.should == expected_order
             end
@@ -393,7 +393,7 @@ describe "app" do
               @threads["t7"].pinned = true
               @threads["t7"].save!
               expected_order = move_to_front(move_to_end(@default_order, "t5"), "t7")
-              test_paged_order({'sort_key'=>'comments', 'sort_dir'=>'asc', 'per_page'=>3}, expected_order)
+              test_paged_order({'sort_key' => 'comments', 'sort_dir' => 'asc', 'per_page' => 3}, expected_order)
             end
 
             it "orders correctly acrosss pages with unread filter" do
@@ -405,21 +405,21 @@ describe "app" do
               @threads["t7"].save!
               expected_order = move_to_front(move_to_end(@default_order[1..8], "t5"), "t7")
               test_paged_order(
-                {'sort_key'=>'comments', 'sort_dir'=>'asc', 'per_page'=>3},
-                expected_order,
-                ["unread"],
-                user.id
+                  {'sort_key' => 'comments', 'sort_dir' => 'asc', 'per_page' => 3},
+                  expected_order,
+                  ["unread"],
+                  user.id
               )
             end
           end
         end
-        
+
       end
 
       def test_unicode_data(text)
-        course_id = "unicode_course"
-        thread = make_thread(User.first, text, course_id, "unicode_commentable")
-        make_comment(User.first, thread, text)
+        course_id = 'unicode_course'
+        thread = create(:comment_thread, body: text, course_id: course_id)
+        create(:comment, comment_thread: thread, body: text)
         result = thread_result(course_id: course_id).first
         check_thread_result_json(nil, thread, result)
       end
@@ -427,107 +427,118 @@ describe "app" do
       include_examples "unicode data"
     end
 
-    describe "GET /api/v1/threads/:thread_id" do
-
-      before(:each) { init_without_subscriptions }
-      
-      it "returns JSON" do
-        thread = CommentThread.first
-        get "/api/v1/threads/#{thread.id}"
-        last_response.should be_ok
-        last_response.content_type.should == "application/json;charset=utf-8"
+    describe 'GET /api/v1/threads/:thread_id' do
+      let(:thread) do
+        comment = create(:comment)
+        comment.comment_thread
       end
 
-      it "get information of a single comment thread" do
-        thread = CommentThread.first
+      subject do
         get "/api/v1/threads/#{thread.id}"
-        last_response.should be_ok
-        response_thread = parse last_response.body
-        check_thread_result_json(nil, thread, response_thread)
       end
 
-      it "computes endorsed correctly" do
-        thread = CommentThread.first
-        comment = thread.root_comments[1]
+      it { should be_ok }
+
+      it 'returns JSON' do
+        expect(subject.content_type).to eq 'application/json;charset=utf-8'
+      end
+
+      it 'get information of a single comment thread' do
+        check_thread_result_json(nil, thread, parse(subject.body))
+      end
+
+      it 'computes endorsed correctly' do
+        comment = thread.root_comments[0]
         comment.endorsed = true
         comment.save!
-        get "/api/v1/threads/#{thread.id}"
-        last_response.should be_ok
-        response_thread = parse last_response.body
-        response_thread["endorsed"].should == true
-        # re-request the thread from the database before checking it.
-        thread = CommentThread.find(thread.id)
-        check_thread_result_json(nil, thread, response_thread)
+
+        expect(subject).to be_ok
+        parsed = parse(subject.body)
+        expect(parsed).to include('endorsed' => true)
+        thread.reload
+        check_thread_result_json(nil, thread, parsed)
       end
 
-      # This is a test to ensure that the username is included even if the
-      # thread's author is the one looking at the comment. This is because of a
-      # regression in which we used User.only(:id, :read_states). This worked
-      # before we included the identity map, but afterwards, the user was
-      # missing the username and was not refetched.
-      # BBEGGS - Note 8/4/2015: Identify map has been removed during the mongoid 4.x upgrade.
-      # Should no longer be an issue.
-      it "includes the username even if the thread is being marked as read for the thread author" do
-        thread = CommentThread.first
-        expected_username = thread.author.username
-        get "/api/v1/threads/#{thread.id}", {:user_id => thread.author_id, :mark_as_read => true}
-        last_response.should be_ok
-        response_thread = parse last_response.body
-        response_thread["username"].should == expected_username
+      context 'when marking as read' do
+        subject do
+          get "/api/v1/threads/#{thread.id}", {:user_id => thread.author.id, :mark_as_read => true}
+        end
+
+        it { should be_ok }
+
+        # This is a test to ensure that the username is included even if the
+        # thread's author is the one looking at the comment. This is because of a
+        # regression in which we used User.only(:id, :read_states). This worked
+        # before we included the identity map, but afterwards, the user was
+        # missing the username and was not refetched.
+        # BBEGGS - Note 8/4/2015: Identify map has been removed during the mongoid 4.x upgrade.
+        # Should no longer be an issue.
+        it 'includes the username even if the thread is being marked as read for the thread author' do
+          expect(parse(subject.body)).to include('username' => thread.author.username)
+        end
       end
 
-      it "get information of a single comment thread with its comments" do
-        thread = CommentThread.first
-        get "/api/v1/threads/#{thread.id}", recursive: true
-        last_response.should be_ok
-        check_thread_result_json(nil, thread, parse(last_response.body))
-        check_thread_response_paging_json(thread, parse(last_response.body))
+      context 'with comments' do
+        subject do
+          get "/api/v1/threads/#{thread.id}", recursive: true
+        end
+
+        it { should be_ok }
+
+        it 'get information of a single comment thread with its comments' do
+          parsed = parse(subject.body)
+          check_thread_result_json(nil, thread, parsed)
+          check_thread_response_paging_json(thread, parsed)
+        end
       end
 
-      it "returns 404 when the thread does not exist" do
-        thread = CommentThread.first
-        path = "/api/v1/threads/#{thread.id}"
-        get path
-        last_response.should be_ok
+      it 'returns 404 when the thread does not exist' do
         thread.destroy
-        get path
-        last_response.status.should == 404
-        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
+        expect(subject.status).to eq 404
+        expect(parse(last_response.body).first).to eq I18n.t(:requested_object_not_found)
       end
 
-      it "marks thread as read and confirms its value on returned response" do
-        user = create_test_user(123)
-        thread = CommentThread.first
-        user.mark_as_read(thread)
-        get "/api/v1/threads/#{thread.id}", user_id: user.id
-        last_response.should be_ok
-        json_response = parse(last_response.body)
-        changed_thread = CommentThread.find(thread.id)
-        check_thread_result_json(user, changed_thread, json_response)
-        json_response["read"].should == true
+      context 'with user specified' do
+        let(:user) { create(:user) }
+
+        subject do
+          user.mark_as_read(thread)
+          get "/api/v1/threads/#{thread.id}", user_id: user.id
+          last_response
+        end
+
+        it { should be_ok }
+
+        it 'marks thread as read and confirms its value on returned response' do
+          parsed = parse(subject.body)
+          thread.reload
+          check_thread_result_json(user, thread, parsed)
+          expect(parsed).to include('read' => true)
+        end
       end
 
       def test_unicode_data(text)
-        thread = make_thread(User.first, text, "unicode_course", "unicode_commentable")
-        make_comment(User.first, thread, text)
+        thread = create(:comment_thread, body: text)
+        create(:comment, comment_thread: thread, body: text)
+
         get "/api/v1/threads/#{thread.id}", recursive: true
-        last_response.should be_ok
-        result = parse last_response.body
-        check_thread_result_json(nil, thread, result)
-        check_thread_response_paging_json(thread, result)
+        expect(last_response).to be_ok
+
+        parsed = parse(last_response.body)
+        check_thread_result_json(nil, thread, parsed)
+        check_thread_response_paging_json(thread, parsed)
       end
 
-      include_examples "unicode data"
+      include_examples 'unicode data'
 
       context "response pagination" do
-
         before(:each) do
           User.all.delete
           Content.all.delete
           @user = create_test_user(999)
           @threads = {}
           @comments = {}
-          [20,10,3,2,1,0].each do |n|
+          [20, 10, 3, 2, 1, 0].each do |n|
             thread_key = "t#{n}"
             thread = make_thread(@user, thread_key, DFLT_COURSE_ID, "pdq")
             @threads[n] = thread
@@ -554,28 +565,28 @@ describe "app" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {}
             check_thread_response_paging_json thread, res, 0, nil, false
-          end 
+          end
         end
 
         it "skips the specified number of responses" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {:resp_skip => 1}
             check_thread_response_paging_json thread, res, 1, nil, false
-          end 
+          end
         end
 
         it "limits the specified number of responses" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {:resp_limit => 2}
             check_thread_response_paging_json thread, res, 0, 2, false
-          end 
+          end
         end
 
         it "skips and limits responses" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {:resp_skip => 3, :resp_limit => 5}
             check_thread_response_paging_json thread, res, 3, 5, false
-          end 
+          end
         end
 
       end
@@ -584,7 +595,7 @@ describe "app" do
     describe "PUT /api/v1/threads/:thread_id" do
 
       before(:each) { init_without_subscriptions }
-      
+
       it "update information of comment thread and don't mark thread as read" do
         thread = CommentThread.first
         comment = thread.comments.first
@@ -665,7 +676,7 @@ describe "app" do
 
       before(:each) { init_without_subscriptions }
 
-      let :default_params  do
+      let :default_params do
         {body: "new comment", course_id: "1", user_id: User.first.id}
       end
       it "create a comment to the comment thread" do
@@ -676,7 +687,7 @@ describe "app" do
         last_response.should be_ok
         changed_thread = CommentThread.find(thread.id)
         changed_thread.comment_count.should == orig_count + 1
-        comment = changed_thread.comments.select{|c| c["body"] == "new comment"}.first
+        comment = changed_thread.comments.select { |c| c["body"] == "new comment" }.first
         comment.should_not be_nil
         comment.author_id.should == user.id
       end
@@ -688,7 +699,7 @@ describe "app" do
         last_response.should be_ok
         changed_thread = CommentThread.find(thread.id)
         changed_thread.comment_count.should == orig_count + 1
-        comment = changed_thread.comments.select{|c| c["body"] == "new comment"}.first
+        comment = changed_thread.comments.select { |c| c["body"] == "new comment" }.first
         comment.should_not be_nil
         comment.anonymous.should be_true
       end
@@ -720,18 +731,29 @@ describe "app" do
 
       include_examples "unicode data"
     end
-    describe "DELETE /api/v1/threads/:thread_id" do
-      before(:each) { init_without_subscriptions }
-      it "delete the comment thread and its comments" do
-        thread = CommentThread.first.to_hash
-        delete "/api/v1/threads/#{thread['id']}"
-        last_response.should be_ok
-        CommentThread.where(title: thread["title"]).first.should be_nil
+
+    describe 'DELETE /api/v1/threads/:thread_id' do
+      let(:thread) { create_comment_thread_and_comments }
+
+      subject { delete "/api/v1/threads/#{thread.id}" }
+
+      it { should be_ok }
+
+      it 'deletes the comment thread and its comments' do
+        expect(CommentThread.where(id: thread.id).count).to eq 1
+        expect(Comment.where(comment_thread: thread).count).to eq 2
+        subject
+        expect(CommentThread.where(id: thread.id).count).to eq 0
+        expect(Comment.where(comment_thread: thread).count).to eq 0
       end
-      it "returns 400 when the thread does not exist" do
-        delete "/api/v1/threads/does_not_exist"
-        last_response.status.should == 400
-        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
+
+      context 'when thread does not exist' do
+        subject { delete '/api/v1/threads/does_not_exist' }
+
+        it 'returns 400 when the thread does not exist' do
+          expect(subject.status).to eq 400
+          expect(parse(subject.body).first).to eq I18n.t(:requested_object_not_found)
+        end
       end
     end
   end
