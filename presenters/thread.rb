@@ -98,13 +98,35 @@ class ThreadPresenter
   # not be filled (i.e. will be empty), but the child_count will still be set
   # correctly for that comment.
   def merge_response_content(content, thread_id)
-    @match = {comment_thread_id: thread_id, parent_id: {:$exists => true}}
-    @group = {_id: "$parent_id", count: {:$sum => 1} }
-    parent_child_counts_view = Comment.collection.aggregate([{:$match => @match}, {:$group => @group}])
+    map = %Q{
+      function() {
+        emit(this.parent_id, {child_count: 1});
+      }
+    }
+    reduce = %Q{
+      function(key, values) {
+        var sum = 0;
+        if (key != null) {
+          values.forEach(function(value) {
+            sum += 1;
+          });
+        }
+        return {child_count: sum};
+      }
+    }
+    parent_child_maps = Comment.where(comment_thread_id: thread_id).map_reduce(map, reduce).out(inline: true)
     parent_child_counts_hash = {}
-    parent_child_counts_view.each do |row|
-       parent_child_counts_hash[row["_id"]] = row["count"]
+    parent_child_maps.each do |map|
+      parent_child_counts_hash[map["_id"]] = map["value"]["child_count"] unless map["_id"].nil?
     end
+
+    #@match = {comment_thread_id: thread_id, parent_id: {:$exists => true}}
+    #@group = {_id: "$parent_id", count: {:$sum => 1} }
+    #parent_child_counts_view = Comment.collection.aggregate([{:$match => @match}, {:$group => @group}])
+    #parent_child_counts_hash = {}
+    #parent_child_counts_view.each do |row|
+    #   parent_child_counts_hash[row["_id"]] = row["count"]
+    #end
 
     top_level = []
     ancestry = []
