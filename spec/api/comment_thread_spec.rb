@@ -334,28 +334,45 @@ describe "app" do
           end
 
           context "pagination" do
-            def thread_result_page (sort_key, sort_order, page, per_page, user_id=nil, unread=false)
-              get "/api/v1/threads", course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order, page: page, per_page: per_page, user_id: user_id, unread: unread
+            def thread_result_page (sort_key, sort_order, page, per_page, course_id=DFLT_COURSE_ID, user_id=nil, unread=false)
+              get "/api/v1/threads", course_id: course_id, sort_key: sort_key, sort_order: sort_order, page: page, per_page: per_page, user_id: user_id, unread: unread
               last_response.should be_ok
               parse(last_response.body)
             end
-
+            it "returns single page with no threads in a course" do
+              result = thread_result_page("date", "desc", 1, 20, "99")
+              result["collection"].length.should == 0
+              result["thread_count"].should == 0
+              result["num_pages"].should == 1
+              result["page"].should == 1
+            end
             it "returns single page" do
               result = thread_result_page("date", "desc", 1, 20)
               result["collection"].length.should == 10
+              result["thread_count"].should == 10
               result["num_pages"].should == 1
               result["page"].should == 1
             end
             it "returns multiple pages" do
               result = thread_result_page("date", "desc", 1, 5)
               result["collection"].length.should == 5
+              result["thread_count"].should == 10
               result["num_pages"].should == 2
               result["page"].should == 1
 
               result = thread_result_page("date", "desc", 2, 5)
               result["collection"].length.should == 5
+              result["thread_count"].should == 10
               result["num_pages"].should == 2
               result["page"].should == 2
+            end
+            it "returns page exceeding available pages with no results" do
+              #TODO: Review whether we can switch pagination endpoint to raise an exception; rather than an empty page
+              result = thread_result_page("date", "desc", 3, 5)
+              result["collection"].length.should == 0
+              result["thread_count"].should == 10
+              result["num_pages"].should == 2
+              result["page"].should == 3
             end
 
             def test_paged_order (sort_spec, expected_order, filter_spec=[], user_id=nil)
@@ -372,6 +389,7 @@ describe "app" do
                     sort_spec['sort_dir'],
                     page,
                     per_page,
+                    DFLT_COURSE_ID,
                     user_id,
                     filter_spec.include?("unread")
                 )
