@@ -37,7 +37,7 @@ class ThreadPresenter
         else
           content = Comment.where(comment_thread_id: @thread._id, "parent_ids" => []).order_by({"sk" => 1})
         end
-        h["children"] = merge_response_content(content)
+        h["children"] = merge_response_content(content, @thread._id)
         h["resp_total"] = content.to_a.select{|d| d.depth == 0 }.length
       else
         responses = Content.where(comment_thread_id: @thread._id).exists(parent_id: false)
@@ -87,17 +87,55 @@ class ThreadPresenter
       content = Comment.where(comment_thread_id: thread_id, "parent_ids" => []).
         where({:id => {"$in" => paged_response_ids}}).sort({"sk" => 1})
     end
-    {"responses" => merge_response_content(content), "response_count" => response_ids.length}
+    {"responses" => merge_response_content(content, thread_id), "response_count" => response_ids.length}
   end
 
   # Takes content output from Mongoid in a depth-first traversal order and
   # returns an array of first-level response hashes with content represented
-  # hierarchically, with a comment's list of children in the key "children".
-  def merge_response_content(content)
+  # hierarchically, with a comment's list of children in the key "children"
+  # and count of children comment in "child_count"
+  # Note: For performance reasons, at certain depths the children array may
+  # not be filled (i.e. will be empty), but the child_count will still be set
+  # correctly for that comment.
+  def merge_response_content(content, thread_id)
+    map = %Q{
+      function() {
+        emit(this.parent_id, {child_count: 1});
+      }
+    }
+    reduce = %Q{
+      function(key, values) {
+        var sum = 0;
+        if (key != null) {
+          values.forEach(function(value) {
+            sum += 1;
+          });
+        }
+        return {child_count: sum};
+      }
+    }
+    parent_child_maps = Comment.where(comment_thread_id: thread_id).map_reduce(map, reduce).out(inline: true)
+    parent_child_counts_hash = {}
+    parent_child_maps.each do |map|
+      parent_child_counts_hash[map["_id"]] = map["value"]["child_count"] unless map["_id"].nil?
+    end
+
+    #@match = {comment_thread_id: thread_id, parent_id: {:$exists => true}}
+    #@group = {_id: "$parent_id", count: {:$sum => 1} }
+    #parent_child_counts_view = Comment.collection.aggregate([{:$match => @match}, {:$group => @group}])
+    #parent_child_counts_hash = {}
+    #parent_child_counts_view.each do |row|
+    #   parent_child_counts_hash[row["_id"]] = row["count"]
+    #end
+
     top_level = []
     ancestry = []
     content.each do |item|
-      item_hash = item.to_hash.merge("children" => [])
+      item_hash = item.to_hash.merge({"children" => [], "child_count" => 0})
+      if parent_child_counts_hash.has_key?(item_hash["id"])
+        item_hash["child_count"] = parent_child_counts_hash[item_hash["id"]]
+      end
+
       if item.parent_id.nil?
         top_level << item_hash
         ancestry = [item_hash]
