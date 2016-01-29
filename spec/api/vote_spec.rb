@@ -49,6 +49,18 @@ describe "app" do
         comment.up_votes_count.should == prev_up_votes - 1
         comment.down_votes_count.should == prev_down_votes
       end
+      it "unvote on the comment is idempotent" do
+        user = User.first
+        comment = Comment.first
+        prev_up_votes = comment.up_votes_count
+        prev_down_votes = comment.down_votes_count
+        delete "/api/v1/comments/#{comment.id}/votes", user_id: user.id
+        # multiple calls to unvote endpoint should not change the data
+        delete "/api/v1/comments/#{comment.id}/votes", user_id: user.id
+        comment = Comment.find(comment.id)
+        comment.up_votes_count.should == prev_up_votes - 1
+        comment.down_votes_count.should == prev_down_votes
+      end
       it "returns 400 when the comment does not exist" do
         delete "/api/v1/comments/does_not_exist/votes", user_id: User.first.id
         last_response.status.should == 400
@@ -66,6 +78,17 @@ describe "app" do
         thread = CommentThread.first
         prev_up_votes = thread.up_votes_count
         prev_down_votes = thread.down_votes_count
+        put "/api/v1/threads/#{thread.id}/votes", user_id: user.id, value: "down"
+        thread = CommentThread.find(thread.id)
+        thread.up_votes_count.should == prev_up_votes - 1
+        thread.down_votes_count.should == prev_down_votes + 1
+      end
+      it "vote on the thread is idempotent" do
+        user = User.first
+        thread = CommentThread.first
+        prev_up_votes = thread.up_votes_count
+        prev_down_votes = thread.down_votes_count
+        put "/api/v1/threads/#{thread.id}/votes", user_id: user.id, value: "down"
         put "/api/v1/threads/#{thread.id}/votes", user_id: user.id, value: "down"
         thread = CommentThread.find(thread.id)
         thread.up_votes_count.should == prev_up_votes - 1

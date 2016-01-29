@@ -21,20 +21,59 @@ describe "app" do
       end
     end
     describe "GET /api/v1/:commentable_id/threads" do
-      it "get all comment threads associated with a commentable object" do
-        get "/api/v1/question_1/threads"
+      def thread_result(commentable_id, params={})
+        get "/api/v1/#{commentable_id}/threads", params
         last_response.should be_ok
-        response = parse last_response.body
-        threads = response['collection']
+        parse(last_response.body)["collection"]
+      end
+      it "get all comment threads associated with a commentable object" do
+        threads = thread_result "question_1"
         threads.length.should == 2
         threads.index{|c| c["body"] == "can anyone help me?"}.should_not be_nil
         threads.index{|c| c["body"] == "it is unsolvable"}.should_not be_nil
       end
+      it "returns standalone threads if explicitly requested" do
+        threads = thread_result "question_1", context: "standalone"
+        threads.length.should == 1
+        threads[0]["body"].should == "no one can see us"
+      end
+      it "filters by course_id" do
+        course1_threads = thread_result "question_1", course_id: "1"
+        course1_threads.length.should == 1
+        course2_threads = thread_result "question_1", course_id: "2"
+        course2_threads.length.should == 1
+        course1_threads.should_not == course2_threads
+      end
+      it "filters by group_id" do
+        group_thread = Commentable.find("question_1").comment_threads.first
+        threads = thread_result "question_1", group_id: 42
+        threads.length.should == 2
+        group_thread.group_id = 43
+        group_thread.save!
+        threads = thread_result "question_1", group_id: 42
+        threads.length.should == 1
+        group_thread.group_id = 42
+        group_thread.save!
+        threads = thread_result "question_1", group_id: 42
+        threads.length.should == 2
+      end
+      it "filters by group_ids" do
+        group_thread = Commentable.find("question_1").comment_threads.first
+        group_thread.group_id = 42
+        group_thread.save!
+        threads = thread_result "question_1", group_ids: "42,43"
+        threads.length.should == 2
+        group_thread.group_id = 43
+        group_thread.save!
+        threads = thread_result "question_1", group_ids: "42,43"
+        threads.length.should == 2
+        group_thread.group_id = 44
+        group_thread.save
+        threads = thread_result "question_1", group_ids: "42,43"
+        threads.length.should == 1
+      end
       it "returns an empty array when the commentable object does not exist (no threads)" do
-        get "/api/v1/does_not_exist/threads"
-        last_response.should be_ok
-        response = parse last_response.body
-        threads = response['collection']
+        threads = thread_result "does_not_exist"
         threads.length.should == 0
       end
 
@@ -59,8 +98,31 @@ describe "app" do
         old_count = CommentThread.count
         post '/api/v1/question_1/threads', default_params
         last_response.should be_ok
+        result = parse(last_response.body)
+        result["read"].should == false
+        result["unread_comments_count"].should == 0
+        result["endorsed"].should == false
         CommentThread.count.should == old_count + 1
-        CommentThread.where(title: "Interesting question").first.should_not be_nil
+        thread = CommentThread.where(title: "Interesting question").first
+        thread.should_not be_nil
+        thread.context.should == "course"
+      end
+      it "can create a standalone thread" do
+        old_count = CommentThread.count
+        post '/api/v1/question_1/threads', default_params.merge(:context => "standalone")
+        CommentThread.count.should == old_count + 1
+        thread = CommentThread.where(title: "Interesting question").first
+        thread.should_not be_nil
+        thread.context.should == "standalone"
+      end
+      CommentThread.thread_type.values.each do |thread_type|
+        it "can create a #{thread_type} thread" do
+          old_count = CommentThread.where(thread_type: thread_type).count
+          post "/api/v1/question_1/threads", default_params.merge(thread_type: thread_type.to_s)
+          last_response.should be_ok
+          parse(last_response.body)["thread_type"].should == thread_type.to_s
+          CommentThread.where(thread_type: thread_type).count.should == old_count + 1
+        end
       end
       it "allows anonymous thread" do
         old_count = CommentThread.count
@@ -97,10 +159,11 @@ describe "app" do
         post '/api/v1/question_1/threads', default_params.merge(body: "     \n    \n")
         last_response.status.should == 400
       end
-      it "returns 503 when the post content is blocked" do
+      it "returns 503 and does not create when the post content is blocked" do
         post '/api/v1/question_1/threads', default_params.merge(body: "BLOCKED POST")
         last_response.status.should == 503
         parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => Digest::MD5.hexdigest("blocked post"))
+        CommentThread.where(body: "BLOCKED POST").to_a.should be_empty
       end
 
       def test_unicode_data(text)

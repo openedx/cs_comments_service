@@ -63,7 +63,9 @@ helpers do
 
   def undo_vote_for(obj)
     raise ArgumentError, t(:user_id_is_required) unless user
-    user.unvote(obj)
+    if user.voted?(obj)
+      user.unvote(obj)
+    end
     obj.reload.to_hash.to_json
   end
   
@@ -116,72 +118,123 @@ helpers do
 
   end
 
-  def handle_threads_query(comment_threads)
-    
-    if params[:course_id]
-      comment_threads = comment_threads.where(:course_id=>params[:course_id])
+  def handle_threads_query(
+    comment_threads,
+    user_id,
+    course_id,
+    group_ids,
+    filter_flagged,
+    filter_unread,
+    filter_unanswered,
+    sort_key,
+    sort_order,
+    page,
+    per_page,
+    context=:course
+  )
 
-      if params[:flagged]
-        self.class.trace_execution_scoped(['Custom/handle_threads_query/find_flagged']) do
-          #get flagged threads and threads containing flagged responses
-          comment_ids = Comment.where(:course_id=>params[:course_id]).
-            where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
-            collect{|c| c.comment_thread_id}.uniq
-            
-          thread_ids = comment_threads.where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).
-            collect{|c| c.id}
-            
-          comment_ids += thread_ids
+    context_threads = comment_threads.where({:context => context})
+
+    if not group_ids.empty?
+      group_threads = get_group_id_criteria(comment_threads, group_ids)
+      comment_threads = comment_threads.all_of(context_threads.selector, group_threads.selector)
+    else
+      comment_threads = context_threads
+    end
+
+    if filter_flagged
+      self.class.trace_execution_scoped(['Custom/handle_threads_query/find_flagged']) do
+        # TODO replace with aggregate query?
+        comment_ids = Comment.where(:course_id => course_id).
+          where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true).
+          collect{|c| c.comment_thread_id}.uniq
           
-          comment_threads = comment_threads.where(:id.in => comment_ids)
-        end
+        thread_ids = comment_threads.where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true).
+          collect{|c| c.id}
+
+        comment_threads = comment_threads.in({"_id" => (comment_ids + thread_ids).uniq})
       end
     end
 
-    if params[:commentable_ids]
-      comment_threads = comment_threads.in(commentable_id: params[:commentable_ids].split(","))
+    if filter_unanswered
+      self.class.trace_execution_scoped(['Custom/handle_threads_query/find_unanswered']) do
+        endorsed_thread_ids = Comment.where(:course_id => course_id).
+          where(:parent_id.exists => false, :endorsed => true).
+          collect{|c| c.comment_thread_id}.uniq
+          
+        comment_threads = comment_threads.where({"thread_type" => :question}).nin({"_id" => endorsed_thread_ids})
+      end
     end
 
-    sort_criteria = get_sort_criteria(params)
-
+    sort_criteria = get_sort_criteria(sort_key, sort_order)
     if not sort_criteria
-      {}.to_json
+      {}
     else
-      page = (params["page"] || DEFAULT_PAGE).to_i
-      per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
+      request_user = user_id ? user : nil
+      page = (page || DEFAULT_PAGE).to_i
+      per_page = (per_page || DEFAULT_PER_PAGE).to_i
 
       comment_threads = comment_threads.order_by(sort_criteria)
-      num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
-      page = [num_pages, [1, page].max].min
-      # actual query happens here (by doing to_a)
-      threads = comment_threads.page(page).per(per_page).to_a
+
+      if request_user and filter_unread
+        # Filter and paginate based on user read state.  Requires joining a subdocument of the
+        # user object with documents in the contents collection, which has to be done in memory.
+        read_dates = {}
+        read_state = request_user.read_states.where(:course_id => course_id).first
+        if read_state
+          read_dates = read_state["last_read_times"].to_hash
+        end
+
+        threads = []
+        skipped = 0
+        to_skip = (page - 1) * per_page
+        has_more = false
+        # batch_size is used to cap the number of documents we might load into memory at any given time
+        # TODO: starting with Mongoid 3.1, you can just do comment_threads.batch_size(size).each()
+        comment_threads.query.batch_size(CommentService.config["manual_pagination_batch_size"].to_i)
+        Mongoid.unit_of_work(disable: :current) do # this is to prevent Mongoid from memoizing every document we look at
+          comment_threads.each do |thread|
+            thread_key = thread._id.to_s
+            if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
+              if skipped >= to_skip
+                if threads.length == per_page
+                  has_more = true
+                  break
+                end
+                threads << thread
+              else
+                skipped += 1
+              end
+            end
+          end
+        end
+        # The following trick makes frontend pagers work without recalculating
+        # the number of all unread threads per user on every request (since the number
+        # of threads in a course could be tens or hundreds of thousands).  It has the 
+        # effect of showing that there's always just one more page of results, until
+        # there definitely are no more pages.  This is really only acceptable for pagers
+        # that don't actually reveal the total number of pages to the user onscreen.
+        num_pages = has_more ? page + 1 : page
+      else
+        # let the installed paginator library handle pagination
+        num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
+        page = [1, page].max
+        threads = comment_threads.page(page).per(per_page).to_a
+      end
       
       if threads.length == 0
         collection = []
       else
-        pres_threads = ThreadListPresenter.new(
-          threads,
-          params[:user_id] ? user : nil,
-          params[:course_id] || threads.first.course_id
-        )
+        pres_threads = ThreadListPresenter.new(threads, request_user, course_id)
         collection = pres_threads.to_hash
       end
-
-      json_output = nil
-      self.class.trace_execution_scoped(['Custom/handle_threads_query/json_serialize']) do
-        json_output = {
-          collection: collection, 
-          num_pages: num_pages,
-          page: page,
-        }.to_json
-      end
-      json_output
+      {collection: collection, num_pages: num_pages, page: page}
     end
   end
 
   # Given query params, return sort criteria appropriate for passing to the
   # order_by function of a Mongoid query. Returns nil if params are not valid.
-  def get_sort_criteria(params)
+  def get_sort_criteria(sort_key, sort_order)
     sort_key_mapper = {
       "date" => :created_at,
       "activity" => :last_activity_at,
@@ -208,14 +261,41 @@ helpers do
     end
   end
 
-  def notifications_by_date_range_and_user_ids start_date_time, end_date_time, user_ids  
+  def get_group_ids_from_params(params)
+    if params["group_id"] and params["group_ids"]
+      raise ArgumentError, t(:cannot_specify_group_id_and_group_ids)
+    end
+    group_ids = []
+    if params["group_id"]
+      group_ids << params["group_id"].to_i
+    elsif params["group_ids"]
+      group_ids.concat(params["group_ids"].split(",").map(&:to_i))
+    end
+    group_ids
+  end
+
+  def get_group_id_criteria(threads, group_ids)
+    if group_ids.length > 1
+      threads.any_of(
+        {"group_id" => {"$in" => group_ids}},
+        {"group_id" => {"$exists" => false}},
+      )
+    else
+      threads.any_of(
+        {"group_id" => group_ids[0]},
+        {"group_id" => {"$exists" => false}},
+      )
+    end
+  end
+
+  def notifications_by_date_range_and_user_ids(start_date_time, end_date_time, user_ids)
     #given a date range and a user, find all of the notifiable content
     #key by thread id, and return notification messages for each user
 
     #first, find the subscriptions for the users
     subscriptions = Subscription.where(:subscriber_id.in => user_ids)
 
-    #get the thhread ids
+    #get the thread ids
     thread_ids = subscriptions.collect{|t| t.source_id}.uniq
 
     #find all the comments
@@ -261,6 +341,9 @@ helpers do
               t["content"] = []
               t["title"] = current_thread.title
               t["commentable_id"] = current_thread.commentable_id
+              unless current_thread.group_id.nil?
+                t["group_id"] = current_thread.group_id
+              end
             else
               t = notification_map[u][c.course_id][c.comment_thread_id.to_s]
             end
@@ -278,9 +361,9 @@ helpers do
 
   end
 
-  def filter_blocked_content c
+  def filter_blocked_content body
     begin
-      normalized_body = c.body.strip.downcase.gsub(/[^a-z ]/, '').gsub(/\s+/, ' ')
+      normalized_body = body.strip.downcase.gsub(/[^a-z ]/, '').gsub(/\s+/, ' ')
       hash = Digest::MD5.hexdigest(normalized_body)
     rescue
       # body was nil, or the hash function failed somehow - never mind

@@ -38,10 +38,25 @@ describe "app" do
 
       describe "filtering works" do
         let!(:threads) do
-          threads = (0..29).map do |i|
+          threads = (0..34).map do |i|
             thread = make_thread(author, "text", course_id + (i % 2).to_s, "commentable" + (i % 3).to_s)
+            if i < 2
+              comment = make_comment(author, thread, "objectionable")
+              comment.abuse_flaggers = [1]
+              comment.save!
+            end
             if i % 5 != 0
               thread.group_id = i % 5
+              thread.save!
+            end
+            if [0, 2, 4].include? i
+              thread.thread_type = :question
+              thread.save!
+              comment = make_comment(author, thread, "response")
+              comment.save!
+            end
+            if i > 29
+              thread.context = :standalone
               thread.save!
             end
             thread
@@ -63,6 +78,47 @@ describe "app" do
           assert_response_contains((0..29).find_all {|i| i % 2 == 0})
         end
 
+        it "by context" do
+          get "api/v1/search/threads", text: "text", context: "standalone"
+          assert_response_contains(30..34)
+        end
+
+        it "with unread filter" do
+          user = create_test_user(Random.new)
+          user.mark_as_read(threads[0])
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", user_id: user.id, unread: true
+          assert_response_contains((1..29).find_all {|i| i % 2 == 0})
+        end
+
+        it "with flagged filter" do
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", flagged: true
+          assert_response_contains([0])
+        end
+
+        it "with unanswered filter" do
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", unanswered: true
+          assert_response_contains([0, 2, 4])
+          comment = threads[2].comments.first
+          comment.endorsed = true
+          comment.save!
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", unanswered: true
+          assert_response_contains([0, 4])
+        end
+
+        it "with unanswered filter and group_id" do
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", unanswered: true
+          assert_response_contains([0, 2, 4])
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", unanswered: true, group_id: 2
+          assert_response_contains([0, 2])
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", unanswered: true, group_id: 4
+          assert_response_contains([0, 4])
+          comment = threads[2].comments.first
+          comment.endorsed = true
+          comment.save!
+          get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", unanswered: true, group_id: 2
+          assert_response_contains([0])
+        end
+
         it "by commentable_id" do
           get "/api/v1/search/threads", text: "text", commentable_id: "commentable0"
           assert_response_contains((0..29).find_all {|i| i % 3 == 0})
@@ -76,6 +132,12 @@ describe "app" do
         it "by group_id" do
           get "/api/v1/search/threads", text: "text", group_id: "1"
           assert_response_contains((0..29).find_all {|i| i % 5 == 0 || i % 5 == 1})
+        end
+
+        it "by group_ids" do
+          get "/api/v1/search/threads", text: "text", group_ids: "1,2"
+          expected_ids = (0..29).find_all {|i| i % 5 == 0 || i % 5 == 1 || i % 5 == 2}
+          assert_response_contains(expected_ids)
         end
 
         it "by all filters combined" do

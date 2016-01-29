@@ -9,6 +9,28 @@ An independent comment system which supports voting and nested comments. It
 also supports features including instructor endorsement for education-aimed
 discussion platforms.
 
+Running The Server
+----
+Elasticsearch and MongoDB servers need to be available, and correctly referenced
+in config/application.yml and config/mongoid.yml, respectively.
+
+Before the server is first run, ensure gems are installed by doing ``bundle install``.
+
+To run the server, do ``ruby app.rb [-p PORT]`` where PORT defaults to 4567.
+
+If you are running cs_comments_service as part of edx-platform__ development under
+devstack, it is strongly recommended to read `those setup documents`__ first.  Note that
+devstack will take care of just about all of the installation, configuration, and 
+service management on your behalf.
+
+__ https://github.com/edx/edx-platform
+__ https://github.com/edx/configuration/wiki/edX-Developer-Stack
+
+Running Tests
+----
+To run tests, do ``bundle exec rspec``.  Append ``--help`` or see rspec documentation
+for additional options to this command.
+
 Internationalization and Localization
 ----
 

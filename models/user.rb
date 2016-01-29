@@ -31,7 +31,7 @@ class User
   end
 
   def subscribed_threads
-    CommentThread.where(:id.in => subscribed_thread_ids)
+    CommentThread.in({"_id" => subscribed_thread_ids})
   end
 
   def to_hash(params={})
@@ -49,9 +49,59 @@ class User
     end
     if params[:course_id]
       self.class.trace_execution_scoped(['Custom/User.to_hash/count_comments_and_threads']) do
-        hash = hash.merge("threads_count" => CommentThread.where(author_id: id,course_id: params[:course_id], anonymous: false, anonymous_to_peers: false).count,
-                          "comments_count" => Comment.where(author_id: id, course_id: params[:course_id], anonymous: false, anonymous_to_peers: false).count
-                         )
+        if not params[:group_ids].empty?
+          # Get threads in either the specified group(s) or posted to all groups (nil).
+          specified_groups_or_global = params[:group_ids] << nil
+          threads_count = CommentThread.course_context.where(
+            author_id: id,
+            course_id: params[:course_id],
+            group_id: {"$in" => specified_groups_or_global},
+            anonymous: false,
+            anonymous_to_peers: false
+          ).count
+
+          # Note that the comments may have been responses to a thread not started by author_id.
+
+          # comment.standalone_context? gets the context from the parent comment_thread
+          # we need to eager load the comment_thread to prevent an N+1 when we iterate through the results
+          comment_thread_ids = Comment.includes(:comment_thread).where(
+            author_id: id,
+            course_id: params[:course_id],
+            anonymous: false,
+            anonymous_to_peers: false
+          ).
+          reject{ |comment| comment.standalone_context? }.
+          collect{ |comment| comment.comment_thread_id }
+
+          # Filter to the unique thread ids visible to the specified group(s).
+          group_comment_thread_ids = CommentThread.where(
+            id: {"$in" => comment_thread_ids.uniq},
+            group_id: {"$in" => specified_groups_or_global},
+          ).collect{|d| d.id}
+
+          # Now filter comment_thread_ids so it only includes things in group_comment_thread_ids
+          # (keeping duplicates so the count will be correct).
+          comments_count = comment_thread_ids.count{
+            |comment_thread_id| group_comment_thread_ids.include?(comment_thread_id)
+          }
+
+        else
+          threads_count = CommentThread.course_context.where(
+            author_id: id,
+            course_id: params[:course_id],
+            anonymous: false,
+            anonymous_to_peers: false
+          ).count
+          # comment.standalone_context? gets the context from the parent comment_thread
+          # we need to eager load the comment_thread to prevent an N+1 when we iterate through the results
+          comments_count = Comment.includes(:comment_thread).where(
+            author_id: id,
+            course_id: params[:course_id],
+            anonymous: false,
+            anonymous_to_peers: false
+          ).reject{ |comment| comment.standalone_context? }.count
+        end
+        hash = hash.merge("threads_count" => threads_count, "comments_count" => comments_count)
       end
     end
     hash

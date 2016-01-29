@@ -29,6 +29,18 @@ describe "app" do
             res["course_id"].should == "abc"
           }
         end
+        it "does not return standalone threads" do
+          [@threads["t1"], @threads["t2"], @threads["t3"]].each do |t|
+            t.course_id = "abc"
+            t.save!
+          end
+          @threads["t2"].context = :standalone
+          @threads["t2"].save!
+          rs = thread_result course_id: "abc", sort_order: "asc"
+          rs.length.should == 2
+          check_thread_result_json(nil, @threads["t1"], rs[0])
+          check_thread_result_json(nil, @threads["t3"], rs[1])
+        end
         it "returns only threads where course id and commentable id match" do
           @threads["t1"].course_id = "course1"
           @threads["t1"].commentable_id = "commentable1"
@@ -57,6 +69,16 @@ describe "app" do
           rs = thread_result course_id: "omg", group_id: 100
           rs.length.should == 1
           check_thread_result_json(nil, @threads["t1"], rs.first)
+        end
+        it "returns only threads where course id and group ids match" do
+          @threads["t1"].course_id = "omg"
+          @threads["t1"].group_id = 100
+          @threads["t1"].save!
+          @threads["t2"].course_id = "omg"
+          @threads["t2"].group_id = 101
+          @threads["t2"].save!
+          rs = thread_result course_id: "omg", group_ids: "100,101", sort_order: "asc"
+          rs.length.should == 2
         end
         it "returns only threads where course id and group id match or group id is nil" do
           @threads["t1"].course_id = "omg"
@@ -102,6 +124,59 @@ describe "app" do
             rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
             rs.length.should == 0 
           end
+        end
+        it "filters unread posts" do
+          user = create_test_user(Random.new)
+          rs = thread_result course_id: DFLT_COURSE_ID, user_id: user.id
+          rs.length.should == 10
+          rs2 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs2.should == rs
+          user.mark_as_read(@threads[rs.first["title"]])
+          rs3 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs3.should == rs[1..9]
+          rs[1..8].each { |r| user.mark_as_read(@threads[r["title"]]) }
+          rs4 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs4.should == rs[9, 1]
+          user.mark_as_read(@threads[rs.last["title"]])
+          rs5 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs5.should == []
+          make_comment(create_test_user(Random.new), @threads[rs.first["title"]], "new activity")
+          rs6 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
+          rs6.length.should == 1
+          rs6.first["title"].should == rs.first["title"]
+        end
+        it "filters unanswered questions" do
+          %w[t9 t7 t5 t3 t1].each do |thread_key|
+            @threads[thread_key].thread_type = :question
+            @threads[thread_key].save!
+          end
+          rs = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs.length.should == 5
+          @comments["t1 c0"].endorsed = true
+          @comments["t1 c0"].save!
+          rs2 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs2.length.should == 4
+          %w[t9 t7 t5].each do |thread_key|
+            comment = @threads[thread_key].comments.first
+            comment.endorsed = true
+            comment.save!
+          end
+          rs3 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs3.length.should == 1
+          @comments["t3 c0"].endorsed = true
+          @comments["t3 c0"].save!
+          rs3 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs3.length.should == 0
+        end
+        it "ignores endorsed comments that are not question responses" do
+          thread = @threads["t0"]
+          thread.thread_type = :question
+          thread.save!
+          comment = make_comment(create_test_user(Random.new), thread.comments.first, "comment on a response")
+          comment.endorsed = true
+          comment.save!
+          rs = thread_result course_id: DFLT_COURSE_ID, unanswered: true
+          rs.length.should == 1
         end
         it "correctly considers read state" do
           user = create_test_user(123)
@@ -259,8 +334,8 @@ describe "app" do
           end
           
           context "pagination" do
-            def thread_result_page (sort_key, sort_order, page, per_page)
-              get "/api/v1/threads", course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order, page: page, per_page: per_page
+            def thread_result_page (sort_key, sort_order, page, per_page, user_id=nil, unread=false)
+              get "/api/v1/threads", course_id: DFLT_COURSE_ID, sort_key: sort_key, sort_order: sort_order, page: page, per_page: per_page, user_id: user_id, unread: unread
               last_response.should be_ok
               parse(last_response.body)
             end
@@ -282,23 +357,59 @@ describe "app" do
               result["num_pages"].should == 2
               result["page"].should == 2
             end
+
+            def test_paged_order (sort_spec, expected_order, filter_spec=[], user_id=nil)
+              # sort spec is a hash with keys: sort_key, sort_dir, per_page
+              # filter spec is an array of filters to set, e.g. "unread", "flagged"
+              # expected order is an array of the expected titles of returned threads, in the expected order
+              actual_order = []
+              per_page = sort_spec['per_page']
+              num_pages = (expected_order.length + per_page - 1) / per_page
+              num_pages.times do |i|
+                page = i + 1
+                result = thread_result_page(
+                  sort_spec['sort_key'],
+                  sort_spec['sort_dir'],
+                  page,
+                  per_page,
+                  user_id,
+                  filter_spec.include?("unread")
+                )
+                result["collection"].length.should == (page * per_page <= expected_order.length ? per_page : expected_order.length % per_page)
+                if filter_spec.include?("unread")
+                  # because of the way we handle num_pages for the unread filter, this is a special case.
+                  result["num_pages"].should == (page == num_pages ? page : page + 1)
+                else
+                  result["num_pages"].should == num_pages
+                end
+                result["page"].should == page
+                actual_order += result["collection"].map {|v| v["title"]}
+              end
+              actual_order.should == expected_order
+            end
+
             it "orders correctly across pages" do
               make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
               @threads["t7"].pinned = true
               @threads["t7"].save!
               expected_order = move_to_front(move_to_end(@default_order, "t5"), "t7")
-              actual_order = []
-              per_page = 3
-              num_pages = (@threads.length + per_page - 1) / per_page
-              num_pages.times do |i|
-                page = i + 1
-                result = thread_result_page("comments", "asc", page, per_page)
-                result["collection"].length.should == (page * per_page <= @threads.length ? per_page : @threads.length % per_page)
-                result["num_pages"].should == num_pages
-                result["page"].should == page
-                actual_order += result["collection"].map {|v| v["title"]}
-              end
-              actual_order.should == expected_order
+              test_paged_order({'sort_key'=>'comments', 'sort_dir'=>'asc', 'per_page'=>3}, expected_order)
+            end
+
+            it "orders correctly acrosss pages with unread filter" do
+              user = create_test_user(Random.new)
+              user.mark_as_read(@threads["t0"])
+              user.mark_as_read(@threads["t9"])
+              make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
+              @threads["t7"].pinned = true
+              @threads["t7"].save!
+              expected_order = move_to_front(move_to_end(@default_order[1..8], "t5"), "t7")
+              test_paged_order(
+                {'sort_key'=>'comments', 'sort_dir'=>'asc', 'per_page'=>3},
+                expected_order,
+                ["unread"],
+                user.id
+              )
             end
           end
         end
@@ -335,7 +446,7 @@ describe "app" do
         check_thread_result_json(nil, thread, response_thread)
       end
 
-      it "computes endorsed? correctly" do
+      it "computes endorsed correctly" do
         thread = CommentThread.first
         comment = thread.root_comments[1]
         comment.endorsed = true
@@ -467,12 +578,20 @@ describe "app" do
       
       it "update information of comment thread" do
         thread = CommentThread.first
-        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id"
+        comment = thread.comments.first
+        comment.endorsed = true
+        comment.endorsement = {:user_id => "42", :time => DateTime.now}
+        comment.save
+        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question"
         last_response.should be_ok
         changed_thread = CommentThread.find(thread.id)
         changed_thread.body.should == "new body"
         changed_thread.title.should == "new title"
         changed_thread.commentable_id.should == "new_commentable_id"
+        changed_thread.thread_type.should == "question"
+        comment.reload
+        comment.endorsed.should == false
+        comment.endorsement.should == nil
         check_thread_result_json(nil, changed_thread, parse(last_response.body))
       end
       it "returns 400 when the thread does not exist" do
@@ -480,12 +599,17 @@ describe "app" do
         last_response.status.should == 400
         parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
       end
-      it "returns 503 if the post body has been blocked" do
+      it "returns 503 and does not update if the post body has been blocked" do
         thread = CommentThread.first
+        original_body = thread.body
         put "/api/v1/threads/#{thread.id}", body: "BLOCKED POST", title: "new title", commentable_id: "new_commentable_id"
         last_response.status.should == 503
+        thread.reload
+        thread.body.should == original_body
         put "/api/v1/threads/#{thread.id}", body: "blocked,   post...", title: "new title", commentable_id: "new_commentable_id"
         last_response.status.should == 503
+        thread.reload
+        thread.body.should == original_body
       end
 
       def test_unicode_data(text)
@@ -542,9 +666,10 @@ describe "app" do
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "    \n      \n  ")
         last_response.status.should == 400
       end
-      it "returns 503 when the post body has been blocked" do
+      it "returns 503 and does not create when the post body has been blocked" do
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "BLOCKED POST")
         last_response.status.should == 503
+        Comment.where(body: "BLOCKED POST").to_a.should be_empty
       end
 
       def test_unicode_data(text)

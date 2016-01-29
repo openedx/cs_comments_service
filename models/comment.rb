@@ -11,6 +11,7 @@ class Comment < Content
   field :course_id, type: String
   field :body, type: String
   field :endorsed, type: Boolean, default: false
+  field :endorsement, type: Hash
   field :anonymous, type: Boolean, default: false
   field :anonymous_to_peers, type: Boolean, default: false
   field :at_position_list, type: Array, default: []
@@ -38,6 +39,7 @@ class Comment < Content
     indexes :comment_thread_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'comment_thread_id'
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'commentable_id'
     indexes :group_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'group_id'
+    indexes :context, type: :string, index: :not_analyzed, included_in_all: false, as: 'context'
     indexes :created_at, type: :date, included_in_all: false
     indexes :updated_at, type: :date, included_in_all: false
   end
@@ -46,7 +48,7 @@ class Comment < Content
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: "User", index: true
 
-  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed
+  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement
 
   validates_presence_of :comment_thread, autosave: false
   validates_presence_of :body
@@ -55,7 +57,7 @@ class Comment < Content
 
   counter_cache :comment_thread
 
-  before_destroy :delete_descendants # TODO async
+  before_destroy :destroy_children # TODO async
 
   before_create :set_thread_last_activity_at
   before_update :set_thread_last_activity_at
@@ -94,13 +96,14 @@ class Comment < Content
       subtree_hash = subtree(sort: sort_by_parent_and_time)
       self.class.hash_tree(subtree_hash).first
     else
-      as_document.slice(*%w[body course_id endorsed anonymous anonymous_to_peers created_at updated_at at_position_list])
+      as_document.slice(*%w[body course_id endorsed endorsement anonymous anonymous_to_peers created_at updated_at at_position_list])
                  .merge("id" => _id)
                  .merge("user_id" => author_id)
                  .merge("username" => author_username) 
                  .merge("depth" => depth)
                  .merge("closed" => comment_thread.nil? ? false : comment_thread.closed) # ditto
                  .merge("thread_id" => comment_thread_id)
+                 .merge("parent_id" => parent_ids[-1])
                  .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id) # ditto
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                  .merge("abuse_flaggers" => abuse_flaggers)
@@ -129,6 +132,18 @@ class Comment < Content
     end
   rescue Mongoid::Errors::DocumentNotFound
     nil
+  end
+
+  def context
+    self.comment_thread_id ? self.comment_thread.context : nil
+  end
+
+  def course_context?
+    self.context == 'course'
+  end
+
+  def standalone_context?
+    self.context == 'standalone'
   end
 
   def self.by_date_range_and_thread_ids from_when, to_when, thread_ids

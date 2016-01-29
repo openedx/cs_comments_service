@@ -12,7 +12,7 @@ namespace :flags do
   #SINATRA_ENV=development rake flags:flagged
 
   task :flagged => :environment do
-    flagged = Content.flagged
+    flagged = Content.flagged.to_a
 
     courses = {}
 

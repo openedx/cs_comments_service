@@ -13,7 +13,9 @@ end
 
 get "#{APIPREFIX}/users/:user_id" do |user_id|
   begin
-    user.to_hash(complete: bool_complete, course_id: params["course_id"]).to_json
+    # Get any group_ids that may have been specified (will be an empty list if none specified).
+    group_ids = get_group_ids_from_params(params)
+    user.to_hash(complete: bool_complete, course_id: params["course_id"], group_ids: group_ids).to_json
   rescue Mongoid::Errors::DocumentNotFound
     error 404
   end
@@ -37,19 +39,20 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
     thread_ids
   end
 
-  num_pages = [1, (active_thread_ids.count / per_page.to_f).ceil].max
-  page = [num_pages, [1, page].max].min
+  threads = CommentThread.course_context.in({"_id" => active_thread_ids})
 
-  paged_thread_ids = active_thread_ids[(page - 1) * per_page, per_page]
-
-  # Find all the threads by id, and then put them in the order found earlier.
-  # Necessary because CommentThread.find does return results in the same
-  # order as the provided ids.
-  paged_active_threads = CommentThread.find(paged_thread_ids).sort_by do |t| 
-    paged_thread_ids.index(t.id)
+  group_ids = get_group_ids_from_params(params)
+  if not group_ids.empty?
+    threads = get_group_id_criteria(threads, group_ids)
   end
 
-  presenter = ThreadListPresenter.new(paged_active_threads.to_a, user, params[:course_id])
+  num_pages = [1, (threads.count / per_page.to_f).ceil].max
+  page = [num_pages, [1, page].max].min
+
+  sorted_threads = threads.sort_by {|t| active_thread_ids.index(t.id)}
+  paged_threads = sorted_threads[(page - 1) * per_page, per_page]
+
+  presenter = ThreadListPresenter.new(paged_threads, user, params[:course_id])
   collection = presenter.to_hash
 
   json_output = nil

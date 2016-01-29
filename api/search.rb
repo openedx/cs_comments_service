@@ -2,15 +2,12 @@ require 'new_relic/agent/method_tracer'
 
 get "#{APIPREFIX}/search/threads" do
   local_params = params # Necessary for params to be available inside blocks
-  sort_criteria = get_sort_criteria(local_params)
-
+  group_ids = get_group_ids_from_params(local_params)
+  context = local_params["context"] ? local_params["context"] : "course"
   search_text = local_params["text"]
-  if !search_text || !sort_criteria
+  if !search_text
     {}.to_json
   else
-    page = (local_params["page"] || DEFAULT_PAGE).to_i
-    per_page = (local_params["per_page"] || DEFAULT_PER_PAGE).to_i
-
     # Because threads and comments are currently separate unrelated documents in
     # Elasticsearch, we must first query for all matching documents, then
     # extract the set of thread ids, and then sort the threads by the specified
@@ -27,12 +24,24 @@ get "#{APIPREFIX}/search/threads" do
               filter :term, :commentable_id => local_params["commentable_id"] if local_params["commentable_id"]
               filter :terms, :commentable_id => local_params["commentable_ids"].split(",") if local_params["commentable_ids"]
               filter :term, :course_id => local_params["course_id"] if local_params["course_id"]
-              if local_params["group_id"]
+              filter :or, [
+                {:not => {:exists => {:field => :context}}},
+                {:term => {:context => context}}
+              ]
+
+              if not group_ids.empty?
+                if group_ids.length > 1
+                  group_id_criteria = {:terms => {:group_id => group_ids}}
+                else
+                  group_id_criteria = {:term => {:group_id => group_ids[0]}}
+                end
+
                 filter :or, [
                   {:not => {:exists => {:field => :group_id}}},
-                  {:term => {:group_id => local_params["group_id"]}}
+                  group_id_criteria
                 ]
               end
+
             end
           end
           sort do
@@ -72,71 +81,27 @@ get "#{APIPREFIX}/search/threads" do
       corrected_text = nil if thread_ids.empty?
     end
 
-    results = nil
-    self.class.trace_execution_scoped(["Custom/get_search_threads/mongo_sort_page"]) do
-      results = CommentThread.
-        where(:id.in => thread_ids.to_a).
-        order_by(sort_criteria).
-        page(page).
-        per(per_page).
-        to_a
+    result_obj = handle_threads_query(
+      CommentThread.in({"_id" => thread_ids.to_a}),
+      local_params["user_id"],
+      local_params["course_id"],
+      group_ids,
+      value_to_boolean(local_params["flagged"]),
+      value_to_boolean(local_params["unread"]),
+      value_to_boolean(local_params["unanswered"]),
+      local_params["sort_key"],
+      local_params["sort_order"],
+      local_params["page"],
+      local_params["per_page"],
+      context
+    )
+    if !result_obj.empty?
+      result_obj[:corrected_text] = corrected_text
+      # NOTE this reflects the total results from ES, but does not consider
+      # any post-filtering that might happen (e.g. unread, flagged...) before
+      # results are shown to the user.
+      result_obj[:total_results] = thread_ids.size
     end
-    total_results = thread_ids.size
-    num_pages = (total_results + per_page - 1) / per_page
-
-    if results.length == 0
-      collection = []
-    else
-      pres_threads = ThreadListPresenter.new(
-        results,
-        local_params[:user_id] ? user : nil,
-        local_params[:course_id] || results.first.course_id
-      )
-      collection = pres_threads.to_hash
-    end
-
-    json_output = nil
-    self.class.trace_execution_scoped(['Custom/get_search_threads/json_serialize']) do
-      json_output = {
-        collection: collection,
-        corrected_text: corrected_text,
-        total_results: total_results,
-        num_pages: num_pages,
-        page: page,
-      }.to_json
-    end
-    json_output
+    result_obj.to_json
   end
-end
-
-get "#{APIPREFIX}/search/threads/more_like_this" do
-  CommentThread.tire.search page: 1, per_page: 5, load: true do |search|
-    search.query do |query|
-      query.more_like_this params["text"], fields: ["title", "body"], min_doc_freq: 1, min_term_freq: 1
-    end
-  end.results.map(&:to_hash).to_json
-end
-
-get "#{APIPREFIX}/search/threads/recent_active" do
-
-  return [].to_json if not params["course_id"]
-
-  follower_id = params["follower_id"]
-  from_time = {
-    "today" => Date.today.to_time,
-    "this_week" => Date.today.to_time - 1.weeks,
-    "this_month" => Date.today.to_time - 1.months,
-  }[params["from_time"] || "this_week"]
-
-  query_params = {}
-  query_params["course_id"] = params["course_id"] if params["course_id"]
-  query_params["commentable_id"] = params["commentable_id"] if params["commentable_id"]
-
-  comment_threads = if follower_id
-    User.find(follower_id).subscribed_threads
-  else
-    CommentThread.all
-  end
-
-  comment_threads.where(query_params.merge(:last_activity_at => {:$gte => from_time})).order_by(:last_activity_at.desc).limit(5).to_a.map(&:to_hash).to_json
 end

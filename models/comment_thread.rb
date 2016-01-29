@@ -5,9 +5,14 @@ require_relative 'content'
 class CommentThread < Content
 
   include Mongoid::Timestamps
+  extend Enumerize
 
   voteable self, :up => +1, :down => -1
 
+  field :thread_type, type: String, default: :discussion
+  enumerize :thread_type, in: [:question, :discussion]
+  field :context, type: String, default: :course
+  enumerize :context, in: [:course, :standalone]
   field :comment_count, type: Integer, default: 0
   field :title, type: String
   field :body, type: String
@@ -38,6 +43,7 @@ class CommentThread < Content
     indexes :comment_count, type: :integer, included_in_all: false
     indexes :votes_point, type: :integer, as: 'votes_point', included_in_all: false
 
+    indexes :context, type: :string, index: :not_analyzed, included_in_all: false
     indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
@@ -50,8 +56,10 @@ class CommentThread < Content
   has_many :comments, dependent: :destroy#, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
   has_many :activities, autosave: true
 
-  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed
+  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type
 
+  validates_presence_of :thread_type
+  validates_presence_of :context
   validates_presence_of :title
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
@@ -60,10 +68,13 @@ class CommentThread < Content
 
   before_create :set_last_activity_at
   before_update :set_last_activity_at, :unless => lambda { closed_changed? }
+  after_update :clear_endorsements
 
   before_destroy :destroy_subscriptions
 
   scope :active_since, ->(from_time) { where(:last_activity_at => {:$gte => from_time}) }
+  scope :standalone_context, ->() { where(:context => :standalone) }
+  scope :course_context, ->() { where(:context => :course) }
 
   def self.new_dumb_thread(options={})
     c = self.new
@@ -113,33 +124,7 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-
-    # to_hash returns the following model for each thread
-    #  title body course_id anonymous anonymous_to_peers commentable_id
-    #  created_at updated_at at_position_list closed
-    #    (all the above direct from the original document)
-    #  id
-    #    from doc._id
-    #  user_id
-    #    from doc.author_id
-    #  username
-    #    from doc.author_username
-    #  votes
-    #    from subdocument votes - {count, up_count, down_count, point}  
-    #  abuse_flaggers
-    #    from original document 
-    #  tags
-    #    deprecated - empty array
-    #  type
-    #    hardcoded "thread"
-    #  group_id
-    #    from orig doc
-    #  pinned
-    #    from orig doc
-    #  comments_count
-    #    count across all comments
-
-    as_document.slice(*%w[title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
+    as_document.slice(*%w[thread_type title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed context])
                      .merge("id" => _id, "user_id" => author_id,
                             "username" => author_username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),
@@ -161,6 +146,18 @@ private
 
   def set_last_activity_at
     self.last_activity_at = Time.now.utc unless last_activity_at_changed?
+  end
+
+  def clear_endorsements
+    if self.thread_type_changed?
+      # We use 'set' instead of 'update_attributes' because the Comment model has a 'before_update' callback that sets
+      # the last activity time on the thread. Therefore the callbacks would be mutually recursive and we end up with a
+      # 'SystemStackError'. The 'set' method skips callbacks and therefore bypasses this issue.
+      self.comments.each do |comment|
+        comment.set :endorsed, false
+        comment.set :endorsement, nil
+      end
+    end
   end
 
   def destroy_subscriptions

@@ -1,13 +1,23 @@
 get "#{APIPREFIX}/threads" do # retrieve threads by course
-  #if a group id is sent, then process the set of threads with that group id or with no group id
-  threads = Content.where(_type:"CommentThread", course_id: params["course_id"])
-  if params["group_id"]
-    threads = threads.any_of(
-      {:group_id => params[:group_id].to_i},
-      {:group_id.exists => false},
-    )
+  
+  threads = Content.where({"_type" => "CommentThread", "course_id" => params["course_id"]})
+  if params[:commentable_ids]
+    threads = threads.in({"commentable_id" => params[:commentable_ids].split(",")})
   end
-  handle_threads_query(threads)
+
+  handle_threads_query(
+    threads,
+    params["user_id"],
+    params["course_id"],
+    get_group_ids_from_params(params),
+    value_to_boolean(params["flagged"]),
+    value_to_boolean(params["unread"]),
+    value_to_boolean(params["unanswered"]),
+    params["sort_key"],
+    params["sort_order"],
+    params["page"],
+    params["per_page"]
+  ).to_json
 end
 
 get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
@@ -41,8 +51,8 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
 end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
-  thread.update_attributes(params.slice(*%w[title body closed commentable_id group_id]))
-  filter_blocked_content thread
+  filter_blocked_content params["body"]
+  thread.update_attributes(params.slice(*%w[title body pinned closed commentable_id group_id thread_type]))
 
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
@@ -53,12 +63,12 @@ put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
 end
 
 post "#{APIPREFIX}/threads/:thread_id/comments" do |thread_id|
+  filter_blocked_content params["body"]
   comment = Comment.new(params.slice(*%w[body course_id]))
   comment.anonymous = bool_anonymous || false
   comment.anonymous_to_peers = bool_anonymous_to_peers || false
   comment.author = user
   comment.comment_thread = thread
-  filter_blocked_content comment
   comment.save
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
