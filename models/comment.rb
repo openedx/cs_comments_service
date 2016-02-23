@@ -39,6 +39,7 @@ class Comment < Content
     indexes :comment_thread_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'comment_thread_id'
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'commentable_id'
     indexes :group_id, type: :string, index: :not_analyzed, included_in_all: false, as: 'group_id'
+    indexes :context, type: :string, index: :not_analyzed, included_in_all: false, as: 'context'
     indexes :created_at, type: :date, included_in_all: false
     indexes :updated_at, type: :date, included_in_all: false
   end
@@ -102,6 +103,7 @@ class Comment < Content
                  .merge("depth" => depth)
                  .merge("closed" => comment_thread.nil? ? false : comment_thread.closed) # ditto
                  .merge("thread_id" => comment_thread_id)
+                 .merge("parent_id" => parent_ids[-1])
                  .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id) # ditto
                  .merge("votes" => votes.slice(*%w[count up_count down_count point]))
                  .merge("abuse_flaggers" => abuse_flaggers)
@@ -130,6 +132,18 @@ class Comment < Content
     end
   rescue Mongoid::Errors::DocumentNotFound
     nil
+  end
+
+  def context
+    self.comment_thread_id ? self.comment_thread.context : nil
+  end
+
+  def course_context?
+    self.context == 'course'
+  end
+
+  def standalone_context?
+    self.context == 'standalone'
   end
 
   def self.by_date_range_and_thread_ids from_when, to_when, thread_ids

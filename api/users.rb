@@ -39,7 +39,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
     thread_ids
   end
 
-  threads = CommentThread.in({"_id" => active_thread_ids})
+  threads = CommentThread.course_context.in({"_id" => active_thread_ids})
 
   group_ids = get_group_ids_from_params(params)
   if not group_ids.empty?

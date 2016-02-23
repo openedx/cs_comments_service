@@ -149,6 +149,19 @@ describe "app" do
              verify_counts_multiple_groups(2, 6, "100", "3000")
              verify_counts_multiple_groups(1, 5, "100", "8")
           end
+
+          context "standalone threads" do
+            before(:each) do
+              # creates a standalone thread with 3 comments by user 100
+              make_standalone_thread_with_comments(@users['u100'])
+            end
+
+            it 'does not return standalone thread or comments in counts' do
+              # user 100 already has 1 thread and 5 comments created by `setup_10_threads`
+              # verify that the new standalone thread is not added to the counts
+              verify_counts(1, 5, "100")
+            end
+          end
       end
     end
     describe "GET /api/v1/users/:user_id/active_threads" do
@@ -168,13 +181,36 @@ describe "app" do
         last_response.body.should == "{}"
       end
 
-      it "only returns threads with activity from the specified user"  do
-        @comments["t3 c4"].author = @users["u100"]
-        @comments["t3 c4"].save!
-        rs = thread_result 100, course_id: "xyz"
-        rs.length.should == 2
-        check_thread_result_json(@users["u100"], @threads["t3"], rs[0])
-        check_thread_result_json(@users["u100"], @threads["t0"], rs[1])
+      context 'with standalone thread' do
+        before(:each) do
+          # creates a standalone thread with 3 comments by user 100, stored as "standalone t0 c{i}"
+          make_standalone_thread_with_comments(@users['u100'], 0)
+          # creates a standalone thread with 3 comments by user 101, with stored as "standalone t0 c{i}"
+          make_standalone_thread_with_comments(@users['u101'], 1)
+        end
+
+        it "only returns threads with non-standalone activity from the specified user"  do
+          # `setup_10_threads` creates a thread "t3" and 5 comments all owned by user 103 
+          # we are hijacking a course thread comment owned by user 103 and making it owned
+          # by user 100 instead, so this user has a comment on someone else's thread
+          @comments["t3 c4"].author = @users["u100"]
+          @comments["t3 c4"].save!
+
+          # do the same as above but with standalone
+          # hijack a standalone thread comment and make it owned by user 100
+          @comments["standalone t1 c1"].author = @users["u100"]
+          @comments["standalone t1 c1"].save!
+
+          results = thread_result 100, course_id: "xyz"
+          # it should not include the standalone thread we created for user 100
+          # not the standalone thread user 100 is a commenter on
+          results.length.should == 2
+
+          # it should include the course thread owned by user 100 (t0)
+          # and the course thread user 100 has a comment on (t3)
+          check_thread_result_json(@users["u100"], @threads["t3"], results[0])
+          check_thread_result_json(@users["u100"], @threads["t0"], results[1])
+        end
       end
 
       it "filters by group_id" do

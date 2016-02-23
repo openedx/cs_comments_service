@@ -131,6 +131,13 @@ def init_without_subscriptions
   comment1.comment_thread = thread
   comment1.save!
 
+  thread = CommentThread.new(title: "Our super secret discussion", body: "no one can see us", course_id: "2", commentable_id: commentable.id)
+  thread.thread_type = :discussion
+  thread.context = :standalone
+  thread.author = user
+  thread.save!
+  user.subscribe(thread)
+
   thread = CommentThread.new(title: "I don't know what to say", body: "lol", course_id: "2", commentable_id: "something else")
   thread.thread_type = :discussion
   thread.author = users[1]
@@ -205,7 +212,7 @@ end
 # this method is used to test results produced using the helper function handle_threads_query
 # which is used in multiple areas of the API
 def check_thread_result(user, thread, hash, is_json=false)
-  expected_keys = %w(id thread_type title body course_id commentable_id created_at updated_at)
+  expected_keys = %w(id thread_type title body course_id commentable_id created_at updated_at context)
   expected_keys += %w(anonymous anonymous_to_peers at_position_list closed user_id)
   expected_keys += %w(username votes abuse_flaggers tags type group_id pinned)
   expected_keys += %w(comments_count unread_comments_count read endorsed)
@@ -237,6 +244,7 @@ def check_thread_result(user, thread, hash, is_json=false)
   hash["pinned"].should == thread.pinned?
   hash["endorsed"].should == thread.endorsed?
   hash["comments_count"].should == thread.comments.length
+  hash["context"] = thread.context
 
   if is_json
     hash["id"].should == thread._id.to_s
@@ -346,10 +354,11 @@ def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil)
 end
 
 # general purpose factory helpers
-def make_thread(author, text, course_id, commentable_id, thread_type=:discussion)
+def make_thread(author, text, course_id, commentable_id, thread_type=:discussion, context=:course)
   thread = CommentThread.new(title: text, body: text, course_id: course_id, commentable_id: commentable_id)
   thread.thread_type = thread_type
   thread.author = author
+  thread.context = context
   thread.save!
   thread
 end
@@ -367,6 +376,27 @@ def make_comment(author, parent, text)
   comment.comment_thread = thread
   comment.save!
   comment
+end
+
+# add standalone threads and comments to the @threads and @comments hashes
+# using the namespace "standalone t#{index}" for threads and "standalone t#{index} c#{i}" for comments
+# takes an index param if used within an iterator, otherwise will namespace using 0 for thread index
+# AKA this will overwrite "standalone t0" each time it is called. 
+def make_standalone_thread_with_comments(author, index=0)
+  thread = make_thread(
+    author,
+    "standalone thread #{index}",
+    DFLT_COURSE_ID,
+    "pdq",
+    :discussion,
+    :standalone
+  )
+
+  3.times do |i|
+    @comments["standalone t#{index} c#{i}"] = make_comment(author, thread, "stand alone comment #{i}")
+  end
+
+  @threads["standalone t#{index}"] = thread
 end
 
 DFLT_COURSE_ID = "xyz"
