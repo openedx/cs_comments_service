@@ -41,12 +41,3 @@ final_index_array.forEach(function(index_name)) {
     print('Ensuring'.concat(index));
     db.contents.ensureIndex(final_index_array[index_name]);
 }
-
-print('Dropping extra indexes');
-
-final_index_array.forEach(function(index_name)) {
-    if (list_of_current_index_names.indexOf(index_name > -1);
-    print('Dropping'.concat(index));
-    db.contents.dropIndex(index);
-}
-
