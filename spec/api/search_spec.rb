@@ -38,7 +38,7 @@ describe "app" do
 
       describe "filtering works" do
         let!(:threads) do
-          threads = (0..29).map do |i|
+          threads = (0..34).map do |i|
             thread = make_thread(author, "text", course_id + (i % 2).to_s, "commentable" + (i % 3).to_s)
             if i < 2
               comment = make_comment(author, thread, "objectionable")
@@ -54,6 +54,10 @@ describe "app" do
               thread.save!
               comment = make_comment(author, thread, "response")
               comment.save!
+            end
+            if i > 29
+              thread.context = :standalone
+              thread.save!
             end
             thread
           end
@@ -72,6 +76,11 @@ describe "app" do
         it "by course_id" do
           get "/api/v1/search/threads", text: "text", course_id: "test/course/id0"
           assert_response_contains((0..29).find_all {|i| i % 2 == 0})
+        end
+
+        it "by context" do
+          get "api/v1/search/threads", text: "text", context: "standalone"
+          assert_response_contains(30..34)
         end
 
         it "with unread filter" do

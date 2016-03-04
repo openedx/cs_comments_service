@@ -16,6 +16,8 @@ class Content
   index({comment_thread_id: 1, endorsed: 1}, {sparse: true})
   index({commentable_id: 1}, {sparse: true, background: true})
 
+  scope :flagged, where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true)
+
   ES_INDEX_NAME = 'content'
 
   def self.put_search_index_mapping(idx=nil)
@@ -38,15 +40,6 @@ class Content
     else
       (anonymous || anonymous_to_peers) ? attr_when_anonymous : author.send(attr)
     end
-  end
-
-  def self.flagged
-    #return an array of flagged content
-    holder = []
-    Content.where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true).each do |c|
-      holder << c
-    end
-    holder
   end
 
   def self.prolific_metric what, count

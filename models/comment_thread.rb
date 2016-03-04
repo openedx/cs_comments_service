@@ -11,6 +11,8 @@ class CommentThread < Content
 
   field :thread_type, type: String, default: :discussion
   enumerize :thread_type, in: [:question, :discussion]
+  field :context, type: String, default: :course
+  enumerize :context, in: [:course, :standalone]
   field :comment_count, type: Integer, default: 0
   field :title, type: String
   field :body, type: String
@@ -41,6 +43,7 @@ class CommentThread < Content
     indexes :comment_count, type: :integer, included_in_all: false
     indexes :votes_point, type: :integer, as: 'votes_point', included_in_all: false
 
+    indexes :context, type: :string, index: :not_analyzed, included_in_all: false
     indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
@@ -56,6 +59,7 @@ class CommentThread < Content
   attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type
 
   validates_presence_of :thread_type
+  validates_presence_of :context
   validates_presence_of :title
   validates_presence_of :body
   validates_presence_of :course_id # do we really need this?
@@ -69,6 +73,8 @@ class CommentThread < Content
   before_destroy :destroy_subscriptions
 
   scope :active_since, ->(from_time) { where(:last_activity_at => {:$gte => from_time}) }
+  scope :standalone_context, ->() { where(:context => :standalone) }
+  scope :course_context, ->() { where(:context => :course) }
 
   def self.new_dumb_thread(options={})
     c = self.new
@@ -118,7 +124,7 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-    as_document.slice(*%w[thread_type title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed])
+    as_document.slice(*%w[thread_type title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed context])
                      .merge("id" => _id, "user_id" => author_id,
                             "username" => author_username,
                             "votes" => votes.slice(*%w[count up_count down_count point]),

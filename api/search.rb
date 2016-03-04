@@ -3,6 +3,7 @@ require 'new_relic/agent/method_tracer'
 get "#{APIPREFIX}/search/threads" do
   local_params = params # Necessary for params to be available inside blocks
   group_ids = get_group_ids_from_params(local_params)
+  context = local_params["context"] ? local_params["context"] : "course"
   search_text = local_params["text"]
   if !search_text
     {}.to_json
@@ -23,6 +24,10 @@ get "#{APIPREFIX}/search/threads" do
               filter :term, :commentable_id => local_params["commentable_id"] if local_params["commentable_id"]
               filter :terms, :commentable_id => local_params["commentable_ids"].split(",") if local_params["commentable_ids"]
               filter :term, :course_id => local_params["course_id"] if local_params["course_id"]
+              filter :or, [
+                {:not => {:exists => {:field => :context}}},
+                {:term => {:context => context}}
+              ]
 
               if not group_ids.empty?
                 if group_ids.length > 1
@@ -87,7 +92,8 @@ get "#{APIPREFIX}/search/threads" do
       local_params["sort_key"],
       local_params["sort_order"],
       local_params["page"],
-      local_params["per_page"]
+      local_params["per_page"],
+      context
     )
     if !result_obj.empty?
       result_obj[:corrected_text] = corrected_text

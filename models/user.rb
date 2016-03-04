@@ -52,7 +52,7 @@ class User
         if not params[:group_ids].empty?
           # Get threads in either the specified group(s) or posted to all groups (nil).
           specified_groups_or_global = params[:group_ids] << nil
-          threads_count = CommentThread.where(
+          threads_count = CommentThread.course_context.where(
             author_id: id,
             course_id: params[:course_id],
             group_id: {"$in" => specified_groups_or_global},
@@ -61,12 +61,17 @@ class User
           ).count
 
           # Note that the comments may have been responses to a thread not started by author_id.
-          comment_thread_ids = Comment.where(
+
+          # comment.standalone_context? gets the context from the parent comment_thread
+          # we need to eager load the comment_thread to prevent an N+1 when we iterate through the results
+          comment_thread_ids = Comment.includes(:comment_thread).where(
             author_id: id,
             course_id: params[:course_id],
             anonymous: false,
             anonymous_to_peers: false
-          ).collect{|c| c.comment_thread_id}
+          ).
+          reject{ |comment| comment.standalone_context? }.
+          collect{ |comment| comment.comment_thread_id }
 
           # Filter to the unique thread ids visible to the specified group(s).
           group_comment_thread_ids = CommentThread.where(
@@ -81,18 +86,20 @@ class User
           }
 
         else
-          threads_count = CommentThread.where(
+          threads_count = CommentThread.course_context.where(
             author_id: id,
             course_id: params[:course_id],
             anonymous: false,
             anonymous_to_peers: false
           ).count
-          comments_count = Comment.where(
+          # comment.standalone_context? gets the context from the parent comment_thread
+          # we need to eager load the comment_thread to prevent an N+1 when we iterate through the results
+          comments_count = Comment.includes(:comment_thread).where(
             author_id: id,
             course_id: params[:course_id],
             anonymous: false,
             anonymous_to_peers: false
-          ).count
+          ).reject{ |comment| comment.standalone_context? }.count
         end
         hash = hash.merge("threads_count" => threads_count, "comments_count" => comments_count)
       end
