@@ -162,7 +162,7 @@ def check_thread_result(user, thread, hash, is_json=false)
   expected_keys = %w(id thread_type title body course_id commentable_id created_at updated_at context)
   expected_keys += %w(anonymous anonymous_to_peers at_position_list closed user_id)
   expected_keys += %w(username votes abuse_flaggers tags type group_id pinned)
-  expected_keys += %w(comments_count unread_comments_count read endorsed)
+  expected_keys += %w(comments_count unread_comments_count read endorsed last_activity_at)
   # these keys are checked separately, when desired, using check_thread_response_paging.
   actual_keys = hash.keys - [
       "children", "endorsed_responses", "non_endorsed_responses", "resp_skip",
@@ -197,9 +197,11 @@ def check_thread_result(user, thread, hash, is_json=false)
     hash["id"].should == thread._id.to_s
     hash["created_at"].should == thread.created_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     hash["updated_at"].should == thread.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    hash["last_activity_at"].should == thread.last_activity_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
   else
     hash["created_at"].should == thread.created_at
     hash["updated_at"].should == thread.updated_at
+    hash["last_activity_at"].should == thread.last_activity_at
   end
 
   if user.nil?
