@@ -5,6 +5,10 @@ require_relative 'content'
 class CommentThread < Content
 
   include Mongoid::Timestamps
+  include Mongoid::Attributes::Dynamic
+  include ActiveModel::MassAssignmentSecurity
+  include Tire::Model::Search
+  include Tire::Model::Callbacks
   extend Enumerize
 
   voteable self, :up => +1, :down => -1
@@ -28,8 +32,6 @@ class CommentThread < Content
 
   index({author_id: 1, course_id: 1})
 
-  include Tire::Model::Search
-  include Tire::Model::Callbacks
 
   index_name Content::ES_INDEX_NAME
 
@@ -48,12 +50,12 @@ class CommentThread < Content
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
     indexes :group_id, type: :integer, as: 'group_id', index: :not_analyzed, included_in_all: false
-    indexes :id,         :index    => :not_analyzed
-    indexes :thread_id, :analyzer => :keyword, :as => "_id"
+    indexes :id, :index => :not_analyzed
+    indexes :thread_id, :analyzer => :keyword, :as => '_id'
   end
 
-  belongs_to :author, class_name: "User", inverse_of: :comment_threads, index: true#, autosave: true
-  has_many :comments, dependent: :destroy#, autosave: true# Use destroy to envoke callback on the top-level comments TODO async
+  belongs_to :author, class_name: 'User', inverse_of: :comment_threads, index: true
+  has_many :comments, dependent: :destroy # Use destroy to invoke callback on the top-level comments
   has_many :activities, autosave: true
 
   attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type
@@ -69,23 +71,11 @@ class CommentThread < Content
   before_create :set_last_activity_at
   before_update :set_last_activity_at, :unless => lambda { closed_changed? }
   after_update :clear_endorsements
-
   before_destroy :destroy_subscriptions
 
   scope :active_since, ->(from_time) { where(:last_activity_at => {:$gte => from_time}) }
   scope :standalone_context, ->() { where(:context => :standalone) }
   scope :course_context, ->() { where(:context => :course) }
-
-  def self.new_dumb_thread(options={})
-    c = self.new
-    c.title = options[:title] || "title"
-    c.body = options[:body] || "body"
-    c.commentable_id = options[:commentable_id] || "commentable_id"
-    c.course_id = options[:course_id] || "course_id"
-    c.author = options[:author] || User.first
-    c.save!
-    c
-  end
 
   def activity_since(from_time=nil)
     if from_time
@@ -95,13 +85,21 @@ class CommentThread < Content
     end
   end
 
-  def activity_today; activity_since(Date.today.to_time); end
+  def activity_today
+    activity_since(Date.today.to_time)
+  end
 
-  def activity_this_week; activity_since(Date.today.to_time - 1.weeks); end
+  def activity_this_week
+    activity_since(Date.today.to_time - 1.weeks)
+  end
 
-  def activity_this_month; activity_since(Date.today.to_time - 1.months); end
+  def activity_this_month
+    activity_since(Date.today.to_time - 1.months)
+  end
 
-  def activity_overall; activity_since(nil); end
+  def activity_overall
+    activity_since(nil)
+  end
 
   def root_comments
     Comment.roots.where(comment_thread_id: self.id)
@@ -124,25 +122,26 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-    as_document.slice(*%w[thread_type title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed context])
-                     .merge("id" => _id, "user_id" => author_id,
-                            "username" => author_username,
-                            "votes" => votes.slice(*%w[count up_count down_count point]),
-                            "abuse_flaggers" => abuse_flaggers,
-                            "tags" => [],
-                            "type" => "thread",
-                            "group_id" => group_id,
-                            "pinned" => pinned?,
-                            "comments_count" => comment_count)
-    
+    as_document.slice(*%w[thread_type title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed context last_activity_at])
+        .merge('id' => _id,
+               'user_id' => author_id,
+               'username' => author_username,
+               'votes' => votes.slice(*%w[count up_count down_count point]),
+               'abuse_flaggers' => abuse_flaggers,
+               'tags' => [],
+               'type' => 'thread',
+               'group_id' => group_id,
+               'pinned' => pinned?,
+               'comments_count' => comment_count)
+
   end
 
   def comment_thread_id
     #so that we can use the comment thread id as a common attribute for flagging
     self.id
-  end  
-  
-private
+  end
+
+  private
 
   def set_last_activity_at
     self.last_activity_at = Time.now.utc unless last_activity_at_changed?
@@ -154,8 +153,8 @@ private
       # the last activity time on the thread. Therefore the callbacks would be mutually recursive and we end up with a
       # 'SystemStackError'. The 'set' method skips callbacks and therefore bypasses this issue.
       self.comments.each do |comment|
-        comment.set :endorsed, false
-        comment.set :endorsement, nil
+        comment.set(endorsed: false)
+        comment.set(endorsement: nil)
       end
     end
   end
@@ -163,5 +162,4 @@ private
   def destroy_subscriptions
     subscriptions.delete_all
   end
-
 end
