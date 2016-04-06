@@ -69,4 +69,32 @@ describe Comment do
       end
     end
   end
+
+  describe '#child_count' do
+    context 'with course_thread' do
+      it 'returns cached child count' do
+        comment = make_comment(author, course_thread, "comment")
+        child_comment = make_comment(author, comment, "comment")
+        expect(comment.get_cached_child_count).to eq(1)
+      end
+
+      it 'returns cached child count' do
+        comment = make_comment(author, course_thread, "comment")
+        child_comment = make_comment(author, comment, "comment")
+        comment.child_count = nil
+        expect(comment.get_cached_child_count).to eq(1)
+      end
+
+      it 'updates cached child count' do
+        comment = make_comment(author, course_thread, "comment")
+        expect(comment.get_cached_child_count).to eq(0)
+        comment.child_count = 2
+        expect(comment.get_cached_child_count).to eq(2)
+        comment.update_cached_child_count
+        expect(comment.get_cached_child_count).to eq(0)
+      end
+    end
+  end
+
+
 end

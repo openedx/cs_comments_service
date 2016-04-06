@@ -703,11 +703,13 @@ describe "app" do
         orig_count = thread.comment_count
         post "/api/v1/threads/#{thread.id}/comments", default_params
         last_response.should be_ok
+        retrieved = parse last_response.body
         changed_thread = CommentThread.find(thread.id)
         changed_thread.comment_count.should == orig_count + 1
         comment = changed_thread.comments.select { |c| c["body"] == "new comment" }.first
         comment.should_not be_nil
         comment.author_id.should == user.id
+        retrieved["child_count"].should == 0
       end
       it "allows anonymous comment" do
         thread = CommentThread.first
