@@ -361,5 +361,22 @@ describe "app" do
 
       include_examples "unicode data"
     end
+
+    describe "POST /api/v1/users/:user_id/read" do
+
+      before(:each) { setup_10_threads }
+
+      it "marks a thread as read for the user" do
+        thread = @threads["t0"]
+        user = create_test_user(42)
+        post "/api/v1/users/#{user.external_id}/read", source_type: "thread", source_id: thread.id
+        last_response.should be_ok
+        user.reload
+        read_states = user.read_states.where(course_id: thread.course_id).to_a
+        read_date = read_states.first.last_read_times[thread.id.to_s]
+        read_date.should >= thread.updated_at
+      end
+    end
+
   end
 end
