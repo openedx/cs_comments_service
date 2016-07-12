@@ -13,5 +13,5 @@ after_fork do |server, worker|
   Signal.trap 'TERM' do
     puts 'Unicorn worker intercepting TERM and doing nothing. Waiting for master to send QUIT'
   end
-  ::Mongoid.default_session.disconnect
+  ::Mongoid.default_client.close
 end

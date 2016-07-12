@@ -1,5 +1,3 @@
-require 'new_relic/agent/method_tracer'
-
 post "#{APIPREFIX}/users" do
   user = User.new(external_id: params["id"])
   user.username = params["username"]
@@ -75,4 +73,9 @@ put "#{APIPREFIX}/users/:user_id" do |user_id|
   else
     user.to_hash.to_json
   end
+end
+
+post "#{APIPREFIX}/users/:user_id/read" do |user_id|
+  user.mark_as_read(source)
+  user.reload.to_hash.to_json
 end

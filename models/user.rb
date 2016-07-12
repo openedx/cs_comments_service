@@ -153,8 +153,9 @@ class ReadState
   field :last_read_times, type: Hash, default: {}
   embedded_in :user
 
-  validates :course_id, uniqueness: true, presence: true
-  
+  validates_presence_of :course_id
+  validates_uniqueness_of :course_id
+
   def to_hash
     to_json
   end

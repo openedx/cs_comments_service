@@ -27,9 +27,12 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
     error 404, [t(:requested_object_not_found)].to_json
   end
 
-  if params["user_id"] and bool_mark_as_read
+  # user is required to return user-specific fields, such as "read" (even if bool_mark_as_read is False)
+  if params["user_id"]
     user = User.only([:id, :username, :read_states]).find_by(external_id: params["user_id"])
-    user.mark_as_read(thread) if user
+  end
+  if user and bool_mark_as_read
+    user.mark_as_read(thread)
   end
 
   presenter = ThreadPresenter.factory(thread, user || nil)
@@ -47,7 +50,7 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   else
     resp_limit = nil
   end
-  presenter.to_hash(true, resp_skip, resp_limit).to_json
+  presenter.to_hash(true, resp_skip, resp_limit, bool_recursive).to_json
 end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
@@ -69,6 +72,7 @@ post "#{APIPREFIX}/threads/:thread_id/comments" do |thread_id|
   comment.anonymous_to_peers = bool_anonymous_to_peers || false
   comment.author = user
   comment.comment_thread = thread
+  comment.child_count = 0
   comment.save
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json

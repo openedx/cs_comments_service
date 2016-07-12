@@ -11,5 +11,5 @@ data_dir = ENV['DATA_DIR'] || Dir.tmpdir
 pid "#{data_dir}/forum_unicorn.pid"
 
 after_fork do |server, worker|
-  ::Mongoid.default_session.disconnect
+  ::Mongoid.default_client.close
 end

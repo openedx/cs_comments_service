@@ -1,59 +1,42 @@
 require 'spec_helper'
+require 'faker'
 
-describe "app" do
 
-  before (:each) { set_api_key_header }
+describe 'app' do
+  before(:each) { set_api_key_header }
+  let(:body) { Faker::Lorem.word }
 
-  let(:author) { create_test_user(1) }
-  describe "thread search" do
-    describe "GET /api/v1/search/threads" do
-      it "returns thread with query match" do
-        commentable = Commentable.new("question_1")
+  describe 'GET /api/v1/search/threads' do
 
-        random_string = (0...8).map{ ('a'..'z').to_a[rand(26)] }.join
-
-        thread = CommentThread.new(title: "Test title", body: random_string, course_id: "1", commentable_id: commentable.id)
-        thread.thread_type = :discussion
-        thread.author = author
-        thread.save!
-
-        sleep 3
-
-        get "/api/v1/search/threads", text: random_string
-        last_response.should be_ok
-        threads = parse(last_response.body)['collection']
-        check_thread_result_json(nil, thread, threads.select{|t| t["id"] == thread.id.to_s}.first)
+    shared_examples_for 'a search endpoint' do
+      subject do
+        refresh_es_index
+        get '/api/v1/search/threads', text: body
       end
 
+      let(:matched_thread) { parse(subject.body)['collection'].select { |t| t['id'] == thread.id.to_s }.first }
+
+      it { should be_ok }
+
+      it 'returns thread with query match' do
+        expect(matched_thread).to_not be_nil
+        check_thread_result_json(nil, thread, matched_thread)
+      end
     end
-  end
 
-  describe "comment search" do
-    describe "GET /api/v1/search/threads" do
-      it "returns thread with comment query match" do
-        commentable = Commentable.new("question_1")
+    context 'when searching on thread content' do
+      let!(:thread) { create(:comment_thread, body: body) }
 
-        random_string = (0...8).map{ ('a'..'z').to_a[rand(26)] }.join
+      it_behaves_like 'a search endpoint'
+    end
 
-        thread = CommentThread.new(title: "Test title", body: "elephant otter", course_id: "1", commentable_id: commentable.id)
-        thread.thread_type = :discussion
-        thread.author = author
-        thread.save!
-
-        sleep 3
-
-        comment = Comment.new(body: random_string, course_id: "1", commentable_id: commentable.id)
-        comment.author = author
-        comment.comment_thread = thread
-        comment.save!
-
-        sleep 1
-
-        get "/api/v1/search/threads", text: random_string
-        last_response.should be_ok
-        threads = parse(last_response.body)['collection']
-        check_thread_result_json(nil, thread, threads.select{|t| t["id"] == thread.id.to_s}.first)
+    context 'when searching on comment content' do
+      let!(:thread) do
+        comment = create(:comment, body: body)
+        thread = comment.comment_thread
       end
+
+      it_behaves_like 'a search endpoint'
     end
   end
 end

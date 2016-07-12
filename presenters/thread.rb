@@ -23,7 +23,7 @@ class ThreadPresenter
     @is_endorsed = is_endorsed
   end
 
-  def to_hash with_responses=false, resp_skip=0, resp_limit=nil
+  def to_hash with_responses=false, resp_skip=0, resp_limit=nil, recursive=true
     raise ArgumentError unless resp_skip >= 0
     raise ArgumentError unless resp_limit.nil? or resp_limit >= 1
     h = @thread.to_hash
@@ -32,7 +32,11 @@ class ThreadPresenter
     h["endorsed"] = @is_endorsed || false
     if with_responses
       if @thread.thread_type.discussion? && resp_skip == 0 && resp_limit.nil?
-        content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => 1})
+        if recursive
+          content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => 1})
+        else
+          content = Comment.where(comment_thread_id: @thread._id, "parent_ids" => []).order_by({"sk" => 1})
+        end
         h["children"] = merge_response_content(content)
         h["resp_total"] = content.to_a.select{|d| d.depth == 0 }.length
       else
@@ -41,18 +45,20 @@ class ThreadPresenter
         when "question"
           endorsed_responses = responses.where(endorsed: true)
           non_endorsed_responses = responses.where(endorsed: false)
-          endorsed_response_info = get_paged_merged_responses(@thread._id, endorsed_responses, 0, nil)
+          endorsed_response_info = get_paged_merged_responses(@thread._id, endorsed_responses, 0, nil, recursive)
           non_endorsed_response_info = get_paged_merged_responses(
             @thread._id,
             non_endorsed_responses,
             resp_skip,
-            resp_limit
+            resp_limit,
+            recursive
           )
           h["endorsed_responses"] = endorsed_response_info["responses"]
           h["non_endorsed_responses"] = non_endorsed_response_info["responses"]
           h["non_endorsed_resp_total"] = non_endorsed_response_info["response_count"]
+          h["resp_total"] = non_endorsed_response_info["response_count"] + endorsed_response_info["response_count"]
         when "discussion"
-          response_info = get_paged_merged_responses(@thread._id, responses, resp_skip, resp_limit)
+          response_info = get_paged_merged_responses(@thread._id, responses, resp_skip, resp_limit, recursive)
           h["children"] = response_info["responses"]
           h["resp_total"] = response_info["response_count"]
         end
@@ -67,15 +73,20 @@ class ThreadPresenter
   # a hash containing the following:
   #   responses
   #     An array of hashes representing the page of responses (including
-  #     children)
+  #     children, if recursive is true)
   #   response_count
   #     The total number of responses
-  def get_paged_merged_responses(thread_id, responses, skip, limit)
+  def get_paged_merged_responses(thread_id, responses, skip, limit, recursive=false)
     response_ids = responses.only(:_id).sort({"sk" => 1}).to_a.map{|doc| doc["_id"]}
     paged_response_ids = limit.nil? ? response_ids.drop(skip) : response_ids.drop(skip).take(limit)
-    content = Comment.where(comment_thread_id: thread_id).
-      or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
-      sort({"sk" => 1})
+    if recursive
+      content = Comment.where(comment_thread_id: thread_id).
+        or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
+        sort({"sk" => 1})
+    else
+      content = Comment.where(comment_thread_id: thread_id, "parent_ids" => []).
+        where({:id => {"$in" => paged_response_ids}}).sort({"sk" => 1})
+    end
     {"responses" => merge_response_content(content), "response_count" => response_ids.length}
   end
 
