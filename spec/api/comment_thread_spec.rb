@@ -666,7 +666,6 @@ describe "app" do
         thread = CommentThread.first
         comment = thread.comments.first
         comment.endorsed = true
-        comment.endorsement = {:user_id => "42", :time => DateTime.now}
         comment.save
         put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question"
         last_response.should be_ok
@@ -716,7 +715,7 @@ describe "app" do
       let :default_params do
         {body: "new comment", course_id: "1", user_id: User.first.id}
       end
-      it "create a comment to the comment thread" do
+      it "creates a comment to the comment thread and marks thread as read for user" do
         thread = CommentThread.first
         user = User.first
         orig_count = thread.comment_count
@@ -729,6 +728,8 @@ describe "app" do
         comment.should_not be_nil
         comment.author_id.should == user.id
         retrieved["child_count"].should == 0
+
+        test_thread_marked_as_read(thread.id, user.id)
       end
       it "allows anonymous comment" do
         thread = CommentThread.first

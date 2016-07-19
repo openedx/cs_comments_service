@@ -77,6 +77,8 @@ post "#{APIPREFIX}/threads/:thread_id/comments" do |thread_id|
     error 400, comment.errors.full_messages.to_json
   else
     user.subscribe(thread) if bool_auto_subscribe
+    # Mark thread as read for owner user on comment creation
+    user.mark_as_read(thread)
     comment.to_hash.to_json
   end
 end
