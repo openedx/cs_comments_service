@@ -1,3 +1,5 @@
+require 'new_relic/agent/method_tracer'
+
 module ThreadUtils
 
   def self.get_endorsed(threads)
@@ -39,9 +41,10 @@ module ThreadUtils
     read_states
   end
 
-  extend self
+  class << self
     include ::NewRelic::Agent::MethodTracer
     add_method_tracer :get_read_states
     add_method_tracer :get_endorsed
+  end
 
 end
