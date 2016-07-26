@@ -36,6 +36,14 @@ describe Comment do
         expect(comment.context).to eq("course")
       end
     end
+
+    context 'without valid parent thread' do
+      it 'returns nil' do
+        comment = make_comment(author, course_thread, "comment")
+        comment.comment_thread_id = 'not a thread'
+        expect(comment.context).to eq(nil)
+      end
+    end
   end
 
   describe '#course_context?' do
@@ -50,6 +58,14 @@ describe Comment do
       it 'returns true' do
         comment = make_comment(author, course_thread, "comment")
         expect(comment.course_context?).to be_true
+      end
+    end
+
+    context 'without valid parent thread' do
+      it 'returns false' do
+        comment = make_comment(author, course_thread, "comment")
+        comment.comment_thread_id = 'not a thread'
+        expect(comment.course_context?).to be_false
       end
     end
   end
@@ -68,6 +84,15 @@ describe Comment do
         expect(comment.standalone_context?).to be_false
       end
     end
+
+    context 'without valid parent thread' do
+      it 'returns false' do
+        comment = make_comment(author, course_thread, "comment")
+        comment.comment_thread_id = 'not a thread'
+        expect(comment.standalone_context?).to be_false
+      end
+    end
+
   end
 
   describe '#child_count' do
