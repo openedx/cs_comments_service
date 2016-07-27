@@ -141,7 +141,14 @@ class Comment < Content
   end
 
   def context
-    self.comment_thread_id ? self.comment_thread.context : nil
+    if self.comment_thread_id
+      t = CommentThread.find self.comment_thread_id
+      if t
+        t.context
+      end
+    end
+  rescue Mongoid::Errors::DocumentNotFound
+    nil
   end
 
   def course_context?
