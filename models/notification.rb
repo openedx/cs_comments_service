@@ -1,3 +1,5 @@
+require_relative 'constants'
+
 class Notification
   include Mongoid::Document
   include Mongoid::Timestamps
@@ -14,6 +16,8 @@ class Notification
   has_and_belongs_to_many :receivers, class_name: "User", inverse_of: :notifications, autosave: true
 
   def to_hash(params={})
-    as_document.slice(*%w[notification_type info actor_id target_id]).merge("id" => _id)
+    as_document
+      .slice(NOTIFICATION_TYPE, INFO, ACTOR_ID, TARGET_ID)
+      .merge!("id" => _id)
   end
 end
