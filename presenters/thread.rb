@@ -23,7 +23,7 @@ class ThreadPresenter
     @is_endorsed = is_endorsed
   end
 
-  def to_hash with_responses=false, resp_skip=0, resp_limit=nil, recursive=true
+  def to_hash(with_responses=false, resp_skip=0, resp_limit=nil, recursive=true)
     raise ArgumentError unless resp_skip >= 0
     raise ArgumentError unless resp_limit.nil? or resp_limit >= 1
     h = @thread.to_hash
@@ -33,21 +33,21 @@ class ThreadPresenter
     if with_responses
       if @thread.thread_type.discussion? && resp_skip == 0 && resp_limit.nil?
         if recursive
-          content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => 1})
+          responses = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => 1})
         else
-          content = Comment.where(comment_thread_id: @thread._id, "parent_ids" => []).order_by({"sk" => 1})
+          responses = Comment.where(comment_thread_id: @thread._id, "parent_ids" => []).order_by({"sk" => 1})
         end
-        h["children"] = merge_response_content(content)
-        h["resp_total"] = content.to_a.select{|d| d.depth == 0 }.length
+        h["children"] = build_response_tree(@thread, responses)
+        h["resp_total"] = responses.to_a.select{|d| d.depth == 0 }.length
       else
         responses = Content.where(comment_thread_id: @thread._id).exists(parent_id: false)
         case @thread.thread_type
         when "question"
           endorsed_responses = responses.where(endorsed: true)
           non_endorsed_responses = responses.where(endorsed: false)
-          endorsed_response_info = get_paged_merged_responses(@thread._id, endorsed_responses, 0, nil, recursive)
+          endorsed_response_info = get_paged_merged_responses(@thread, endorsed_responses, 0, nil, recursive)
           non_endorsed_response_info = get_paged_merged_responses(
-            @thread._id,
+            @thread,
             non_endorsed_responses,
             resp_skip,
             resp_limit,
@@ -58,7 +58,7 @@ class ThreadPresenter
           h["non_endorsed_resp_total"] = non_endorsed_response_info["response_count"]
           h["resp_total"] = non_endorsed_response_info["response_count"] + endorsed_response_info["response_count"]
         when "discussion"
-          response_info = get_paged_merged_responses(@thread._id, responses, resp_skip, resp_limit, recursive)
+          response_info = get_paged_merged_responses(@thread, responses, resp_skip, resp_limit, recursive)
           h["children"] = response_info["responses"]
           h["resp_total"] = response_info["response_count"]
         end
@@ -69,6 +69,14 @@ class ThreadPresenter
     h
   end
 
+  def materialize_response(thread, response)
+    # Forcefully set comment_thread so that we're not materializing that field
+    # every single time that the response is serialized.
+    response.comment_thread = thread
+
+    response.to_hash
+  end
+
   # Given a Mongoid object representing responses, apply pagination and return
   # a hash containing the following:
   #   responses
@@ -76,36 +84,38 @@ class ThreadPresenter
   #     children, if recursive is true)
   #   response_count
   #     The total number of responses
-  def get_paged_merged_responses(thread_id, responses, skip, limit, recursive=false)
+  def get_paged_merged_responses(thread, responses, skip, limit, recursive=false)
     response_ids = responses.only(:_id).sort({"sk" => 1}).to_a.map{|doc| doc["_id"]}
     paged_response_ids = limit.nil? ? response_ids.drop(skip) : response_ids.drop(skip).take(limit)
     if recursive
-      content = Comment.where(comment_thread_id: thread_id).
-        or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
-        sort({"sk" => 1})
+      responses = Comment.where(comment_thread_id: thread._id)
+        .or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}})
+        .sort({"sk" => 1})
     else
-      content = Comment.where(comment_thread_id: thread_id, "parent_ids" => []).
-        where({:id => {"$in" => paged_response_ids}}).sort({"sk" => 1})
+      responses = Comment.where(comment_thread_id: thread._id, "parent_ids" => [])
+        .where({:id => {"$in" => paged_response_ids}})
+        .sort({"sk" => 1})
     end
-    {"responses" => merge_response_content(content), "response_count" => response_ids.length}
+
+    {"responses" => build_response_tree(thread, responses), "response_count" => response_ids.length}
   end
 
   # Takes content output from Mongoid in a depth-first traversal order and
   # returns an array of first-level response hashes with content represented
   # hierarchically, with a comment's list of children in the key "children".
-  def merge_response_content(content)
+  def build_response_tree(thread, responses)
     top_level = []
     ancestry = []
-    content.each do |item|
-      item_hash = item.to_hash.merge!("children" => [])
-      if item.parent_id.nil?
-        top_level << item_hash
-        ancestry = [item_hash]
+    responses.each do |response|
+      response_hash = materialize_response(thread, response).merge!("children" => [])
+      if response.parent_id.nil?
+        top_level << response_hash
+        ancestry = [response_hash]
       else
         while ancestry.length > 0 do
-          if item.parent_id == ancestry.last["id"]
-            ancestry.last["children"] << item_hash
-            ancestry << item_hash
+          if response.parent_id == ancestry.last["id"]
+            ancestry.last["children"] << response_hash
+            ancestry << response_hash
             break
           else
             ancestry.pop
@@ -122,6 +132,7 @@ class ThreadPresenter
 
   include ::NewRelic::Agent::MethodTracer
   add_method_tracer :to_hash
-  add_method_tracer :merge_response_content
+  add_method_tracer :materialize_response
+  add_method_tracer :build_response_tree
 
 end
