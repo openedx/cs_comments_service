@@ -97,7 +97,7 @@ class ThreadPresenter
     top_level = []
     ancestry = []
     content.each do |item|
-      item_hash = item.to_hash.merge("children" => [])
+      item_hash = item.to_hash.merge!("children" => [])
       if item.parent_id.nil?
         top_level << item_hash
         ancestry = [item_hash]

@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 require 'new_relic/agent/method_tracer'
 require_relative 'content'
+require_relative 'constants'
 
 class CommentThread < Content
-
   include Mongoid::Timestamps
   include Mongoid::Attributes::Dynamic
   include ActiveModel::MassAssignmentSecurity
@@ -31,7 +30,6 @@ class CommentThread < Content
   field :pinned, type: Boolean
 
   index({author_id: 1, course_id: 1})
-
 
   index_name Content::ES_INDEX_NAME
 
@@ -122,17 +120,18 @@ class CommentThread < Content
   end
 
   def to_hash(params={})
-    as_document.slice(*%w[thread_type title body course_id anonymous anonymous_to_peers commentable_id created_at updated_at at_position_list closed context last_activity_at])
-        .merge('id' => _id,
-               'user_id' => author_id,
-               'username' => author_username,
-               'votes' => votes.slice(*%w[count up_count down_count point]),
-               'abuse_flaggers' => abuse_flaggers,
-               'tags' => [],
-               'type' => 'thread',
-               'group_id' => group_id,
-               'pinned' => pinned?,
-               'comments_count' => comment_count)
+    as_document
+      .slice(THREAD_TYPE, TITLE, BODY, COURSE_ID, ANONYMOUS, ANONYMOUS_TO_PEERS, COMMENTABLE_ID, CREATED_AT, UPDATED_AT, AT_POSITION_LIST, CLOSED, CONTEXT, LAST_ACTIVITY_AT)
+      .merge!("id" => _id,
+              "user_id" => author_id,
+              "username" => author_username,
+              "votes" => votes.slice(COUNT, UP_COUNT, DOWN_COUNT, POINT),
+              "abuse_flaggers" => abuse_flaggers,
+              "tags" => [],
+              "type" => THREAD,
+              "group_id" => group_id,
+              "pinned" => pinned?,
+              "comments_count" => comment_count)
 
   end
 

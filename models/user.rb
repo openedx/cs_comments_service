@@ -1,4 +1,5 @@
 require 'new_relic/agent/method_tracer'
+require_relative 'constants'
 
 class User
   include Mongoid::Document
@@ -35,18 +36,20 @@ class User
   end
 
   def to_hash(params={})
-    hash = as_document.slice(*%w[username external_id])
+    hash = as_document
+      .slice(USERNAME, EXTERNAL_ID)
+
     if params[:complete]
-      hash = hash.merge("subscribed_thread_ids" => subscribed_thread_ids,
+      hash = hash.merge!("subscribed_thread_ids" => subscribed_thread_ids,
                         "subscribed_commentable_ids" => [], # not used by comment client.  To be removed once removed from comment client.
                         "subscribed_user_ids" => [], # ditto.
                         "follower_ids" => [], # ditto.
                         "id" => id,
                         "upvoted_ids" => upvoted_ids,
                         "downvoted_ids" => downvoted_ids,
-                        "default_sort_key" => default_sort_key
-                       )
+                        "default_sort_key" => default_sort_key)
     end
+
     if params[:course_id]
       self.class.trace_execution_scoped(['Custom/User.to_hash/count_comments_and_threads']) do
         if not params[:group_ids].empty?
@@ -101,7 +104,7 @@ class User
             anonymous_to_peers: false
           ).reject{ |comment| comment.standalone_context? }.count
         end
-        hash = hash.merge("threads_count" => threads_count, "comments_count" => comments_count)
+        hash = hash.merge!("threads_count" => threads_count, "comments_count" => comments_count)
       end
     end
     hash
