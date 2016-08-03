@@ -1,8 +1,8 @@
 require_relative 'concerns/searchable'
 require_relative 'content'
+require_relative 'constants'
 
 class Comment < Content
-
   include Mongoid::Tree
   include Mongoid::Timestamps
   include Mongoid::MagicCounterCache
@@ -25,7 +25,6 @@ class Comment < Content
   index({author_id: 1, course_id: 1})
   index({_type: 1, comment_thread_id: 1, author_id: 1, updated_at: 1})
 
-
   index_name Content::ES_INDEX_NAME
 
   mapping do
@@ -38,7 +37,6 @@ class Comment < Content
     indexes :created_at, type: :date, included_in_all: false
     indexes :updated_at, type: :date, included_in_all: false
   end
-
 
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: 'User', index: true
@@ -91,19 +89,20 @@ class Comment < Content
       subtree_hash = subtree(sort: sort_by_parent_and_time)
       self.class.hash_tree(subtree_hash).first
     else
-      as_document.slice(*%w[body course_id endorsed endorsement anonymous anonymous_to_peers created_at updated_at at_position_list])
-          .merge("id" => _id)
-          .merge("user_id" => author_id)
-          .merge("username" => author_username)
-          .merge("depth" => depth)
-          .merge("closed" => comment_thread.nil? ? false : comment_thread.closed)
-          .merge("thread_id" => comment_thread_id)
-          .merge("parent_id" => parent_ids[-1])
-          .merge("commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id)
-          .merge("votes" => votes.slice(*%w[count up_count down_count point]))
-          .merge("abuse_flaggers" => abuse_flaggers)
-          .merge("type" => "comment")
-          .merge("child_count" => get_cached_child_count)
+      as_document
+        .slice(BODY, COURSE_ID, ENDORSED, ENDORSEMENT, ANONYMOUS, ANONYMOUS_TO_PEERS, CREATED_AT, UPDATED_AT, AT_POSITION_LIST)
+        .merge!("id" => _id,
+                "user_id" => author_id,
+                "username" => author_username,
+                "depth" => depth,
+                "closed" => comment_thread.nil? ? false : comment_thread.closed,
+                "thread_id" => comment_thread_id,
+                "parent_id" => parent_ids[-1],
+                "commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id,
+                "votes" => votes.slice(COUNT, UP_COUNT, DOWN_COUNT, POINT),
+                "abuse_flaggers" => abuse_flaggers,
+                "type" => COMMENT,
+                "child_count" => get_cached_child_count)
     end
   end
 
