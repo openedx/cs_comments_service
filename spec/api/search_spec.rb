@@ -3,15 +3,14 @@ require 'unicode_shared_examples'
 
 describe "app" do
   describe "search" do
+    include_context 'search_enabled'
 
     before (:each) { set_api_key_header }
-
     let(:author) { create_test_user(42) }
-
     let(:course_id) { "test/course/id" }
 
     def get_result_ids(result)
-      result["collection"].map {|t| t["id"]}
+      result["collection"].map { |t| t["id"] }
     end
 
     describe "GET /api/v1/search/threads" do
@@ -21,17 +20,17 @@ describe "app" do
         result.should == {}
       end
 
-      it "returns an empty reuslt if text parameter is missing" do
+      it "returns an empty result if text parameter is missing" do
         get "/api/v1/search/threads", course_id: course_id
         assert_empty_response
       end
 
-      it "returns an empty reuslt if sort key is invalid" do
+      it "returns an empty result if sort key is invalid" do
         get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "invalid", sort_order: "desc"
         assert_empty_response
       end
 
-      it "returns an empty reuslt if sort order is invalid" do
+      it "returns an empty result if sort order is invalid" do
         get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "date", sort_order: "invalid"
         assert_empty_response
       end
@@ -69,13 +68,13 @@ describe "app" do
           last_response.should be_ok
           result = parse(last_response.body)
           actual_ids = Set.new get_result_ids(result)
-          expected_ids = Set.new expected_thread_indexes.map {|i| threads[i].id.to_s}
+          expected_ids = Set.new expected_thread_indexes.map { |i| threads[i].id.to_s }
           actual_ids.should == expected_ids
         end
 
         it "by course_id" do
           get "/api/v1/search/threads", text: "text", course_id: "test/course/id0"
-          assert_response_contains((0..29).find_all {|i| i % 2 == 0})
+          assert_response_contains((0..29).find_all { |i| i % 2 == 0 })
         end
 
         it "by context" do
@@ -87,7 +86,7 @@ describe "app" do
           user = create_test_user(Random.new)
           user.mark_as_read(threads[0])
           get "/api/v1/search/threads", text: "text", course_id: "test/course/id0", user_id: user.id, unread: true
-          assert_response_contains((1..29).find_all {|i| i % 2 == 0})
+          assert_response_contains((1..29).find_all { |i| i % 2 == 0 })
         end
 
         it "with flagged filter" do
@@ -121,22 +120,22 @@ describe "app" do
 
         it "by commentable_id" do
           get "/api/v1/search/threads", text: "text", commentable_id: "commentable0"
-          assert_response_contains((0..29).find_all {|i| i % 3 == 0})
+          assert_response_contains((0..29).find_all { |i| i % 3 == 0 })
         end
 
         it "by commentable_ids" do
           get "/api/v1/search/threads", text: "text", commentable_ids: "commentable0,commentable1"
-          assert_response_contains((0..29).find_all {|i| i % 3 == 0 || i % 3 == 1})
+          assert_response_contains((0..29).find_all { |i| i % 3 == 0 || i % 3 == 1 })
         end
 
         it "by group_id" do
           get "/api/v1/search/threads", text: "text", group_id: "1"
-          assert_response_contains((0..29).find_all {|i| i % 5 == 0 || i % 5 == 1})
+          assert_response_contains((0..29).find_all { |i| i % 5 == 0 || i % 5 == 1 })
         end
 
         it "by group_ids" do
           get "/api/v1/search/threads", text: "text", group_ids: "1,2"
-          expected_ids = (0..29).find_all {|i| i % 5 == 0 || i % 5 == 1 || i % 5 == 2}
+          expected_ids = (0..29).find_all { |i| i % 5 == 0 || i % 5 == 1 || i % 5 == 2 }
           assert_response_contains(expected_ids)
         end
 
@@ -148,8 +147,8 @@ describe "app" do
 
       describe "sorting works" do
         let!(:threads) do
-          threads = (0..5).map {|i| make_thread(author, "text", course_id, "dummy")}
-          [1, 2].map {|i| author.vote(threads[i], :up)}
+          threads = (0..5).map { |i| make_thread(author, "text", course_id, "dummy") }
+          [1, 2].map { |i| author.vote(threads[i], :up) }
           [1, 3].map do |i|
             threads[i].comment_count = 5
             threads[i].save!
@@ -164,7 +163,7 @@ describe "app" do
           last_response.should be_ok
           result = parse(last_response.body)
           actual_ids = get_result_ids(result)
-          expected_ids = expected_thread_indexes.map {|i| threads[i].id.to_s}
+          expected_ids = expected_thread_indexes.map { |i| threads[i].id.to_s }
           actual_ids.should == expected_ids
         end
 
@@ -197,7 +196,7 @@ describe "app" do
 
       describe "pagination" do
         let!(:threads) do
-          threads = (1..50).map {|i| make_thread(author, "text", course_id, "dummy")}
+          threads = (1..50).map { |i| make_thread(author, "text", course_id, "dummy") }
           refresh_es_index
           threads
         end
@@ -210,7 +209,7 @@ describe "app" do
             result = parse(last_response.body)
             result_ids += get_result_ids(result)
           end
-          result_ids.should == threads.reverse.map {|t| t.id.to_s}
+          result_ids.should == threads.reverse.map { |t| t.id.to_s }
         end
 
         it "works correctly with page size 1" do
@@ -227,7 +226,7 @@ describe "app" do
       end
 
       describe "spelling correction" do
-        let(:commentable_id) {"test_commentable"}
+        let(:commentable_id) { "test_commentable" }
 
         def check_correction(original_text, corrected_text)
           get "/api/v1/search/threads", text: original_text
@@ -292,8 +291,8 @@ describe "app" do
         end
       end
 
-      it "returns the correct values for total_results and num_pages" do
-        course_id = "test/course/id"
+      it 'returns the correct values for total_results and num_pages' do
+        course_id = 'test/course/id'
         for i in 1..100 do
           text = "all"
           text += " half" if i % 2 == 0
@@ -302,15 +301,14 @@ describe "app" do
           text += " one" if i == 100
           # There is currently a bug that causes only 10 threads with matching
           # titles/bodies to be considered, so this test case uses comments.
-          thread = make_thread(author, "dummy text", course_id, "dummy_commentable")
-          make_comment(author, thread, text)
+          create(:comment, course_id: course_id, body: text)
         end
         # Elasticsearch does not necessarily make newly indexed content
         # available immediately, so we must explicitly refresh the index
         refresh_es_index
 
         test_text = lambda do |text, expected_total_results, expected_num_pages|
-          get "/api/v1/search/threads", course_id: course_id, text: text, per_page: "10"
+          get '/api/v1/search/threads', course_id: course_id, text: text, per_page: '10'
           last_response.should be_ok
           result = parse(last_response.body)
           result["total_results"].should == expected_total_results

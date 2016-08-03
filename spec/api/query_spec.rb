@@ -3,6 +3,7 @@ require 'faker'
 
 
 describe 'app' do
+  include_context 'search_enabled'
   before(:each) { set_api_key_header }
   let(:body) { Faker::Lorem.word }
 

@@ -17,21 +17,23 @@ rescue LoadError
   # no rspec available
 end
 
-Tire.configure do
-  url YAML.load(application_yaml)['elasticsearch_server']
-end
-
 LOG = Logger.new(STDERR)
 
 desc 'Load the environment'
 task :environment do
   environment = ENV['SINATRA_ENV'] || 'development'
   Sinatra::Base.environment = environment
+
   Mongoid.load!('config/mongoid.yml')
   Mongoid.logger.level = Logger::INFO
+
   module CommentService
     class << self;
-      attr_accessor :config;
+      attr_accessor :config
+
+      def search_enabled?
+        self.config[:enable_search]
+      end
     end
   end
 
@@ -41,8 +43,8 @@ task :environment do
   Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
 end
 
-Dir.glob('lib/tasks/*.rake').each { |r| import r }
-
 task :console => :environment do
   binding.pry
 end
+
+Dir.glob('lib/tasks/*.rake').each { |r| import r }

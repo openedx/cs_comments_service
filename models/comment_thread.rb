@@ -1,4 +1,5 @@
 require 'new_relic/agent/method_tracer'
+require_relative 'concerns/searchable'
 require_relative 'content'
 require_relative 'constants'
 
@@ -6,8 +7,7 @@ class CommentThread < Content
   include Mongoid::Timestamps
   include Mongoid::Attributes::Dynamic
   include ActiveModel::MassAssignmentSecurity
-  include Tire::Model::Search
-  include Tire::Model::Callbacks
+  include Searchable
   extend Enumerize
 
   voteable self, :up => +1, :down => -1
@@ -39,10 +39,8 @@ class CommentThread < Content
     indexes :created_at, type: :date, included_in_all: false
     indexes :updated_at, type: :date, included_in_all: false
     indexes :last_activity_at, type: :date, included_in_all: false
-
     indexes :comment_count, type: :integer, included_in_all: false
     indexes :votes_point, type: :integer, as: 'votes_point', included_in_all: false
-
     indexes :context, type: :string, index: :not_analyzed, included_in_all: false
     indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
     indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
