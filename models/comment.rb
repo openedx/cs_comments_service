@@ -24,6 +24,7 @@ class Comment < Content
 
   index({author_id: 1, course_id: 1})
   index({_type: 1, comment_thread_id: 1, author_id: 1, updated_at: 1})
+  index({comment_thread_id: 1, author_id: 1, created_at: 1})
 
   index_name Content::ES_INDEX_NAME
 
@@ -52,7 +53,6 @@ class Comment < Content
 
   before_destroy :destroy_children
   before_create :set_thread_last_activity_at
-  before_update :set_thread_last_activity_at
   before_save :set_sk
 
   def self.hash_tree(nodes)
