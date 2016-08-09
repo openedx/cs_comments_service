@@ -214,11 +214,11 @@ def check_thread_result(user, thread, hash, is_json=false)
       read_date = read_states.first.last_read_times[thread.id.to_s]
       if read_date
         thread.comments.each do |c|
-          if c.updated_at < read_date
+          if c.created_at < read_date
             expected_unread_cnt -= 1
           end
         end
-        hash["read"].should == (read_date >= thread.updated_at)
+        hash["read"].should == (read_date >= thread.last_activity_at)
       else
         hash["read"].should == false
       end
