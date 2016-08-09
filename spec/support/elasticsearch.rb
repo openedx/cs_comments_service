@@ -24,6 +24,6 @@ end
 
 RSpec.configure do |config|
   config.before(:suite) do
-    CommentService.config[:enable_search] = false
+    #CommentService.config[:enable_search] = false
   end
 end
