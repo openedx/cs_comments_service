@@ -89,6 +89,9 @@ delete "#{APIPREFIX}/threads/:thread_id" do |thread_id|
     # If the thread is not in the index, that's actually a good thing given that we just removed it.
     # Note that this exception will probably only be encountered for tests that don't wait for the index
     # to be refreshed before attempting to destroy a newly-recreated thread.
+  rescue Exception => e
+    puts "hit exception deleting thread: "
+    puts e
   end
   thread.to_hash.to_json
 end
