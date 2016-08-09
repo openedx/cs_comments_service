@@ -1,4 +1,5 @@
 require 'new_relic/agent/method_tracer'
+require_relative 'concerns/searchable'
 require_relative 'content'
 require_relative 'constants'
 
@@ -6,8 +7,7 @@ class CommentThread < Content
   include Mongoid::Timestamps
   include Mongoid::Attributes::Dynamic
   include ActiveModel::MassAssignmentSecurity
-  include Elasticsearch::Model
-  include Elasticsearch::Model::Callbacks
+  include Searchable
   extend Enumerize
 
   voteable self, :up => +1, :down => -1
