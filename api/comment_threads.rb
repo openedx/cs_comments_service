@@ -92,6 +92,7 @@ delete "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   rescue Exception => e
     puts "hit exception deleting thread: "
     puts e
+    raise e
   end
   thread.to_hash.to_json
 end
