@@ -1,4 +1,3 @@
-require_relative 'concerns/searchable'
 require_relative 'content'
 require_relative 'constants'
 
@@ -7,7 +6,8 @@ class Comment < Content
   include Mongoid::Timestamps
   include Mongoid::MagicCounterCache
   include ActiveModel::MassAssignmentSecurity
-  include Searchable
+  include Tire::Model::Search
+  include Tire::Model::Callbacks
 
   voteable self, :up => +1, :down => -1
 
