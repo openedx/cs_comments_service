@@ -1,14 +1,12 @@
-require 'database_cleaner'
+require 'mongoid_cleaner'
 
 RSpec.configure do |config|
   config.before(:suite) do
-    # Mongoid only supports truncation.
-    DatabaseCleaner.strategy = :truncation
-    DatabaseCleaner.clean_with(:truncation)
+    MongoidCleaner.strategy = :drop
   end
 
   config.around(:each) do |example|
-    DatabaseCleaner.cleaning do
+    MongoidCleaner.cleaning do
       example.run
     end
   end

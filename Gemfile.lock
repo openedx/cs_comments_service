@@ -42,7 +42,6 @@ GEM
       url
     coderay (1.0.7)
     dalli (2.1.0)
-    database_cleaner (1.5.1)
     delayed_job (4.1.1)
       activesupport (>= 3.0, < 5.0)
     delayed_job_mongoid (2.2.0)
@@ -85,6 +84,8 @@ GEM
     mongoid-compatibility (0.3.1)
       activesupport
       mongoid (>= 2.0)
+    mongoid_cleaner (1.2.0)
+      mongoid (>= 4.0)
     mongoid_magic_counter_cache (1.1.1)
       mongoid
       rake
@@ -173,7 +174,6 @@ DEPENDENCIES
   bundler
   codecov
   dalli
-  database_cleaner (~> 1.5.1)
   delayed_job
   delayed_job_mongoid
   enumerize
@@ -184,6 +184,7 @@ DEPENDENCIES
   i18n
   mongoid (~> 5.0.0)
   mongoid-tree!
+  mongoid_cleaner (~> 1.2.0)
   mongoid_magic_counter_cache
   newrelic_rpm
   nokogiri (~> 1.6.8)
@@ -204,3 +205,9 @@ DEPENDENCIES
   unicorn
   will_paginate_mongoid (~> 2.0)
   yajl-ruby
+
+RUBY VERSION
+   ruby 1.9.3p551
+
+BUNDLED WITH
+   1.12.5

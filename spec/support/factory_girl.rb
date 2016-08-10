@@ -6,11 +6,8 @@ RSpec.configure do |config|
   FactoryGirl.find_definitions
 
   config.before(:suite) do
-    begin
-      DatabaseCleaner.start
+    MongoidCleaner.cleaning do
       FactoryGirl.lint
-    ensure
-      DatabaseCleaner.clean
     end
   end
 end
