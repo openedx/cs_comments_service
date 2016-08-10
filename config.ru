@@ -10,6 +10,8 @@
 # More conversation at https://github.com/edx/cs_comments_service/pull/146
 # -Nov 18th, 2015
 
+puts "Loading config.ru."
+
 require "rack-timeout"
 use Rack::Timeout           # Call as early as possible so rack-timeout runs before other middleware.
 Rack::Timeout.timeout = 20 
