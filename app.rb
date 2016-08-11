@@ -88,8 +88,8 @@ require 'yajl/json_gem'
 # Note that BSON was moved from Moped::BSON::ObjectId to BSON::ObjectId
 module BSON
   class ObjectId
-    def to_json
-      self.to_s.to_json
+    def as_json(options = {})
+      self.to_s
     end
   end
 end
@@ -100,8 +100,8 @@ class Time
   # object.
   # Note that this was done to prevent milliseconds from showing up in the JSON response thus breaking
   # API compatibility for downstream clients.
-  def to_json(*)
-    '"' + utc().strftime("%Y-%m-%dT%H:%M:%SZ") + '"'
+  def as_json(options = {})
+    utc().strftime("%Y-%m-%dT%H:%M:%SZ")
   end
 end
 

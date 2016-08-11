@@ -31,6 +31,7 @@ class CommentThread < Content
 
   index({author_id: 1, course_id: 1})
 
+
   index_name Content::ES_INDEX_NAME
 
   mapping do
