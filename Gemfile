@@ -40,7 +40,7 @@ gem 'rest-client'
 
 group :test do
   gem 'codecov', :require => false
-  gem 'database_cleaner', '~> 1.5.1'
+  gem 'mongoid_cleaner', '~> 1.2.0'
   gem 'factory_girl', '~> 4.0'
   gem 'faker', '~> 1.6'
   gem 'guard'
