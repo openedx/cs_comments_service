@@ -117,35 +117,22 @@ class Comment < Content
   end
 
   def commentable_id
-    #we need this to have a universal access point for the flag rake task
-    if self.comment_thread_id
-      t = CommentThread.find self.comment_thread_id
-      if t
-        t.commentable_id
-      end
-    end
+    return nil unless self.comment_thread
+    self.comment_thread.commentable_id
   rescue Mongoid::Errors::DocumentNotFound
     nil
   end
 
   def group_id
-    if self.comment_thread_id
-      t = CommentThread.find self.comment_thread_id
-      if t
-        t.group_id
-      end
-    end
+    return nil unless self.comment_thread
+    self.comment_thread.group_id
   rescue Mongoid::Errors::DocumentNotFound
     nil
   end
 
   def context
-    if self.comment_thread_id
-      t = CommentThread.find self.comment_thread_id
-      if t
-        t.context
-      end
-    end
+    return nil unless self.comment_thread
+    self.comment_thread.context
   rescue Mongoid::Errors::DocumentNotFound
     nil
   end
