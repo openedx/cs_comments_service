@@ -342,6 +342,17 @@ def make_comment(author, parent, text)
   comment
 end
 
+def make_standalone_thread(author)
+  make_thread(
+      author,
+      "standalone thread 0",
+      DFLT_COURSE_ID,
+      "pdq",
+      :discussion,
+      :standalone
+  )
+end
+
 # add standalone threads and comments to the @threads and @comments hashes
 # using the namespace "standalone t#{index}" for threads and "standalone t#{index} c#{i}" for comments
 # takes an index param if used within an iterator, otherwise will namespace using 0 for thread index
