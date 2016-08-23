@@ -133,7 +133,6 @@ class CommentThread < Content
               "group_id" => group_id,
               "pinned" => pinned?,
               "comments_count" => comment_count)
-
   end
 
   def comment_thread_id
@@ -162,4 +161,7 @@ class CommentThread < Content
   def destroy_subscriptions
     subscriptions.delete_all
   end
+
+  include ::NewRelic::Agent::MethodTracer
+  add_method_tracer :to_hash
 end
