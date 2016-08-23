@@ -31,7 +31,7 @@ module ThreadUtils
             unread_comment_count = Comment.collection.find(
               :comment_thread_id => t._id,
               :author_id => {"$ne" => user.id},
-              :updated_at => {"$gte" => read_dates[thread_key]}
+              :updated_at => {"$gte" => read_dates[thread_key]},
               ).count
             read_states[thread_key] = [is_read, unread_comment_count]
           end

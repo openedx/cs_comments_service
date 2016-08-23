@@ -1,3 +1,4 @@
+require 'new_relic/agent/method_tracer'
 require_relative 'content'
 require_relative 'constants'
 
@@ -164,4 +165,7 @@ class Comment < Content
       self.sk = (self.parent_ids.dup << self.id).join("-")
     end
   end
+
+  include ::NewRelic::Agent::MethodTracer
+  add_method_tracer :to_hash
 end
