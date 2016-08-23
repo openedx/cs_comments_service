@@ -28,10 +28,10 @@ module ThreadUtils
           thread_key = t._id.to_s
           if read_dates.has_key? thread_key
             is_read = read_dates[thread_key] >= t.updated_at
-            unread_comment_count = Comment.collection.find(
+            unread_comment_count = Comment.where(
               :comment_thread_id => t._id,
               :author_id => {"$ne" => user.id},
-              :updated_at => {"$gte" => read_dates[thread_key]}
+              :updated_at => {"$gte" => read_dates[thread_key]},
               ).count
             read_states[thread_key] = [is_read, unread_comment_count]
           end
