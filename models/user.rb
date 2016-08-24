@@ -111,11 +111,11 @@ class User
   end
 
   def upvoted_ids
-    Content.up_voted_by(self).map(&:id)
+    Content.up_voted_by(self).pluck(:_id)
   end
 
   def downvoted_ids
-    Content.down_voted_by(self).map(&:id)
+    Content.down_voted_by(self).pluck(:_id)
   end
 
   def followers
