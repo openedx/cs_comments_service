@@ -33,9 +33,13 @@ class ThreadPresenter
     if with_responses
       if @thread.thread_type.discussion? && resp_skip == 0 && resp_limit.nil?
         if recursive
-          content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => 1})
+          content = Comment.includes(:comment_thread)
+            .where(comment_thread_id: @thread._id)
+            .sort({"sk" => 1})
         else
-          content = Comment.where(comment_thread_id: @thread._id, "parent_ids" => []).order_by({"sk" => 1})
+          content = Comment.includes(:comment_thread)
+            .where(comment_thread_id: @thread._id, "parent_ids" => [])
+            .sort({"sk" => 1})
         end
         h["children"] = merge_response_content(content)
         h["resp_total"] = content.to_a.select{|d| d.depth == 0 }.length
@@ -77,15 +81,18 @@ class ThreadPresenter
   #   response_count
   #     The total number of responses
   def get_paged_merged_responses(thread_id, responses, skip, limit, recursive=false)
-    response_ids = responses.only(:_id).sort({"sk" => 1}).to_a.map{|doc| doc["_id"]}
+    response_ids = responses.sort({"sk" => 1}).pluck(:_id)
     paged_response_ids = limit.nil? ? response_ids.drop(skip) : response_ids.drop(skip).take(limit)
     if recursive
-      content = Comment.where(comment_thread_id: thread_id).
-        or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
-        sort({"sk" => 1})
+      content = Comment.includes(:comment_thread)
+        .where(comment_thread_id: thread_id)
+        .or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}})
+        .sort({"sk" => 1})
     else
-      content = Comment.where(comment_thread_id: thread_id, "parent_ids" => []).
-        where({:id => {"$in" => paged_response_ids}}).sort({"sk" => 1})
+      content = Comment.includes(:comment_thread)
+        .where(comment_thread_id: thread_id, "parent_ids" => [])
+        .where({:id => {"$in" => paged_response_ids}})
+        .sort({"sk" => 1})
     end
     {"responses" => merge_response_content(content), "response_count" => response_ids.length}
   end
