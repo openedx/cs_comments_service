@@ -23,7 +23,7 @@ class ThreadPresenter
     @is_endorsed = is_endorsed
   end
 
-  def to_hash with_responses=false, resp_skip=0, resp_limit=nil, recursive=true
+  def to_hash(with_responses=false, resp_skip=0, resp_limit=nil, recursive=true)
     raise ArgumentError unless resp_skip >= 0
     raise ArgumentError unless resp_limit.nil? or resp_limit >= 1
     h = @thread.to_hash

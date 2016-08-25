@@ -513,6 +513,18 @@ describe "app" do
         check_thread_result_json(nil, thread, parsed)
       end
 
+      context 'when requesting the thread for informational purposes' do
+        subject do
+          get "/api/v1/threads/#{thread.id}", with_responses: false # we're asking for no responses here.
+        end
+
+        it 'should have no children' do
+          expect(subject).to be_ok
+          parsed = parse(subject.body)
+          expect(parsed).not_to include('children')
+        end
+      end
+
       context 'when marking as read' do
         subject do
           get "/api/v1/threads/#{thread.id}", {:user_id => thread.author.id, :mark_as_read => true}
