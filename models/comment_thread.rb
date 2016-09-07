@@ -68,7 +68,6 @@ class CommentThread < Content
   validates_presence_of :author, autosave: false
 
   before_create :set_last_activity_at
-  before_update :set_last_activity_at, :unless => lambda { closed_changed? }
   after_update :clear_endorsements
   before_destroy :destroy_subscriptions
 

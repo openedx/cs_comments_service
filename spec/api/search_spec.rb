@@ -175,7 +175,7 @@ describe "app" do
         end
 
         it "by activity" do
-          asc_order = [0, 2, 5, 1, 3, 4]
+          asc_order = [0, 1, 2, 3, 4, 5]
           check_sort("activity", "asc", asc_order)
           check_sort("activity", "desc", asc_order.reverse)
         end

@@ -211,7 +211,7 @@ describe "app" do
           rs.each_with_index { |result, i|
             check_thread_result_json(user, @threads["t#{i+1}"], result)
           }
-          rs[0]["read"].should == false # no unread comments, but the thread itself was updated
+          rs[0]["read"].should == true
           rs[0]["unread_comments_count"].should == 0
           rs[1]["read"].should == false
           rs[1]["unread_comments_count"].should == 5
@@ -258,18 +258,54 @@ describe "app" do
             expected_order = @default_order
             actual_order.should == expected_order
           end
-          it "sorts using last activity / descending" do
+          it "sort unchanged using last activity / descending when thread is updated" do
+            t5 = @threads["t5"]
+            t5.update(body: "changed!")
+            t5.save!
+            actual_order = thread_result_order("activity", "desc")
+            expected_order = @default_order
+            actual_order.should == expected_order
+          end
+          it "sort unchanged using last activity / ascending when thread is updated" do
+            t5 = @threads["t5"]
+            t5.update(body: "changed!")
+            t5.save!
+            actual_order = thread_result_order("activity", "asc")
+            expected_order = @default_order.reverse
+            actual_order.should == expected_order
+          end
+          it "sort unchanged using last activity / descending when comment is updated" do
             t5c = @threads["t5"].comments.first
             t5c.update(body: "changed!")
             t5c.save!
             actual_order = thread_result_order("activity", "desc")
-            expected_order = move_to_front(@default_order, "t5")
+            expected_order = @default_order
             actual_order.should == expected_order
           end
-          it "sorts using last activity / ascending" do
+          it "sort unchanged using last activity / ascending when comment is updated" do
             t5c = @threads["t5"].comments.first
             t5c.update(body: "changed!")
             t5c.save!
+            actual_order = thread_result_order("activity", "asc")
+            expected_order = @default_order.reverse
+            actual_order.should == expected_order
+          end
+          it "sorts using last activity / descending when response is created" do
+            t5 = @threads["t5"]
+            comment = t5.comments.new(body: "this problem is so easy", course_id: "1")
+            comment.author = User.first
+            comment.save!
+
+            actual_order = thread_result_order("activity", "desc")
+            expected_order = move_to_front(@default_order, "t5")
+            actual_order.should == expected_order
+          end
+          it "sorts using last activity / ascending when response is created" do
+            t5 = @threads["t5"]
+            comment = t5.comments.new(body: "this problem is so easy", course_id: "1")
+            comment.author = User.first
+            comment.save!
+
             actual_order = thread_result_order("activity", "asc")
             expected_order = move_to_end(@default_order.reverse, "t5")
             actual_order.should == expected_order
