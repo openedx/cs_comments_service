@@ -42,11 +42,17 @@ post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   
   thread.author = user
   thread.save
+
   if thread.errors.any?
     error 400, thread.errors.full_messages.to_json
   else
+    # Mark thread as read for owner user on creation
+    user.mark_as_read(thread)
     user.subscribe(thread) if bool_auto_subscribe
-    presenter = ThreadPresenter.factory(thread, nil)
+
+    # Initialize ThreadPresenter; if non-null user is passed it also calculates
+    # user specific data on initialization such as thread "read" status
+    presenter = ThreadPresenter.factory(thread, user)
     thread = presenter.to_hash
     thread["resp_total"] = 0
     thread.to_json

@@ -125,11 +125,11 @@ describe 'app' do
       subject { post "/api/v1/#{commentable_id}/threads", parameters }
 
       shared_examples_for 'CommentThread creation API' do |context='course'|
-        it 'creates a new CommentThread' do
+        it 'creates a new CommentThread and marks it as read for owner user' do
           expect(CommentThread.count).to eq 0
 
           body = parse(subject.body)
-          expect(body).to include('read' => false,
+          expect(body).to include('read' => true,
                                   'unread_comments_count' => 0,
                                   'endorsed' => false,
                                   'resp_total' => 0)

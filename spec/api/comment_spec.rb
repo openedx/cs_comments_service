@@ -155,7 +155,7 @@ describe 'Comment API' do
   end
 
   describe 'POST /api/v1/comments/:comment_id' do
-    it 'creates a sub comment to the comment' do
+    it 'creates a sub comment to the comment and marks thread as read for user' do
       comment = thread.comments.first
       previous_child_count = comment.children.length
       user = thread.author
@@ -172,6 +172,8 @@ describe 'Comment API' do
       sub_comment.course_id.should == course_id
       sub_comment.author.should == user
       sub_comment.child_count.should == 0
+
+      test_thread_marked_as_read(thread.id, user.id)
     end
 
     it 'returns 400 when the comment does not exist' do

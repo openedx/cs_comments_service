@@ -409,3 +409,11 @@ def create_comment_thread_and_comments
 
   thread
 end
+
+def test_thread_marked_as_read(thread_id, user_id)
+  # get thread to assert its "read" status
+  get "/api/v1/threads/#{thread_id}", user_id: user_id
+  last_response.should be_ok
+  retrieved_thread = parse last_response.body
+  retrieved_thread["read"].should == true
+end
