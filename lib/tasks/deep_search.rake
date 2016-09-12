@@ -50,7 +50,6 @@ namespace :deep_search do
     end
 
     sort_keys = %w[date activity votes comments]
-    sort_order = "desc"
 
     #set the sinatra env to test to avoid 401'ing
     set :environment, :test
@@ -58,7 +57,7 @@ namespace :deep_search do
     start_time = Time.now
     puts "Starting test at #{start_time}"
     1000.times do |i|
-      query_params = { course_id: "1", sort_key: sort_keys.sample, sort_order: sort_order, page: 1, per_page: 5, text: bodies.sample }
+      query_params = { course_id: "1", sort_key: sort_keys.sample, page: 1, per_page: 5, text: bodies.sample }
       RestClient.get "#{PREFIX}/threads", params: query_params
     end
     end_time = Time.now
