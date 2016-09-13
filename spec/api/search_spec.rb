@@ -164,13 +164,11 @@ describe "app" do
         end
 
         it "by date" do
-          asc_order = [0, 1, 2, 3, 4, 5]
-          check_sort("date", asc_order.reverse)
+          check_sort("date", [5, 4, 3, 2, 1, 0])
         end
 
         it "by activity" do
-          asc_order = [0, 1, 2, 3, 4, 5]
-          check_sort("activity", asc_order.reverse)
+          check_sort("activity", [5, 4, 3, 2, 1, 0])
         end
 
         it "by votes" do
