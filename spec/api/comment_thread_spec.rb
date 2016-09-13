@@ -25,7 +25,7 @@ describe "app" do
           rs = thread_result course_id: "abc"
           rs.length.should == 2
           rs.each_with_index { |res, i|
-            check_thread_result_json(nil, @threads["t#{i+1}"], res)
+            check_thread_result_json(nil, @threads["t#{2-i}"], res)
             res["course_id"].should == "abc"
           }
         end
@@ -38,8 +38,8 @@ describe "app" do
           @threads["t2"].save!
           rs = thread_result course_id: "abc"
           rs.length.should == 2
-          check_thread_result_json(nil, @threads["t1"], rs[0])
-          check_thread_result_json(nil, @threads["t3"], rs[1])
+          check_thread_result_json(nil, @threads["t3"], rs[0])
+          check_thread_result_json(nil, @threads["t1"], rs[1])
         end
         it "returns only threads where course id and commentable id match" do
           @threads["t1"].course_id = "course1"
@@ -91,7 +91,7 @@ describe "app" do
           rs = thread_result course_id: "omg", group_id: 100
           rs.length.should == 2
           rs.each_with_index { |res, i|
-            check_thread_result_json(nil, @threads["t#{i+1}"], res)
+            check_thread_result_json(nil, @threads["t#{2-i}"], res)
             res["course_id"].should == "omg"
           }
         end
@@ -187,7 +187,7 @@ describe "app" do
           rs = thread_result course_id: "abc", user_id: "123"
           rs.length.should == 2
           rs.each_with_index { |result, i|
-            check_thread_result_json(user, @threads["t#{i+1}"], result)
+            check_thread_result_json(user, @threads["t#{2-i}"], result)
             result["course_id"].should == "abc"
             result["unread_comments_count"].should == 5
             result["read"].should == false
@@ -197,34 +197,34 @@ describe "app" do
           rs = thread_result course_id: "abc", user_id: "123"
           rs.length.should == 2
           rs.each_with_index { |result, i|
-            check_thread_result_json(user, @threads["t#{i+1}"], result)
+            check_thread_result_json(user, @threads["t#{2-i}"], result)
           }
-          rs[0]["read"].should == true
-          rs[0]["unread_comments_count"].should == 0
-          rs[1]["read"].should == false
-          rs[1]["unread_comments_count"].should == 5
+          rs[1]["read"].should == true
+          rs[1]["unread_comments_count"].should == 0
+          rs[0]["read"].should == false
+          rs[0]["unread_comments_count"].should == 5
 
           @threads["t1"].updated_at += 1 # 1 second later
           @threads["t1"].save!
           rs = thread_result course_id: "abc", user_id: "123"
           rs.length.should == 2
           rs.each_with_index { |result, i|
-            check_thread_result_json(user, @threads["t#{i+1}"], result)
+            check_thread_result_json(user, @threads["t#{2-i}"], result)
           }
-          rs[0]["read"].should == true
-          rs[0]["unread_comments_count"].should == 0
-          rs[1]["read"].should == false
-          rs[1]["unread_comments_count"].should == 5
+          rs[1]["read"].should == true
+          rs[1]["unread_comments_count"].should == 0
+          rs[0]["read"].should == false
+          rs[0]["unread_comments_count"].should == 5
 
           # author's own posts should not count as unread
           make_comment(user, @threads["t1"], "my two cents")
           rs = thread_result course_id: "abc", user_id: "123"
-          rs[0]["unread_comments_count"].should == 0
+          rs[1]["unread_comments_count"].should == 0
 
           # other's posts do, though
           make_comment(@threads["t1"].author, @threads["t1"], "the last word")
           rs = thread_result course_id: "abc", user_id: "123"
-          rs[0]["unread_comments_count"].should == 1
+          rs[1]["unread_comments_count"].should == 1
         end
 
         context "sorting" do
@@ -300,14 +300,14 @@ describe "app" do
             @threads["t7"].save!
 
             actual_order = thread_result_order("comments")
-            expected_order = move_to_front(move_to_front(@default_order, "t5"), "t7")
+            expected_order = move_to_front(@default_order, "t7", "t5")
             actual_order.should == expected_order
 
             @threads["t8"].pinned = true
             @threads["t8"].save!
 
             actual_order = thread_result_order("comments")
-            expected_order = move_to_end(move_to_front(@default_order, "t5"), "t8", "t7")
+            expected_order = move_to_front(@default_order, "t8", "t7", "t5")
             actual_order.should == expected_order
 
             actual_order = thread_result_order("date")
@@ -391,7 +391,7 @@ describe "app" do
               make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
               @threads["t7"].pinned = true
               @threads["t7"].save!
-              expected_order = move_to_end(move_to_front(@default_order, "t5"), "t7")
+              expected_order = move_to_front(@default_order, "t7", "t5")
               test_paged_order({'sort_key' => 'comments', 'per_page' => 3}, expected_order)
             end
 
@@ -402,7 +402,7 @@ describe "app" do
               make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
               @threads["t7"].pinned = true
               @threads["t7"].save!
-              expected_order = move_to_end(move_to_front(@default_order[1..8], "t5"), "t7")
+              expected_order = move_to_front(@default_order[1..8], "t7", "t5")
               test_paged_order(
                   {'sort_key' => 'comments', 'per_page' => 3},
                   expected_order,
