@@ -137,7 +137,6 @@ helpers do
     filter_unread,
     filter_unanswered,
     sort_key,
-    sort_order,
     page,
     per_page,
     context=:course
@@ -175,7 +174,7 @@ helpers do
       end
     end
 
-    sort_criteria = get_sort_criteria(sort_key, sort_order)
+    sort_criteria = get_sort_criteria(sort_key)
     if not sort_criteria
       {}
     else
@@ -240,7 +239,7 @@ helpers do
 
   # Given query params, return sort criteria appropriate for passing to the
   # order_by function of a Mongoid query. Returns nil if params are not valid.
-  def get_sort_criteria(sort_key, sort_order)
+  def get_sort_criteria(sort_key)
     sort_key_mapper = {
       "date" => :created_at,
       "activity" => :last_activity_at,
@@ -248,16 +247,11 @@ helpers do
       "comments" => :comment_count,
     }
 
-    sort_order_mapper = {
-      "desc" => :desc,
-      "asc" => :asc,
-    }
-
     sort_key = sort_key_mapper[params["sort_key"] || "date"]
-    sort_order = sort_order_mapper[params["sort_order"] || "desc"]
 
-    if sort_key && sort_order
-      sort_criteria = [[:pinned, :desc], [sort_key, sort_order]]
+    if sort_key
+      # only sort order of :desc is supported.  support for :asc would require new indices.
+      sort_criteria = [[:pinned, :desc], [sort_key, :desc]]
       if ![:created_at, :last_activity_at].include? sort_key
         sort_criteria << [:created_at, :desc]
       end

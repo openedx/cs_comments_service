@@ -18,7 +18,6 @@ get "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),
     params["sort_key"],
-    params["sort_order"],
     params["page"],
     params["per_page"],
     params["context"] ? params["context"] : :course
