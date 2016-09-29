@@ -147,6 +147,8 @@ class User
   add_method_tracer :subscribed_thread_ids
   add_method_tracer :upvoted_ids
   add_method_tracer :downvoted_ids
+  add_method_tracer :subscribe
+  add_method_tracer :mark_as_read
 
 end
 
