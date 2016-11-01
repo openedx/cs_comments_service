@@ -265,6 +265,10 @@ end
 
 
 def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
+  if resp_limit.nil?
+    resp_limit = CommentService.config["thread_response_default_size"]
+  end
+
   all_responses = thread.root_comments.sort({"sk" => 1}).to_a
   total_responses = all_responses.length
   hash["resp_total"].should == total_responses
@@ -277,11 +281,7 @@ def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, 
     check_comment(expected_responses[i], response_hash, is_json, recursive)
   end
   hash["resp_skip"].to_i.should == resp_skip
-  if resp_limit.nil?
-    hash["resp_limit"].should be_nil
-  else
-    hash["resp_limit"].to_i.should == resp_limit
-  end
+  hash["resp_limit"].to_i.should == resp_limit
 end
 
 def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)

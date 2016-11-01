@@ -542,6 +542,17 @@ describe "app" do
 
       include_examples 'unicode data'
 
+      context 'error conditions' do
+        subject do
+          resp_limit = CommentService.config["thread_response_size_limit"]
+          get "/api/v1/threads/#{thread.id}", resp_limit: resp_limit+1
+        end
+
+        it "returns an error when the limit is exceeded" do
+          expect(subject.status).to eq 400
+        end
+      end
+
       context "response pagination" do
         before(:each) do
           User.all.delete
@@ -549,7 +560,7 @@ describe "app" do
           @user = create_test_user(999)
           @threads = {}
           @comments = {}
-          [20, 10, 3, 2, 1, 0].each do |n|
+          [201, 10, 3, 2, 1, 0].each do |n|
             thread_key = "t#{n}"
             thread = make_thread(@user, thread_key, DFLT_COURSE_ID, "pdq")
             @threads[n] = thread
@@ -557,7 +568,7 @@ describe "app" do
               # generate n responses in this thread
               comment_key = "#{thread_key} r#{i}"
               comment = make_comment(@user, thread, comment_key)
-              i.times do |j|
+              2.times do |j|
                 subcomment_key = "#{comment_key} c#{j}"
                 subcomment = make_comment(@user, comment, subcomment_key)
               end
@@ -572,7 +583,7 @@ describe "app" do
           parse(last_response.body)
         end
 
-        it "returns all responses when no skip/limit params given" do
+        it "limits responses when no skip/limit params given" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {}
             check_thread_response_paging_json thread, res, 0, nil, false
