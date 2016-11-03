@@ -1,3 +1,4 @@
+
 get "#{APIPREFIX}/threads" do # retrieve threads by course
   threads = CommentThread.where({"course_id" => params["course_id"]})
   if params[:commentable_ids]
@@ -46,7 +47,11 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
       error 400, [t(:param_must_be_a_number_greater_than_zero, :param => 'resp_limit')].to_json
     end
   else
-    resp_limit = nil
+    resp_limit = CommentService.config["thread_response_default_size"]
+  end
+  size_limit = CommentService.config["thread_response_size_limit"]
+  unless (resp_limit <= size_limit)
+    error 400, [t(:param_exceeds_limit, :param => resp_limit, :limit => size_limit)].to_json
   end
   presenter.to_hash(bool_with_responses, resp_skip, resp_limit, bool_recursive).to_json
 end

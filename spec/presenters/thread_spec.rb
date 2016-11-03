@@ -3,6 +3,8 @@ require 'spec_helper'
 describe ThreadPresenter do
   
   context "#to_hash" do
+    let(:default_resp_limit) { CommentService.config["thread_response_default_size"] }
+
     shared_examples "to_hash arguments" do |thread_type, endorse_responses|
       before(:each) do
         User.all.delete
@@ -94,18 +96,18 @@ describe ThreadPresenter do
       it "handles with_responses=true and recursive=true" do
         @threads_with_num_comments.each do |thread, num_comments|
           is_endorsed = num_comments > 0 && endorse_responses
-          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, nil, true)
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, default_resp_limit, true)
           check_thread_result(@reader, thread, hash)
-          check_thread_response_paging(thread, hash, 0, nil, false, true)
+          check_thread_response_paging(thread, hash, 0, default_resp_limit, false, true)
         end
       end
 
       it "handles with_responses=true and recursive=false" do
         @threads_with_num_comments.each do |thread, num_comments|
           is_endorsed = num_comments > 0 && endorse_responses
-          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, nil, false)
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, default_resp_limit, false)
           check_thread_result(@reader, thread, hash)
-          check_thread_response_paging(thread, hash)
+          check_thread_response_paging(thread, hash, 0, default_resp_limit)
         end
       end
 
@@ -113,9 +115,9 @@ describe ThreadPresenter do
         @threads_with_num_comments.each do |thread, num_comments|
           is_endorsed = num_comments > 0 && endorse_responses
           [0, 1, 2, 9, 10, 11, 1000].each do |skip|
-            hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, skip, nil, true)
+            hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, skip, default_resp_limit, true)
             check_thread_result(@reader, thread, hash)
-            check_thread_response_paging(thread, hash, skip)
+            check_thread_response_paging(thread, hash, skip, default_resp_limit)
           end
         end
       end
