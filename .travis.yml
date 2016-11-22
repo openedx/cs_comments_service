@@ -11,8 +11,7 @@ cache: bundler
 
 before_install:
   - docker-compose -f docker-compose-travis.yml up -d
-  - docker exec forum_testing chmod -R +x /edx/app/forum/cs_comments_service/.travis
+  - docker exec forum_testing chmod +x /edx/app/forum/cs_comments_service/.travis/run_tests.sh
 
 script:
-  - docker exec forum_testing /edx/app/forum/cs_comments_service/.travis/prepare_env.sh
   - docker exec forum_testing /edx/app/forum/cs_comments_service/.travis/run_tests.sh
