@@ -6,12 +6,12 @@ export MONGOHQ_URL="mongodb://mongo.edx:27017/cs_comments_service_test"
 cd /edx/app/forum/cs_comments_service
 
 #gem update bundler # Ensure we use the latest version of bundler. Travis' default version of outdated.
-which bundle
-which ruby
-which gem
-gem update bundle
-ruby --version
-gem --version
-bundle --version
-bundle install
+#which bundle
+#which ruby
+#which gem
+#gem update bundle
+#ruby --version
+#gem --version
+#bundle --version
+#bundle install
 bundle exec rspec
