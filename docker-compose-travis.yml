@@ -12,6 +12,6 @@ services:
     image: edxops/forums:feanil-test
 
     container_name: forum_testing
-#    volumes:
-#      - .:/edx/app/forum/cs_comments_service
+    volumes:
+      - .:/edx/app/forum/cs_comments_service
     command: tail -f /dev/null
