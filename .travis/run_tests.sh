@@ -7,4 +7,6 @@ cd /edx/app/forum/cs_comments_service
 
 gem update bundler # Ensure we use the latest version of bundler. Travis' default version of outdated.
 
+bundle install
+
 bundle exec rspec
