@@ -9,4 +9,8 @@ cd /edx/app/forum/cs_comments_service
 which bundle
 which ruby
 which gem
+gem update bundle
+ruby --version
+gem --version
+bundle --version
 bundle exec rspec
