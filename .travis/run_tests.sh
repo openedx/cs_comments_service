@@ -13,5 +13,6 @@ cd /edx/app/forum/cs_comments_service
 #ruby --version
 #gem --version
 #bundle --version
+rm -rf vendor 
 bundle install
 bundle exec rspec
