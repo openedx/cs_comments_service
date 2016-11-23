@@ -13,4 +13,5 @@ gem update bundle
 ruby --version
 gem --version
 bundle --version
+bundle install
 bundle exec rspec
