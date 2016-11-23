@@ -7,9 +7,7 @@ language: ruby
 rvm:
   - "1.9.3"
 
-cache: bundler
-
-before_install:
+install:
   - docker-compose -f docker-compose-travis.yml up -d
 
 script:
