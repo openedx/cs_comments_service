@@ -25,7 +25,6 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   else
     user.mark_as_read(comment.comment_thread)
     comment.to_hash.to_json
-    user.mark_as_read(comment.comment_thread)
   end
 end
 

@@ -206,5 +206,8 @@ DEPENDENCIES
   will_paginate_mongoid (~> 2.0)
   yajl-ruby
 
+RUBY VERSION       
+   ruby 1.9.3p551     
+
 BUNDLED WITH
    1.12.5
