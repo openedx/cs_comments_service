@@ -1,0 +1,17 @@
+# This is only currently used by Travis for testing
+version: "2"
+
+services:
+  elasticsearch:
+    image: edxops/elasticsearch:0.9.13
+    container_name: "es.edx"
+  mongo:
+    image: mongo:3.0.12
+    container_name: "mongo.edx"
+  forum:
+    image: edxops/forums:latest
+
+    container_name: forum_testing
+    volumes:
+      - ..:/edx/app/forum/cs_comments_service
+    command: tail -f /dev/null
