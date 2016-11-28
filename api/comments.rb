@@ -24,6 +24,7 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
     error 400, comment.errors.full_messages.to_json
   else
     comment.to_hash.to_json
+    user.mark_as_read(comment.comment_thread)
   end
 end
 
