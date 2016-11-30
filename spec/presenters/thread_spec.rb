@@ -155,7 +155,7 @@ describe ThreadPresenter do
     end
   end
 
-  context "#merge_response_content" do
+  context "#build_response_tree" do
 
     before(:each) { @cid_seq = 10 }
 
@@ -174,7 +174,7 @@ describe ThreadPresenter do
       c010 = make_comment(c01)
 
       pres = ThreadPresenter.new(nil, nil, nil, nil, nil)
-      responses = pres.merge_response_content([c0, c00, c01, c010])
+      responses = pres.build_response_tree(nil, [c0, c00, c01, c010])
       responses.size.should == 1 # c0
       responses[0]["id"].should == c0.id
       responses[0]["children"].size.should == 2 # c00, c01
@@ -196,7 +196,7 @@ describe ThreadPresenter do
       # be silently skipped over.
 
       pres = ThreadPresenter.new(nil, nil, nil, nil, nil)
-      responses = pres.merge_response_content([c00, c000, c1, c10, c111])
+      responses = pres.build_response_tree(nil, [c00, c000, c1, c10, c111])
       responses.size.should == 1 # c1
       responses[0]["id"].should == c1.id
       responses[0]["children"].size.should == 1 # c10
