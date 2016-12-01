@@ -15,3 +15,6 @@ services:
     volumes:
       - ..:/edx/app/forum/cs_comments_service
     command: tail -f /dev/null
+    depends_on:
+          - "elasticsearch"
+          - "mongo"

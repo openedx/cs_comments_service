@@ -6,5 +6,10 @@ cd /edx/app/forum/cs_comments_service
 
 bundle install
 
-bundle exec rake search:initialize
-bundle exec rspec
+# allow dependent services to finish start up (e.g. ElasticSearch, Mongo)
+sleep 10
+
+bin/rake search:initialize
+
+# Use 'bin/rspec -fd' to print test names for debugging
+bin/rspec
