@@ -26,7 +26,8 @@ namespace :search do
   desc 'Creates a new search index and points the "content" alias to it'
   task :initialize => :environment do
     index = TaskHelpers::ElasticsearchHelper.create_index
-    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
+    # Does it change anything to remove this?  Should be unrelated.
+    #TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
     TaskHelpers::ElasticsearchHelper.move_alias(Content::ES_INDEX_NAME, index)
   end
 
