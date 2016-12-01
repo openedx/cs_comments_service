@@ -5,7 +5,7 @@ module TaskHelpers
     LOG = Logger.new(STDERR)
 
     def self.create_index(name=nil)
-      name ||= "#{Content::ES_INDEX_NAME}_#{Time.now.strftime('%Y%m%d%H%M%S')}"
+      name ||= "#{Content::ES_INDEX_NAME}_#{Time.now.strftime('%Y%m%d%H%M%S%L')}"
 
       mappings = {}
       [Comment, CommentThread].each do |model|
@@ -31,6 +31,10 @@ module TaskHelpers
     def self.get_index_shard_count(name)
       settings = Elasticsearch::Model.client.indices.get_settings(index: name)
       settings[name]['settings']['index']['number_of_shards']
+    end
+
+    def self.exists_alias(alias_name)
+      Elasticsearch::Model.client.indices.exists_alias(name: alias_name)
     end
 
     def self.move_alias(alias_name, index_name)

@@ -37,7 +37,9 @@ task :environment do
     end
   end
 
-  CommentService.config = YAML.load(application_yaml)
+  CommentService.config = YAML.load(application_yaml).with_indifferent_access
+
+  Elasticsearch::Model.client = Elasticsearch::Client.new(host: CommentService.config[:elasticsearch_server], log: false)
 
   Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each { |file| require file }
   Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
