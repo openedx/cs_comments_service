@@ -8,6 +8,10 @@ end
 RSpec.shared_context 'search_enabled' do
   before(:all) do
     CommentService.config[:enable_search] = true
+
+    # Delete any indices that might have been previously-created to ensure our search
+    # tests start with a clean slate. Each test will recreate the index.
+    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
   end
 
   before(:each) do
