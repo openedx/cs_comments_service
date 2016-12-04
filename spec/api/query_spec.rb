@@ -3,6 +3,7 @@ require 'faker'
 
 
 describe 'app' do
+  include_context 'search_enabled'
   before(:each) { set_api_key_header }
   let(:body) { Faker::Lorem.word }
 
@@ -14,7 +15,7 @@ describe 'app' do
         get '/api/v1/search/threads', text: body
       end
 
-      let(:matched_thread) { parse(subject.body)['collection'].select { |t| t['id'] == thread.id.to_s }.first }
+      let!(:matched_thread) { parse(subject.body)['collection'].select { |t| t['id'] == thread.id.to_s }.first }
 
       it { should be_ok }
 
@@ -25,7 +26,11 @@ describe 'app' do
     end
 
     context 'when searching on thread content' do
-      let!(:thread) { create(:comment_thread, body: body) }
+      let!(:thread) {
+        thread = create(:comment_thread, body: body)
+        refresh_es_index
+        thread
+      }
 
       it_behaves_like 'a search endpoint'
     end
@@ -33,6 +38,7 @@ describe 'app' do
     context 'when searching on comment content' do
       let!(:thread) do
         comment = create(:comment, body: body)
+        refresh_es_index
         thread = comment.comment_thread
       end
 

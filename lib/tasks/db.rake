@@ -91,11 +91,6 @@ namespace :db do
   end
 
   task :seed => [:environment, :clean] do
-    Tire.index 'comment_threads' do
-      delete
-    end
-    CommentThread.create_elasticsearch_index
-
     beginning_time = Time.now
 
     (1..10).map { |id| create_test_user(id) }
