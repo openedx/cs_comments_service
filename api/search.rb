@@ -133,8 +133,6 @@ get "#{APIPREFIX}/search/threads" do
   if !search_text
     '{}'
   else
-
-
     get_threads(context, group_ids, local_params, search_text)
   end
 end
