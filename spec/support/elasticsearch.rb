@@ -20,6 +20,14 @@ RSpec.shared_context 'search_enabled' do
     TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
   end
 
+  after(:all) do
+    # Ensure that subsequent tests, that do not require search, are unaffected by search.
+    CommentService.config[:enable_search] = false
+
+    # Ensure (once more) the index was deleted.
+    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
+  end
+
 end
 
 RSpec.configure do |config|

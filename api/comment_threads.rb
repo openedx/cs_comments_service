@@ -89,12 +89,6 @@ post "#{APIPREFIX}/threads/:thread_id/comments" do |thread_id|
 end
 
 delete "#{APIPREFIX}/threads/:thread_id" do |thread_id|
-  begin
-    thread.destroy
-  rescue Elasticsearch::Transport::Transport::Errors::NotFound
-    # If the thread is not in the index, that's actually a good thing given that we just removed it.
-    # Note that this exception will probably only be encountered for tests that don't wait for the index
-    # to be refreshed before attempting to destroy a newly-recreated thread.
-  end
+  thread.destroy
   thread.to_hash.to_json
 end
