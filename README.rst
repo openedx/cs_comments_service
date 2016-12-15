@@ -44,7 +44,7 @@ having to take downtime or modify code with a new index name.
 
     $ bin/rake search:initialize
 
-Run ther server:
+Run the server:
 
 .. code-block::
 
