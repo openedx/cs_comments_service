@@ -738,11 +738,7 @@ describe 'app' do
       it 'deletes the comment thread and its comments' do
         expect(CommentThread.where(id: thread.id).count).to eq 1
         expect(Comment.where(comment_thread: thread).count).to eq 2
-        # temporary sleep for Travis failure.
-        sleep(10)
         subject
-        # temporary sleep for Travis failure.
-        sleep(10)
         expect(CommentThread.where(id: thread.id).count).to eq 0
         expect(Comment.where(comment_thread: thread).count).to eq 0
       end

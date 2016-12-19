@@ -3,7 +3,9 @@ ruby "1.9.3"
 
 gem 'pry'
 gem 'pry-nav'
-# gem 'debugger'
+
+# Use with command-line debugging, but not RubyMine
+#gem 'debugger'
 
 gem 'bundler'
 
