@@ -43,7 +43,6 @@ describe 'app' do
     end
 
     it 'does not require api key' do
-      get '/heartbeat'
       expect(subject.status).to eq 200
     end
 
@@ -125,6 +124,10 @@ describe 'app' do
 
       it 'reports failure if cluster status is red' do
         test_es_check(false, 'red')
+      end
+
+      it 'reports failure if cluster status is unexpected' do
+        test_es_check(false, 'unexpected')
       end
 
       it 'reports failure if the cluster health check times out' do

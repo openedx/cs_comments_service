@@ -35,10 +35,10 @@ Install the requisite gems:
 
     $ bundle install
 
-Setup the search index. Note that the command below creates an alias with a unique name (e.g. content_20160101), and
-assigns it a known alias: content. If you choose not to use the command below, you should still opt to reference your
-index by an alias rather than the actual index name. This will enable you to swap out indices (e.g. reindex) without
-having to take downtime or modify code with a new index name.
+Setup the search index. Note that the command below creates an alias with a unique name (e.g.
+content_20161220185820323), and assigns it a known alias: content. If you choose not to use the command below, you
+should still opt to reference your index by an alias rather than the actual index name. This will enable you to swap out
+indices (e.g. reindex) without having to take downtime or modify code with a new index name.
 
 .. code-block:: bash
 
