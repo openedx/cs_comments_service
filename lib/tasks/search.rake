@@ -10,12 +10,11 @@ namespace :search do
     end
   end
 
-  desc 'Reindex all data from the database'
-  task :reindex, [:index] => :environment do |t, args|
-    args.with_defaults(:index => Content::ES_INDEX_NAME)
-    [Comment, CommentThread].each do |model|
-      model.import(index: args[:index])
-    end
+  desc 'Rebuilds a new index of all data from the database and then updates alias.'
+  task :rebuild_index, [:call_move_alias] => :environment do |t, args|
+    args.with_defaults(:call_move_alias => false)
+    alias_name = args[:call_move_alias] ? Content::ES_INDEX_NAME : nil
+    TaskHelpers::ElasticsearchHelper.rebuild_index(alias_name)
   end
 
   desc 'Generate a new, empty physical index, without bringing it online.'
@@ -30,7 +29,10 @@ namespace :search do
   end
 
   desc 'Sets/moves an alias to the specified index'
-  task :move_alias, [:alias, :index] => :environment do |t, args|
-    TaskHelpers::ElasticsearchHelper.move_alias(args[:alias], args[:index])
+  task :move_alias, [:index, :force_delete] => :environment do |t, args|
+    # Forces delete of an index with same name as alias if it exists.
+    args.with_defaults(:force_delete => false)
+    alias_name = Content::ES_INDEX_NAME
+    TaskHelpers::ElasticsearchHelper.move_alias(alias_name, args[:index], args[:force_delete])
   end
 end

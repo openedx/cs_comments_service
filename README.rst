@@ -38,11 +38,25 @@ Install the requisite gems:
 Setup the search index. Note that the command below creates an alias with a unique name (e.g.
 content_20161220185820323), and assigns it a known alias: content. If you choose not to use the command below, you
 should still opt to reference your index by an alias rather than the actual index name. This will enable you to swap out
-indices (e.g. reindex) without having to take downtime or modify code with a new index name.
+indices (e.g. rebuild_index) without having to take downtime or modify code with a new index name.
 
 .. code-block:: bash
 
     $ bin/rake search:initialize
+
+To rebuild a new index from the database and then point the alias 'content' to it, you can use the
+rebuid_index task. This task will also run catchup before and after the alias is moved, to minimize time where the alias
+does not contain all documents.
+
+.. code-block:: bash
+
+    $ bin/rake search:rebuild_index[true]
+
+To rebuild a new index without moving the alias and without running catchup, do the following:
+
+.. code-block:: bash
+
+    $ bin/rake search:rebuild_index
 
 Run the server:
 
