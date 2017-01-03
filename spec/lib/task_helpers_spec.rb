@@ -51,16 +51,40 @@ describe TaskHelpers do
     end
 
     context("#rebuild_index") do
+      include_context 'search_enabled'
 
-      it "builds new index" do
-        index_name = TaskHelpers::ElasticsearchHelper.rebuild_index()
-        TaskHelpers::ElasticsearchHelper.exists_index(index_name).should be_true
+      def create_thread_and_delete_index()
+        thread = create(:comment_thread, body: 'the best test body', course_id: 'test_course_id')
+        refresh_es_index
+        TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
       end
 
-      it "builds new index and points alias to it when index of same name as alias exists" do
-        TaskHelpers::ElasticsearchHelper.create_index(alias_name)
+      it "builds new index without switching alias" do
+        create_thread_and_delete_index
+
+        index_name = TaskHelpers::ElasticsearchHelper.rebuild_index()
+        refresh_es_index(index_name)
+
+        Elasticsearch::Model.client.search(index: index_name)['hits']['total'].should be > 0
+      end
+
+      it "builds new index and points alias to it" do
+        create_thread_and_delete_index
+
         index_name = TaskHelpers::ElasticsearchHelper.rebuild_index(alias_name)
-        assert_alias_points_to_index(alias_name, index_name)
+        refresh_es_index(alias_name)
+
+        Elasticsearch::Model.client.search(index: alias_name)['hits']['total'].should be > 0
+      end
+
+      it "builds new index and points alias to it, first deleting index with same name as alias" do
+        create_thread_and_delete_index
+        TaskHelpers::ElasticsearchHelper.create_index(alias_name)
+
+        index_name = TaskHelpers::ElasticsearchHelper.rebuild_index(alias_name)
+        refresh_es_index(alias_name)
+
+        Elasticsearch::Model.client.search(index: alias_name)['hits']['total'].should be > 0
       end
 
     end

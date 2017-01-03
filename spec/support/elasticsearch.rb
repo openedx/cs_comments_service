@@ -1,7 +1,8 @@
 require 'task_helpers'
 
-def refresh_es_index
-  TaskHelpers::ElasticsearchHelper.refresh_index(Content::ES_INDEX_NAME)
+def refresh_es_index(index_name=nil)
+  index_name = index_name ? index_name : Content::ES_INDEX_NAME
+  TaskHelpers::ElasticsearchHelper.refresh_index(index_name)
 end
 
 
