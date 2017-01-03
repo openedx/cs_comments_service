@@ -13,7 +13,7 @@ module TaskHelpers
     # Params:
     # +alias_name+:: (optional) The alias to point to the new index.
     def self.rebuild_index(alias_name=nil)
-      start_time = Time.now
+      initial_start_time = Time.now
       index_name = create_index()
 
       [Comment, CommentThread].each do |model|
@@ -24,7 +24,7 @@ module TaskHelpers
         # Just in case initial rebuild took days and first catch up takes hours,
         # we catch up once before the alias move and once afterwards.
         first_catchup_start_time = Time.now
-        catchup_index(start_time, index_name)
+        catchup_index(initial_start_time, index_name)
 
         move_alias(alias_name, index_name, force_delete: true)
         catchup_index(first_catchup_start_time, alias_name)
