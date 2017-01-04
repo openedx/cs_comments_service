@@ -30,6 +30,67 @@ describe "app" do
         assert_empty_response
       end
 
+      describe "search for updated/deleted comment/thread works" do
+        let(:course_id) { 'test/course/id' }
+
+        def assert_result_total(expected_total)
+          last_response.should be_ok
+          result = parse(last_response.body)
+          result["total_results"].should == expected_total
+        end
+
+        def create_and_delete_comment_or_thread(factory_name, text)
+          comment_or_thread = create(factory_name, course_id: course_id, body: text)
+          comment_or_thread.destroy
+          refresh_es_index
+        end
+
+        def update_comment_or_thread(factory_name, original_text, new_text)
+          comment_or_thread = create(factory_name, course_id: course_id, body: original_text)
+          comment_or_thread.body = new_text
+          comment_or_thread.save!
+          refresh_es_index
+        end
+
+        it 'returns an empty result if thread is deleted' do
+          text = 'thread-to-be-deleted-text'
+          create_and_delete_comment_or_thread(:comment_thread, text)
+
+          get '/api/v1/search/threads', course_id: course_id, text: text
+          assert_result_total(0)
+        end
+
+        it 'returns result only for updated thread' do
+          original_text = 'thread-to-be-updated-original-text'
+          new_text = 'thread-updated-text'
+          update_comment_or_thread(:comment_thread, original_text, new_text)
+
+          get '/api/v1/search/threads', course_id: course_id, text: original_text
+          assert_result_total(0)
+          get '/api/v1/search/threads', course_id: course_id, text: new_text
+          assert_result_total(1)
+        end
+
+        it 'returns an empty result if comment is deleted' do
+          text = 'comment-to-be-deleted-text'
+          create_and_delete_comment_or_thread(:comment, text)
+
+          get '/api/v1/search/threads', course_id: course_id, text: text
+          assert_result_total(0)
+        end
+
+        it 'returns result only for updated comment' do
+          original_text = 'comment-to-be-updated-original-text'
+          new_text = 'comment-updated-text'
+          update_comment_or_thread(:comment, original_text, new_text)
+
+          get '/api/v1/search/threads', course_id: course_id, text: original_text
+          assert_result_total(0)
+          get '/api/v1/search/threads', course_id: course_id, text: new_text
+          assert_result_total(1)
+        end
+      end
+
       describe "filtering works" do
         let!(:threads) do
           threads = (0..34).map do |i|
