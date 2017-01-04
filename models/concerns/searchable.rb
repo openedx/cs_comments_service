@@ -23,7 +23,8 @@ module Searchable
       self.as_json(options.merge root: false)
     end
 
-    private
+    private # all methods below are private
+
     def index_document
       __elasticsearch__.index_document if CommentService.search_enabled?
     end
