@@ -8,15 +8,15 @@ get "#{APIPREFIX}/threads" do # retrieve threads by course
 
   handle_threads_query(
     threads,
-    params['user_id'],
-    params['course_id'],
+    params["user_id"],
+    params["course_id"],
     get_group_ids_from_params(params),
-    value_to_boolean(params['flagged']),
-    value_to_boolean(params['unread']),
-    value_to_boolean(params['unanswered']),
-    params['sort_key'],
-    params['page'],
-    params['per_page']
+    value_to_boolean(params["flagged"]),
+    value_to_boolean(params["unread"]),
+    value_to_boolean(params["unanswered"]),
+    params["sort_key"],
+    params["page"],
+    params["per_page"]
   ).to_json
 end
 
