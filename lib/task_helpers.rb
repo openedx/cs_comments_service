@@ -12,30 +12,40 @@ module TaskHelpers
     #
     # Params:
     # +alias_name+:: (optional) The alias to point to the new index.
-    def self.rebuild_index(alias_name=nil)
+    # +batch_size+:: (optional) The number of elements to index at a time. Defaults to 100.
+    # +sleep_time+:: (optional) The number of seconds to sleep between batches. Defaults to 0.
+    def self.rebuild_index(alias_name=nil, batch_size=100, sleep_time=0)
       initial_start_time = Time.now
       index_name = create_index()
 
       [Comment, CommentThread].each do |model|
-        model.import(index: index_name)
+        current_batch = 0
+        model.import(index: index_name, batch_size: batch_size) do |response|
+            batch_import_post_process(response, current_batch, sleep_time)
+            current_batch += 1
+        end
       end
 
       if alias_name
         # Just in case initial rebuild took days and first catch up takes hours,
         # we catch up once before the alias move and once afterwards.
         first_catchup_start_time = Time.now
-        catchup_index(initial_start_time, index_name)
+        catchup_index(initial_start_time, index_name, batch_size, sleep_time)
 
         move_alias(alias_name, index_name, force_delete: true)
-        catchup_index(first_catchup_start_time, alias_name)
+        catchup_index(first_catchup_start_time, alias_name, batch_size, sleep_time)
       end
 
       index_name
     end
 
-    def self.catchup_index(start_time, index_name)
+    def self.catchup_index(start_time, index_name, batch_size=100, sleep_time=0)
       [Comment, CommentThread].each do |model|
-        model.where(:updated_at.gte => start_time).import(index: index_name)
+        current_batch = 0
+        model.where(:updated_at.gte => start_time).import(index: index_name, batch_size: batch_size) do |response|
+            batch_import_post_process(response, current_batch, sleep_time)
+            current_batch += 1
+        end
       end
     end
 
@@ -61,6 +71,14 @@ module TaskHelpers
         # that can be used to ignore 404 errors.
         LOG.info "Unable to delete non-existent index: #{name}."
       end
+    end
+
+    def self.batch_import_post_process(response, batch_number, sleep_time)
+        response['items'].select { |i| i['index']['error'] }.each do |item|
+            LOG.error "Error indexing. Response was: #{response}"
+        end
+        LOG.info "imported batch #{batch_number} into the index"
+        sleep(sleep_time)
     end
 
     def self.get_index_shard_count(name)
