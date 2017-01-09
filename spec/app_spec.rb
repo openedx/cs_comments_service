@@ -7,10 +7,10 @@ describe 'app' do
     # /heartbeat is the only exception, covered in the heartbeat tests below
     let(:urls) do
       {
-          '/' => 404,
+          "/" => 404,
           "/api/v1/users/#{user.id}" => 200,
-          '/api/v1/users/doesnotexist' => 404,
-          '/selftest' => 200
+          "/api/v1/users/doesnotexist" => 404,
+          "/selftest" => 200
       }
     end
 
