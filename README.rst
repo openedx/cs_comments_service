@@ -50,7 +50,7 @@ does not contain all documents.
 
 .. code-block:: bash
 
-    $ bin/rake search:rebuild_index[true]
+    $ bin/rake search:rebuild_index[call_move_alias=true]
 
 To rebuild a new index without moving the alias and without running catchup, do the following:
 
