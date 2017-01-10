@@ -19,7 +19,7 @@ module TaskHelpers
       index_name = create_index()
 
       [Comment, CommentThread].each do |model|
-        current_batch = 0
+        current_batch = 1
         model.import(index: index_name, batch_size: batch_size) do |response|
             batch_import_post_process(response, current_batch, sleep_time)
             current_batch += 1
@@ -36,17 +36,19 @@ module TaskHelpers
         catchup_index(first_catchup_start_time, alias_name, batch_size, sleep_time)
       end
 
+      LOG.info "Rebuild index complete."
       index_name
     end
 
     def self.catchup_index(start_time, index_name, batch_size=100, sleep_time=0)
       [Comment, CommentThread].each do |model|
-        current_batch = 0
+        current_batch = 1
         model.where(:updated_at.gte => start_time).import(index: index_name, batch_size: batch_size) do |response|
             batch_import_post_process(response, current_batch, sleep_time)
             current_batch += 1
         end
       end
+      LOG.info "Catch up to #{start_time} complete."
     end
 
     def self.create_index(name=nil)
@@ -77,7 +79,7 @@ module TaskHelpers
         response['items'].select { |i| i['index']['error'] }.each do |item|
             LOG.error "Error indexing. Response was: #{response}"
         end
-        LOG.info "imported batch #{batch_number} into the index"
+        LOG.info "Imported batch #{batch_number} into the index"
         sleep(sleep_time)
     end
 
