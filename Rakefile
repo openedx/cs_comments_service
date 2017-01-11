@@ -16,6 +16,8 @@ end
 
 LOG = Logger.new(STDERR)
 
+RAKE_SEARCH_INITIALIZE = (Rake.application.top_level_tasks.include? 'search:initialize')
+
 desc 'Load the environment'
 task :environment do
   # Load all of app.rb, because it is too easy to introduce bugs otherwise where Rake
