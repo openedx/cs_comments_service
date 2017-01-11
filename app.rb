@@ -53,9 +53,12 @@ Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each { |file| require file }
 
 Elasticsearch::Model.client = Elasticsearch::Client.new(host: CommentService.config[:elasticsearch_server], log: false)
 
-# Ensure Elasticsearch index mappings exist.
-Comment.put_search_index_mapping
-CommentThread.put_search_index_mapping
+$check_index_mapping_exists = defined?(RAKE_SEARCH_INITIALIZE) === nil || RAKE_SEARCH_INITIALIZE === false
+if $check_index_mapping_exists
+  # Ensure Elasticsearch index mappings exist, unless we are creating it in the rake search initialize
+  Comment.put_search_index_mapping
+  CommentThread.put_search_index_mapping
+end
 
 # Comment out observers until notifications are actually set up properly.
 #Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
