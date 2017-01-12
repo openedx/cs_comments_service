@@ -12,9 +12,9 @@ module TaskHelpers
     #
     # Params:
     # +alias_name+:: (optional) The alias to point to the new index.
-    # +batch_size+:: (optional) The number of elements to index at a time. Defaults to 100.
+    # +batch_size+:: (optional) The number of elements to index at a time. Defaults to 500.
     # +sleep_time+:: (optional) The number of seconds to sleep between batches. Defaults to 0.
-    def self.rebuild_index(alias_name=nil, batch_size=100, sleep_time=0)
+    def self.rebuild_index(alias_name=nil, batch_size=500, sleep_time=0)
       initial_start_time = Time.now
       index_name = create_index()
 
@@ -48,7 +48,7 @@ module TaskHelpers
             current_batch += 1
         end
       end
-      LOG.info "Catch up to #{start_time} complete."
+      LOG.info "Catch up from #{start_time} complete."
     end
 
     def self.create_index(name=nil)

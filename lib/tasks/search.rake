@@ -2,21 +2,21 @@ require 'task_helpers'
 
 namespace :search do
   desc 'Indexes content updated in the last N minutes.'
-  task :catchup, [:minutes] => :environment do |t, args|
+  task :catchup, [:minutes, :index_name, :batch_size, :sleep_time] => :environment do |t, args|
     start_time = Time.now - (args[:minutes].to_i * 60)
-
-    [Comment, CommentThread].each do |model|
-      model.where(:updated_at.gte => start_time).import(index: Content::ES_INDEX_NAME)
-    end
+    args.with_defaults(:index_name => Content::ES_INDEX_NAME)
+    args.with_defaults(:batch_size => 500)
+    args.with_defaults(:sleep_time => 0)
+    TaskHelpers::ElasticsearchHelper.catchup_index(start_time, args[:index_name], args[:batch_size].to_i, args[:sleep_time].to_i)
   end
 
   desc 'Rebuilds a new index of all data from the database and then updates alias.'
   task :rebuild_index, [:call_move_alias, :batch_size, :sleep_time] => :environment do |t, args|
     args.with_defaults(:call_move_alias => false)
-    args.with_defaults(:batch_size => 100)
+    args.with_defaults(:batch_size => 500)
     args.with_defaults(:sleep_time => 0)
     alias_name = args[:call_move_alias] ? Content::ES_INDEX_NAME : nil
-    TaskHelpers::ElasticsearchHelper.rebuild_index(alias_name, args[:batch_size], args[:sleep_time])
+    TaskHelpers::ElasticsearchHelper.rebuild_index(alias_name, args[:batch_size].to_i, args[:sleep_time].to_i)
   end
 
   desc 'Generate a new, empty physical index, without bringing it online.'

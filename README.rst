@@ -44,19 +44,26 @@ indices (e.g. rebuild_index) without having to take downtime or modify code with
 
     $ bin/rake search:initialize
 
+To rebuild a new index without moving the alias and without running catchup, do the following:
+
+.. code-block:: bash
+
+    $ bin/rake search:rebuild_index
+
 To rebuild a new index from the database and then point the alias 'content' to it, you can use the
 rebuild_index task. This task will also run catchup before and after the alias is moved, to minimize time where the
 alias does not contain all documents.
 
 .. code-block:: bash
 
-    $ bin/rake search:rebuild_index[call_move_alias=true]
+    $ bin/rake search:rebuild_index[true]
 
-To rebuild a new index without moving the alias and without running catchup, do the following:
+You can also adjust the batch size (e.g. 200) and the sleep time (e.g. 2 seconds) between batches to lighten the load
+on MongoDB.
 
 .. code-block:: bash
 
-    $ bin/rake search:rebuild_index
+    $ bin/rake search:rebuild_index[true,200,2]
 
 Run the server:
 
