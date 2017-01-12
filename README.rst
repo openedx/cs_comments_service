@@ -45,8 +45,8 @@ indices (e.g. rebuild_index) without having to take downtime or modify code with
     $ bin/rake search:initialize
 
 To rebuild a new index from the database and then point the alias 'content' to it, you can use the
-rebuid_index task. This task will also run catchup before and after the alias is moved, to minimize time where the alias
-does not contain all documents.
+rebuild_index task. This task will also run catchup before and after the alias is moved, to minimize time where the
+alias does not contain all documents.
 
 .. code-block:: bash
 
