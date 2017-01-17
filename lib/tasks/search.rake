@@ -71,7 +71,7 @@ namespace :search do
       # NOTE on the small chance that another process re-auto-creates the index
       # we just deleted before we have a chance to create the alias, this next
       # call will fail.
-      move_alias_to(Content::ES_INDEX_NAME, new_index_name)
+      move_alias_to(Content::ES_INDEX_NAME, new_index)
     end
 
     op = in_place ? 'reindex' : '(re)build index'
