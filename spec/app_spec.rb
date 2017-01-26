@@ -174,4 +174,17 @@ describe 'app' do
       expect(last_response.body).to include File.expand_path(__FILE__)
     end
   end
+
+  describe 'config' do
+    describe 'Elasticsearch client' do
+      subject { Elasticsearch::Model.client }
+
+      it 'has a host value set to that from application.yaml' do
+        expected = URI::parse(CommentService.config[:elasticsearch_server])
+        host = subject.transport.hosts[0]
+        host[:port] = host[:port].to_i
+        expect(URI::HTTP.build(host)).to eq expected
+      end
+    end
+  end
 end
