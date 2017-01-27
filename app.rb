@@ -72,7 +72,7 @@ Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
 Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each { |file| require file }
 
 
-$check_index_mapping_exists = defined?(RAKE_SEARCH_INITIALIZE) === nil || RAKE_SEARCH_INITIALIZE === false
+$check_index_mapping_exists = defined?(RAKE_SEARCH) === nil || RAKE_SEARCH === false
 if $check_index_mapping_exists
   # Ensure Elasticsearch index mappings exist, unless we are creating it in the rake search initialize
   Comment.put_search_index_mapping
