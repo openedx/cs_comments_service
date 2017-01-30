@@ -57,12 +57,9 @@ module TaskHelpers
     def self.create_index(name=nil)
       name ||= "#{Content::ES_INDEX_NAME}_#{Time.now.strftime('%Y%m%d%H%M%S%L')}"
 
-      mappings = {}
-      [Comment, CommentThread].each do |model|
-        mappings.merge! model.mappings.to_hash
-      end
+      Elasticsearch::Model.client.indices.create(index: name)
+      put_mappings(name)
 
-      Elasticsearch::Model.client.indices.create(index: name, body: {mappings: mappings})
       LOG.info "Created new index: #{name}."
       name
     end
@@ -142,5 +139,71 @@ module TaskHelpers
     def self.refresh_index(name)
       Elasticsearch::Model.client.indices.refresh(index: name)
     end
+
+    def self.initialize_index(alias_name, force_new_index)
+      # When force_new_index is true, a fresh index will be created for the alias,
+      # even if it already exists.
+      if force_new_index or not exists_alias(alias_name)
+        index_name = create_index()
+        # WARNING: if an index exists with the same name as the intended alias, it
+        #   will be deleted.
+        move_alias(alias_name, index_name, force_delete: true)
+      end
+    end
+
+    def self.put_mappings(name)
+      # As of ES 0.9, the order that these mappings are created matters.  Unit test failures
+      # appear with a different order. It is unclear if this is a defect in ES, the test, or
+      # neither.
+      [CommentThread, Comment].each do |model|
+        Elasticsearch::Model.client.indices.put_mapping(index: name, type: model.document_type, body: model.mappings.to_hash)
+      end
+      LOG.info "Added mappings to index: #{name}."
+    end
+
+    # Validates that the alias exists and its index includes the proper mappings.
+    # There is no return value, but an exception is raised if the alias is invalid.
+    #
+    # Params:
+    # +alias_name+:: The alias name to be validated.
+    def self.validate_index(alias_name)
+      if exists_alias(alias_name) === false
+        fail "Alias #{alias_name} does not exist."
+      end
+
+      actual_mapping = Elasticsearch::Model.client.indices.get_mapping(index: alias_name).values[0]
+      expected_mapping = {}
+      [CommentThread, Comment].each do |model|
+        expected_mapping.merge! model.mappings.to_hash
+      end
+
+      # As of ES 0.9, the order the mappings are created in matters.  See put_mappings.
+      # Compare document types and order
+      expected_mapping_keys = expected_mapping.keys.map { |x| x.to_s }
+      if actual_mapping.keys != expected_mapping_keys
+        fail "Actual mapping types [#{actual_mapping.keys}] does not match expected mapping types (including order) [#{expected_mapping.keys}]."
+      end
+
+      # Check that expected field mappings of the correct type exist
+      expected_mapping.keys.each do |doc_type|
+        missing_fields = Array.new
+        invalid_field_types = Array.new
+        expected_mapping[doc_type][:properties].keys.each do |property|
+          if actual_mapping[doc_type.to_s]['properties'].key?(property.to_s)
+            expected_type = expected_mapping[doc_type][:properties][property][:type].to_s
+            actual_type = actual_mapping[doc_type.to_s]['properties'][property.to_s]['type']
+            if actual_type != expected_type
+              invalid_field_types.push("'#{property}' type '#{actual_type}' should be '#{expected_type}'")
+            end
+          else
+            missing_fields.push(property)
+          end
+        end
+        if missing_fields.any? or invalid_field_types.any?
+          fail "Document type '#{doc_type}' has missing or invalid field mappings.  Missing fields: #{missing_fields}. Invalid types: #{invalid_field_types}."
+        end
+      end
+    end
+
   end
 end

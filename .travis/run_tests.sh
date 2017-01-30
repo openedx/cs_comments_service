@@ -9,8 +9,6 @@ bundle install
 # allow dependent services to finish start up (e.g. ElasticSearch, Mongo)
 sleep 10
 
-bin/rake search:initialize
-
 # Use 'bin/rspec -fd' to print test names for debugging
 # Printing test names can be especially helpful for tracking down test
 # failure differences between Travis and Mac, because tests are loaded

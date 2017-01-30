@@ -48,10 +48,12 @@ Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Log
 # Setup Elasticsearch
 # NOTE (CCB): If you want to see all data sent to Elasticsearch (e.g. for debugging purposes), set the tracer argument
 # to the value of a logger.
-# Example: Elascisearch.Client.new(tracer: get_logger('elasticsearch.tracer'))
+# Example: Elasticsearch::Client.new(tracer: get_logger('elasticsearch.tracer'))
+# NOTE: You can also add a logger, but it will log some FATAL warning during index creation.
+# Example: Elasticsearch::Client.new(logger: get_logger('elasticsearch', Logger::WARN))
 Elasticsearch::Model.client = Elasticsearch::Client.new(
     host: CommentService.config[:elasticsearch_server],
-    logger: get_logger('elasticsearch', Logger::WARN)
+    log: false
 )
 
 # Setup i18n
@@ -70,14 +72,6 @@ end
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each { |file| require file }
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
 Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each { |file| require file }
-
-
-$check_index_mapping_exists = defined?(RAKE_SEARCH) === nil || RAKE_SEARCH === false
-if $check_index_mapping_exists
-  # Ensure Elasticsearch index mappings exist, unless we are creating it in the rake search initialize
-  Comment.put_search_index_mapping
-  CommentThread.put_search_index_mapping
-end
 
 # Comment out observers until notifications are actually set up properly.
 #Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}

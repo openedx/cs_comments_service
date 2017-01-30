@@ -31,9 +31,19 @@ namespace :search do
   end
 
   desc 'Creates a new search index and points the "content" alias to it'
-  task :initialize => :environment do
-    index = TaskHelpers::ElasticsearchHelper.create_index
-    TaskHelpers::ElasticsearchHelper.move_alias(Content::ES_INDEX_NAME, index)
+  task :initialize, [:force_new_index] => :environment do |t, args|
+    # When force_new_index is true, a fresh index for "content" alias is created even if the
+    # "content" alias already exists.
+    args.with_defaults(:force_new_index => false)
+    # WARNING: if "content" is an index and not an alias, it will be deleted and recreated
+    #  no matter what is supplied for the force argument
+    TaskHelpers::ElasticsearchHelper.initialize_index(Content::ES_INDEX_NAME, args[:force_new_index])
+  end
+
+  desc 'Updates field mappings for the given index.'
+  task :put_mappings, [:index] => :environment do |t, args|
+    args.with_defaults(:index => Content::ES_INDEX_NAME)
+    TaskHelpers::ElasticsearchHelper.put_mappings(args[:index])
   end
 
   desc 'Sets/moves an alias to the specified index'
@@ -43,4 +53,10 @@ namespace :search do
     alias_name = Content::ES_INDEX_NAME
     TaskHelpers::ElasticsearchHelper.move_alias(alias_name, args[:index], args[:force_delete])
   end
+
+  desc 'Validates that the "content" alias exists with expected field mappings and types.'
+  task :validate_index => :environment do
+    TaskHelpers::ElasticsearchHelper.validate_index(Content::ES_INDEX_NAME)
+  end
+
 end

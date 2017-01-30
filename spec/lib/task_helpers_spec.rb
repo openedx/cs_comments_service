@@ -86,7 +86,27 @@ describe TaskHelpers do
 
         Elasticsearch::Model.client.search(index: alias_name)['hits']['total'].should be > 0
       end
-
     end
+
+    context("#validate_index") do
+      include_context 'search_enabled'
+
+      subject { TaskHelpers::ElasticsearchHelper.validate_index(Content::ES_INDEX_NAME) }
+
+      it "validates the 'content' alias exists with proper mappings" do
+        subject
+      end
+
+      it "fails if the alias doesn't exist" do
+        TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
+        expect{subject}.to raise_error(RuntimeError)
+      end
+
+      it "fails if the alias has the wrong mappings" do
+        Elasticsearch::Model.client.indices.delete_mapping(index: Content::ES_INDEX_NAME, type: Comment.document_type)
+        expect{subject}.to raise_error(RuntimeError)
+      end
+    end
+
   end
 end
