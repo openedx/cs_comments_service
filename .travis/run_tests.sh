@@ -9,7 +9,7 @@ bundle install
 # allow dependent services to finish start up (e.g. ElasticSearch, Mongo)
 sleep 10
 
-bin/rake search:initialize
+bin/rake search:initialize[true]
 
 # Use 'bin/rspec -fd' to print test names for debugging
 # Printing test names can be especially helpful for tracking down test

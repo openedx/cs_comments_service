@@ -45,14 +45,25 @@ Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
 Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Logger::INFO
 
+
+$is_not_rake_search_initialize = defined?(RAKE_SEARCH_INITIALIZE) === nil || RAKE_SEARCH_INITIALIZE === false
+
 # Setup Elasticsearch
 # NOTE (CCB): If you want to see all data sent to Elasticsearch (e.g. for debugging purposes), set the tracer argument
 # to the value of a logger.
 # Example: Elascisearch.Client.new(tracer: get_logger('elasticsearch.tracer'))
-Elasticsearch::Model.client = Elasticsearch::Client.new(
-    host: CommentService.config[:elasticsearch_server],
-    logger: get_logger('elasticsearch', Logger::WARN)
-)
+if $is_not_rake_search_initialize
+  Elasticsearch::Model.client = Elasticsearch::Client.new(
+      host: CommentService.config[:elasticsearch_server],
+      logger: get_logger('elasticsearch', Logger::WARN)
+  )
+else
+  # avoid misleading fatal errors during initialization
+  Elasticsearch::Model.client = Elasticsearch::Client.new(
+      host: CommentService.config[:elasticsearch_server],
+      log: false
+  )
+end
 
 # Setup i18n
 I18n.load_path += Dir[File.join(File.dirname(__FILE__), 'locale', '*.yml').to_s]
@@ -72,8 +83,8 @@ Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
 Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each { |file| require file }
 
 
-$check_index_mapping_exists = defined?(RAKE_SEARCH) === nil || RAKE_SEARCH === false
-if $check_index_mapping_exists
+$is_not_rake_search_call = defined?(RAKE_SEARCH) === nil || RAKE_SEARCH === false
+if $is_not_rake_search_call
   # Ensure Elasticsearch index mappings exist, unless we are creating it in the rake search initialize
   Comment.put_search_index_mapping
   CommentThread.put_search_index_mapping
