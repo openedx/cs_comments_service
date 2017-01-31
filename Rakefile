@@ -16,9 +16,8 @@ end
 
 LOG = Logger.new(STDERR)
 
-# Indicates whether this is being run from within a 'search:' task in rake.
-RAKE_SEARCH = (Rake.application.top_level_tasks.select {|task| task.include? 'search:'}).any?
-RAKE_SEARCH_INITIALIZE = (Rake.application.top_level_tasks.select {|task| task.include? 'search:initialize'}).any?
+# Indicates whether this is being run from within a 'search:initialize' task in rake.
+IN_RAKE_SEARCH_INITIALIZE = (Rake.application.top_level_tasks.select {|task| task.include? 'search:initialize'}).any?
 
 desc 'Load the environment'
 task :environment do

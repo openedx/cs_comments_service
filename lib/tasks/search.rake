@@ -25,11 +25,12 @@ namespace :search do
   end
 
   desc 'Creates a new search index and points the "content" alias to it'
-  task :initialize, [:force] => :environment do |t, args|
-    args.with_defaults(:force => false)
-    # if the alias doesn't already exist, create the index and move the alias.
-    # WARNING: if an index exists with the same name as the intended alias, it
-    #   will be deleted.
+  task :initialize, [:force_new_index] => :environment do |t, args|
+    # When force_new_index is true, a fresh index for "content" alias is created even if the
+    # "content" alias already exists.
+    args.with_defaults(:force_new_index => false)
+    # WARNING: if "content" is an index and not an alias, it will be deleted and recreated
+    #  no matter what is supplied for the force argument
     TaskHelpers::ElasticsearchHelper.initialize_index(Content::ES_INDEX_NAME, args[:force])
   end
 

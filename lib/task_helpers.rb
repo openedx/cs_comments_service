@@ -140,12 +140,13 @@ module TaskHelpers
       Elasticsearch::Model.client.indices.refresh(index: name)
     end
 
-    def self.initialize_index(alias_name, force)
-      # if the alias doesn't already exist, create the index and move the alias.
-      # WARNING: if an index exists with the same name as the intended alias, it
-      #   will be deleted.
-      if force or not exists_alias(alias_name)
+    def self.initialize_index(alias_name, force_new_index)
+      # When force_new_index is true, a fresh index will be created for the alias,
+      # even if it already exists.
+      if force_new_index or not exists_alias(alias_name)
         index_name = create_index()
+        # WARNING: if an index exists with the same name as the intended alias, it
+        #   will be deleted.
         move_alias(alias_name, index_name, force_delete: true)
       end
     end
