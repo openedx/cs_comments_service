@@ -45,26 +45,16 @@ Mongoid.load!("config/mongoid.yml", environment)
 Mongoid.logger.level = Logger::INFO
 Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Logger::INFO
 
-
-# true if this is not being called from rake search:initialize
-$is_not_in_rake_search_initialize = defined?(IN_RAKE_SEARCH_INITIALIZE) === nil || IN_RAKE_SEARCH_INITIALIZE === false
-
 # Setup Elasticsearch
 # NOTE (CCB): If you want to see all data sent to Elasticsearch (e.g. for debugging purposes), set the tracer argument
 # to the value of a logger.
-# Example: Elascisearch.Client.new(tracer: get_logger('elasticsearch.tracer'))
-if $is_not_in_rake_search_initialize
-  Elasticsearch::Model.client = Elasticsearch::Client.new(
-      host: CommentService.config[:elasticsearch_server],
-      logger: get_logger('elasticsearch', Logger::WARN)
-  )
-else
-  # avoid misleading fatal errors during rake search initialization
-  Elasticsearch::Model.client = Elasticsearch::Client.new(
-      host: CommentService.config[:elasticsearch_server],
-      log: false
-  )
-end
+# Example: Elasticsearch::Client.new(tracer: get_logger('elasticsearch.tracer'))
+# NOTE: You can also add a logger, but it will log some FATAL warning during index creation.
+# Example: Elasticsearch::Client.new(logger: get_logger('elasticsearch', Logger::WARN))
+Elasticsearch::Model.client = Elasticsearch::Client.new(
+    host: CommentService.config[:elasticsearch_server],
+    log: false
+)
 
 # Setup i18n
 I18n.load_path += Dir[File.join(File.dirname(__FILE__), 'locale', '*.yml').to_s]
@@ -82,12 +72,6 @@ end
 Dir[File.dirname(__FILE__) + '/lib/**/*.rb'].each { |file| require file }
 Dir[File.dirname(__FILE__) + '/models/*.rb'].each { |file| require file }
 Dir[File.dirname(__FILE__) + '/presenters/*.rb'].each { |file| require file }
-
-if $is_not_in_rake_search_initialize
-  # Ensure Elasticsearch index mappings exist, unless we are creating it in the rake search initialize
-  Comment.put_search_index_mapping
-  CommentThread.put_search_index_mapping
-end
 
 # Comment out observers until notifications are actually set up properly.
 #Dir[File.dirname(__FILE__) + '/models/observers/*.rb'].each {|file| require file}
