@@ -31,7 +31,7 @@ namespace :search do
     args.with_defaults(:force_new_index => false)
     # WARNING: if "content" is an index and not an alias, it will be deleted and recreated
     #  no matter what is supplied for the force argument
-    TaskHelpers::ElasticsearchHelper.initialize_index(Content::ES_INDEX_NAME, args[:force])
+    TaskHelpers::ElasticsearchHelper.initialize_index(Content::ES_INDEX_NAME, args[:force_new_index])
   end
 
   desc 'Sets/moves an alias to the specified index'

@@ -60,11 +60,6 @@ module TaskHelpers
       end
 
       Elasticsearch::Model.client.indices.create(index: name, body: {mappings: mappings})
-
-      [Comment, CommentThread].each do |model|
-        model.put_search_index_mapping(name)
-      end
-
       LOG.info "Created new index: #{name}."
       name
     end
