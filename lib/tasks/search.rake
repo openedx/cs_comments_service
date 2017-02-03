@@ -11,12 +11,18 @@ namespace :search do
   end
 
   desc 'Rebuilds a new index of all data from the database and then updates alias.'
-  task :rebuild_index, [:call_move_alias, :batch_size, :sleep_time] => :environment do |t, args|
-    args.with_defaults(:call_move_alias => false)
+  task :rebuild_index, [:call_move_alias, :batch_size, :sleep_time, :extra_catchup_minutes] => :environment do |t, args|
+    args.with_defaults(:call_move_alias => true)
     args.with_defaults(:batch_size => 500)
-    args.with_defaults(:sleep_time => 0)
-    alias_name = args[:call_move_alias] ? Content::ES_INDEX_NAME : nil
-    TaskHelpers::ElasticsearchHelper.rebuild_index(alias_name, args[:batch_size].to_i, args[:sleep_time].to_i)
+    args.with_defaults(:sleep_time => 0)  # sleep time between batches in seconds
+    args.with_defaults(:extra_catchup_minutes => 5) # additional catchup time in minutes
+    alias_name = args[:call_move_alias] === true ? Content::ES_INDEX_NAME : nil
+    TaskHelpers::ElasticsearchHelper.rebuild_index(
+        alias_name,
+        args[:batch_size].to_i,
+        args[:sleep_time].to_i,
+        args[:extra_catchup_minutes].to_i
+    )
   end
 
   desc 'Generate a new, empty physical index, without bringing it online.'

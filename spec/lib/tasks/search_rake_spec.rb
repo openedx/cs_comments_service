@@ -11,21 +11,22 @@ describe "search:rebuild_index" do
   its(:prerequisites) { should include("environment") }
 
   it "calls rebuild_index with defaults" do
-    TaskHelpers::ElasticsearchHelper.should_receive(:rebuild_index).with(nil, 500, 0)
+    TaskHelpers::ElasticsearchHelper.should_receive(:rebuild_index).with(Content::ES_INDEX_NAME, 500, 0, 5)
 
     subject.invoke
   end
 
   it "calls rebuild_index with arguments" do
     # Rake calls receive arguments as strings.
-    call_move_alias = 'true'
+    call_move_alias = 'false'
     batch_size = '100'
     sleep_time = '2'
+    extra_catchup_minutes = '10'
     TaskHelpers::ElasticsearchHelper.should_receive(:rebuild_index).with(
-          Content::ES_INDEX_NAME, batch_size.to_i, sleep_time.to_i
+          nil, batch_size.to_i, sleep_time.to_i, extra_catchup_minutes.to_i
     )
 
-    subject.invoke(call_move_alias, batch_size, sleep_time)
+    subject.invoke(call_move_alias, batch_size, sleep_time, extra_catchup_minutes)
   end
 end
 
