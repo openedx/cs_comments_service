@@ -14,7 +14,8 @@ module TaskHelpers
     # +alias_name+:: (optional) The alias to point to the new index.
     # +batch_size+:: (optional) The number of elements to index at a time. Defaults to 500.
     # +sleep_time+:: (optional) The number of seconds to sleep between batches. Defaults to 0.
-    def self.rebuild_index(alias_name=nil, batch_size=500, sleep_time=0)
+    # +extra_catchup_minutes+:: (optional) The number of extra minutes to catchup. Defaults to 5.
+    def self.rebuild_index(alias_name=nil, batch_size=500, sleep_time=0, extra_catchup_minutes=5)
       initial_start_time = Time.now
       index_name = create_index()
 
@@ -30,10 +31,12 @@ module TaskHelpers
         # Just in case initial rebuild took days and first catch up takes hours,
         # we catch up once before the alias move and once afterwards.
         first_catchup_start_time = Time.now
-        catchup_index(initial_start_time, index_name, batch_size, sleep_time)
+        adjusted_start_time = initial_start_time - (extra_catchup_minutes * 60)
+        catchup_index(adjusted_start_time, index_name, batch_size, sleep_time)
 
         move_alias(alias_name, index_name, force_delete: true)
-        catchup_index(first_catchup_start_time, alias_name, batch_size, sleep_time)
+        adjusted_start_time = first_catchup_start_time - (extra_catchup_minutes * 60)
+        catchup_index(adjusted_start_time, alias_name, batch_size, sleep_time)
       end
 
       LOG.info "Rebuild index complete."
