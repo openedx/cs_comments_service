@@ -54,12 +54,11 @@ module TaskHelpers
     def self.create_index(name=nil)
       name ||= "#{Content::ES_INDEX_NAME}_#{Time.now.strftime('%Y%m%d%H%M%S%L')}"
 
-      mappings = {}
-      [Comment, CommentThread].each do |model|
-        mappings.merge! model.mappings.to_hash
-      end
+      Elasticsearch::Model.client.indices.create(index: name)
 
-      Elasticsearch::Model.client.indices.create(index: name, body: {mappings: mappings})
+      [CommentThread, Comment].each do |model|
+        Elasticsearch::Model.client.indices.put_mapping(index: name, type: model.document_type, body: model.mappings.to_hash)
+      end
 
       LOG.info "sleep(10)"
       sleep(10)
