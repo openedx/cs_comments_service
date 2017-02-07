@@ -15,4 +15,4 @@ bin/rake search:initialize[true]
 # Printing test names can be especially helpful for tracking down test
 # failure differences between Travis and Mac, because tests are loaded
 # and run in different orders.
-bin/rspec
+bin/rspec -fd spec/api/search_spec.rb:201

@@ -60,6 +60,11 @@ module TaskHelpers
       end
 
       Elasticsearch::Model.client.indices.create(index: name, body: {mappings: mappings})
+
+      LOG.info "sleep(10)"
+      sleep(10)
+      LOG.info Elasticsearch::Model.client.indices.get_mapping(index: name)
+
       LOG.info "Created new index: #{name}."
       name
     end
