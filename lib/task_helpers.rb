@@ -56,7 +56,7 @@ module TaskHelpers
 
       Elasticsearch::Model.client.indices.create(index: name)
 
-      [Comment, CommentThread].each do |model|
+      [CommentThread, Comment].each do |model|
         Elasticsearch::Model.client.indices.put_mapping(index: name, type: model.document_type, body: model.mappings.to_hash)
       end
 
