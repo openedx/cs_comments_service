@@ -10,14 +10,6 @@ module Searchable
     after_update :update_indexed_document
     after_destroy :delete_document
 
-    def self.put_search_index_mapping(index=nil)
-      index ||= self.index_name
-      success = self.__elasticsearch__.client.indices.put_mapping(index: index, type: self.document_type, body: self.mappings.to_hash)
-      unless success
-        logger.warn "WARNING! could not apply search index mapping for #{self.name}"
-      end
-    end
-
     def as_indexed_json(options={})
       # TODO: Play with the `MyModel.indexes` method -- reject non-mapped attributes, `:as` options, etc
       self.as_json(options.merge root: false)

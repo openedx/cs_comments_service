@@ -16,9 +16,6 @@ end
 
 LOG = Logger.new(STDERR)
 
-# Indicates whether this is being run from within a 'search:' task in rake.
-RAKE_SEARCH = (Rake.application.top_level_tasks.select {|task| task.include? 'search:'}).any?
-
 desc 'Load the environment'
 task :environment do
   # Load all of app.rb to keep rake and the app as similar as possible.
