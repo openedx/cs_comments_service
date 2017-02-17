@@ -148,6 +148,10 @@ module TaskHelpers
         # WARNING: if an index exists with the same name as the intended alias, it
         #   will be deleted.
         move_alias(alias_name, index_name, force_delete: true)
+      else
+        LOG.info "Skipping initialization. The 'content' alias already exists. If 'rake search:validate_index' indicates "\
+          "a problem with the mappings, you could either use 'rake search:rebuild_index' to reload from the db or 'rake "\
+          "search:initialize[true]' to force initialization with an empty index."
       end
     end
 
@@ -168,7 +172,7 @@ module TaskHelpers
     # +alias_name+:: The alias name to be validated.
     def self.validate_index(alias_name)
       if exists_alias(alias_name) === false
-        fail "Alias #{alias_name} does not exist."
+        fail "Alias '#{alias_name}' does not exist."
       end
 
       actual_mapping = Elasticsearch::Model.client.indices.get_mapping(index: alias_name).values[0]
@@ -203,6 +207,7 @@ module TaskHelpers
           fail "Document type '#{doc_type}' has missing or invalid field mappings.  Missing fields: #{missing_fields}. Invalid types: #{invalid_field_types}."
         end
       end
+      LOG.info "Passed: Alias '#{alias_name}' exists with up-to-date mappings."
     end
 
   end
