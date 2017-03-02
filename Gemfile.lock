@@ -186,7 +186,7 @@ DEPENDENCIES
   mongoid-tree!
   mongoid_cleaner (~> 1.2.0)
   mongoid_magic_counter_cache
-  newrelic_rpm
+  newrelic_rpm (~> 3.16.0)
   nokogiri (~> 1.6.8)
   protected_attributes
   pry
