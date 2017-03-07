@@ -1,4 +1,3 @@
-require 'new_relic/agent/method_tracer'
 require_relative 'constants'
 
 class User
@@ -142,13 +141,17 @@ class User
     read_state.save
   end
 
-  include ::NewRelic::Agent::MethodTracer
-  add_method_tracer :to_hash
-  add_method_tracer :subscribed_thread_ids
-  add_method_tracer :upvoted_ids
-  add_method_tracer :downvoted_ids
-  add_method_tracer :subscribe
-  add_method_tracer :mark_as_read
+  begin
+    require 'new_relic/agent/method_tracer'
+    include ::NewRelic::Agent::MethodTracer
+    add_method_tracer :to_hash
+    add_method_tracer :subscribed_thread_ids
+    add_method_tracer :upvoted_ids
+    add_method_tracer :downvoted_ids
+    add_method_tracer :subscribe
+    add_method_tracer :mark_as_read
+  rescue LoadError
+  end
 
 end
 

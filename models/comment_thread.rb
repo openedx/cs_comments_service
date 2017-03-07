@@ -1,4 +1,3 @@
-require 'new_relic/agent/method_tracer'
 require_relative 'concerns/searchable'
 require_relative 'content'
 require_relative 'constants'
@@ -158,6 +157,10 @@ class CommentThread < Content
     subscriptions.delete_all
   end
 
-  include ::NewRelic::Agent::MethodTracer
-  add_method_tracer :to_hash
+  begin
+    require 'new_relic/agent/method_tracer'
+    include ::NewRelic::Agent::MethodTracer
+    add_method_tracer :to_hash
+  rescue LoadError
+  end
 end

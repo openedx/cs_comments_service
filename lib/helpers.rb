@@ -1,4 +1,3 @@
-require 'new_relic/agent/method_tracer'
 
 helpers do
   def commentable
@@ -375,11 +374,15 @@ helpers do
     end
   end
 
-  include ::NewRelic::Agent::MethodTracer
-  add_method_tracer :user
-  add_method_tracer :thread
-  add_method_tracer :comment
-  add_method_tracer :flag_as_abuse
-  add_method_tracer :un_flag_as_abuse
-  add_method_tracer :handle_threads_query
+  begin
+    require 'new_relic/agent/method_tracer'
+    include ::NewRelic::Agent::MethodTracer
+    add_method_tracer :user
+    add_method_tracer :thread
+    add_method_tracer :comment
+    add_method_tracer :flag_as_abuse
+    add_method_tracer :un_flag_as_abuse
+    add_method_tracer :handle_threads_query
+  rescue LoadError
+  end
 end
