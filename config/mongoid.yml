@@ -15,16 +15,14 @@ common_uri: &default_uri
 development:
   clients:
     default:
+      <<: *default_uri
       <<: *default_client
-      database: cs_comments_service_development
-      hosts:
-        - localhost:27017
 
 test:
   clients:
     default:
-      <<: *default_client
       <<: *default_uri
+      <<: *default_client
 
 production:
   clients:
