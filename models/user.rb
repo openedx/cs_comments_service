@@ -151,6 +151,7 @@ class User
     add_method_tracer :subscribe
     add_method_tracer :mark_as_read
   rescue LoadError
+    logger.warn "NewRelic agent library not installed"
   end
 
 end

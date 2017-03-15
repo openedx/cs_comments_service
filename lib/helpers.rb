@@ -384,5 +384,6 @@ helpers do
     add_method_tracer :un_flag_as_abuse
     add_method_tracer :handle_threads_query
   rescue LoadError
+    logger.warn "NewRelic agent library not installed"
   end
 end

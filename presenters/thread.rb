@@ -125,6 +125,7 @@ class ThreadPresenter
     add_method_tracer :to_hash
     add_method_tracer :merge_response_content
   rescue LoadError
+    logger.warn "NewRelic agent library not installed"
   end
 
 end

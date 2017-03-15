@@ -46,6 +46,7 @@ module ThreadUtils
       add_method_tracer :get_read_states
       add_method_tracer :get_endorsed
     rescue LoadError
+      logger.warn "NewRelic agent library not installed"
     end
   end
 

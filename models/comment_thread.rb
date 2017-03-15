@@ -162,5 +162,6 @@ class CommentThread < Content
     include ::NewRelic::Agent::MethodTracer
     add_method_tracer :to_hash
   rescue LoadError
+    logger.warn "NewRelic agent library not installed"
   end
 end
