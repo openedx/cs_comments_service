@@ -20,42 +20,40 @@ def get_thread_ids(context, group_ids, local_params, search_text)
     )
   end
 
-  self.class.trace_execution_scoped(['Custom/get_search_threads/es_search']) do
-    body = {
-        size: CommentService.config['max_deep_search_comment_count'].to_i,
-        sort: [
-            {updated_at: :desc}
-        ],
-        query: {
-            multi_match: {
-                query: search_text,
-                fields: [:title, :body],
-                operator: :AND
-            },
-            filtered: {
-                filter: {
-                    and: filters
-                }
-            }
-        }
-    }
+  body = {
+      size: CommentService.config['max_deep_search_comment_count'].to_i,
+      sort: [
+          {updated_at: :desc}
+      ],
+      query: {
+          multi_match: {
+              query: search_text,
+              fields: [:title, :body],
+              operator: :AND
+          },
+          filtered: {
+              filter: {
+                  and: filters
+              }
+          }
+      }
+  }
 
-    response = Elasticsearch::Model.client.search(index: Content::ES_INDEX_NAME, body: body)
+  response = Elasticsearch::Model.client.search(index: Content::ES_INDEX_NAME, body: body)
 
-    thread_ids = Set.new
-    response['hits']['hits'].each do |hit|
-      case hit['_type']
-        when CommentThread.document_type
-          thread_ids.add(hit['_id'])
-        when Comment.document_type
-          thread_ids.add(hit['_source']['comment_thread_id'])
-        else
-          # There shouldn't be any other document types. Nevertheless, ignore them, if they are present.
-          next
-      end
+  thread_ids = Set.new
+  response['hits']['hits'].each do |hit|
+    case hit['_type']
+      when CommentThread.document_type
+        thread_ids.add(hit['_id'])
+      when Comment.document_type
+        thread_ids.add(hit['_source']['comment_thread_id'])
+      else
+        # There shouldn't be any other document types. Nevertheless, ignore them, if they are present.
+        next
     end
-    thread_ids
   end
+  thread_ids
 end
 
 def get_suggested_text(search_text)

@@ -150,27 +150,23 @@ helpers do
     end
 
     if filter_flagged
-      self.class.trace_execution_scoped(['Custom/handle_threads_query/find_flagged']) do
-        # TODO replace with aggregate query?
-        comment_ids = Comment.where(:course_id => course_id).
-          where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true).
-          collect{|c| c.comment_thread_id}.uniq
+      # TODO replace with aggregate query?
+      comment_ids = Comment.where(:course_id => course_id).
+        where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true).
+        collect{|c| c.comment_thread_id}.uniq
 
-        thread_ids = comment_threads.where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true).
-          collect{|c| c.id}
+      thread_ids = comment_threads.where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true).
+        collect{|c| c.id}
 
-        comment_threads = comment_threads.in({"_id" => (comment_ids + thread_ids).uniq})
-      end
+      comment_threads = comment_threads.in({"_id" => (comment_ids + thread_ids).uniq})
     end
 
     if filter_unanswered
-      self.class.trace_execution_scoped(['Custom/handle_threads_query/find_unanswered']) do
-        endorsed_thread_ids = Comment.where(:course_id => course_id).
-          where(:parent_id.exists => false, :endorsed => true).
-          collect{|c| c.comment_thread_id}.uniq
+      endorsed_thread_ids = Comment.where(:course_id => course_id).
+        where(:parent_id.exists => false, :endorsed => true).
+        collect{|c| c.comment_thread_id}.uniq
 
-        comment_threads = comment_threads.where({"thread_type" => :question}).nin({"_id" => endorsed_thread_ids})
-      end
+      comment_threads = comment_threads.where({"thread_type" => :question}).nin({"_id" => endorsed_thread_ids})
     end
 
     sort_criteria = get_sort_criteria(sort_key)

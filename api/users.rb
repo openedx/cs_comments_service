@@ -54,13 +54,11 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
   collection = presenter.to_hash
 
   json_output = nil
-  self.class.trace_execution_scoped(['Custom/get_user_active_threads/json_serialize']) do
-    json_output = {
-      collection: collection,
-      num_pages: num_pages,
-      page: page,
-    }.to_json
-  end
+  json_output = {
+  collection: collection,
+  num_pages: num_pages,
+  page: page,
+  }.to_json
   json_output
 
 end
