@@ -1,5 +1,4 @@
 require_relative 'thread_utils'
-require 'new_relic/agent/method_tracer'
 
 class ThreadPresenter
 
@@ -120,8 +119,13 @@ class ThreadPresenter
     top_level
   end
 
-  include ::NewRelic::Agent::MethodTracer
-  add_method_tracer :to_hash
-  add_method_tracer :merge_response_content
+  begin
+    require 'new_relic/agent/method_tracer'
+    include ::NewRelic::Agent::MethodTracer
+    add_method_tracer :to_hash
+    add_method_tracer :merge_response_content
+  rescue LoadError
+    logger.warn "NewRelic agent library not installed"
+  end
 
 end

@@ -1,4 +1,3 @@
-require 'new_relic/agent/method_tracer'
 require_relative 'constants'
 
 class User
@@ -51,61 +50,59 @@ class User
     end
 
     if params[:course_id]
-      self.class.trace_execution_scoped(['Custom/User.to_hash/count_comments_and_threads']) do
-        if not params[:group_ids].empty?
-          # Get threads in either the specified group(s) or posted to all groups (nil).
-          specified_groups_or_global = params[:group_ids] << nil
-          threads_count = CommentThread.course_context.where(
-            author_id: id,
-            course_id: params[:course_id],
-            group_id: {"$in" => specified_groups_or_global},
-            anonymous: false,
-            anonymous_to_peers: false
-          ).count
+      if not params[:group_ids].empty?
+        # Get threads in either the specified group(s) or posted to all groups (nil).
+        specified_groups_or_global = params[:group_ids] << nil
+        threads_count = CommentThread.course_context.where(
+          author_id: id,
+          course_id: params[:course_id],
+          group_id: {"$in" => specified_groups_or_global},
+          anonymous: false,
+          anonymous_to_peers: false
+        ).count
 
-          # Note that the comments may have been responses to a thread not started by author_id.
+        # Note that the comments may have been responses to a thread not started by author_id.
 
-          # comment.standalone_context? gets the context from the parent comment_thread
-          # we need to eager load the comment_thread to prevent an N+1 when we iterate through the results
-          comment_thread_ids = Comment.includes(:comment_thread).where(
-            author_id: id,
-            course_id: params[:course_id],
-            anonymous: false,
-            anonymous_to_peers: false
-          ).
-          reject{ |comment| comment.standalone_context? }.
-          collect{ |comment| comment.comment_thread_id }
+        # comment.standalone_context? gets the context from the parent comment_thread
+        # we need to eager load the comment_thread to prevent an N+1 when we iterate through the results
+        comment_thread_ids = Comment.includes(:comment_thread).where(
+          author_id: id,
+          course_id: params[:course_id],
+          anonymous: false,
+          anonymous_to_peers: false
+        ).
+        reject{ |comment| comment.standalone_context? }.
+        collect{ |comment| comment.comment_thread_id }
 
-          # Filter to the unique thread ids visible to the specified group(s).
-          group_comment_thread_ids = CommentThread.where(
-            id: {"$in" => comment_thread_ids.uniq},
-            group_id: {"$in" => specified_groups_or_global},
-          ).collect{|d| d.id}
+        # Filter to the unique thread ids visible to the specified group(s).
+        group_comment_thread_ids = CommentThread.where(
+          id: {"$in" => comment_thread_ids.uniq},
+          group_id: {"$in" => specified_groups_or_global},
+        ).collect{|d| d.id}
 
-          # Now filter comment_thread_ids so it only includes things in group_comment_thread_ids
-          # (keeping duplicates so the count will be correct).
-          comments_count = comment_thread_ids.count{
-            |comment_thread_id| group_comment_thread_ids.include?(comment_thread_id)
-          }
+        # Now filter comment_thread_ids so it only includes things in group_comment_thread_ids
+        # (keeping duplicates so the count will be correct).
+        comments_count = comment_thread_ids.count{
+          |comment_thread_id| group_comment_thread_ids.include?(comment_thread_id)
+        }
 
-        else
-          threads_count = CommentThread.course_context.where(
-            author_id: id,
-            course_id: params[:course_id],
-            anonymous: false,
-            anonymous_to_peers: false
-          ).count
-          # comment.standalone_context? gets the context from the parent comment_thread
-          # we need to eager load the comment_thread to prevent an N+1 when we iterate through the results
-          comments_count = Comment.includes(:comment_thread).where(
-            author_id: id,
-            course_id: params[:course_id],
-            anonymous: false,
-            anonymous_to_peers: false
-          ).reject{ |comment| comment.standalone_context? }.count
-        end
-        hash = hash.merge!("threads_count" => threads_count, "comments_count" => comments_count)
+      else
+        threads_count = CommentThread.course_context.where(
+          author_id: id,
+          course_id: params[:course_id],
+          anonymous: false,
+          anonymous_to_peers: false
+        ).count
+        # comment.standalone_context? gets the context from the parent comment_thread
+        # we need to eager load the comment_thread to prevent an N+1 when we iterate through the results
+        comments_count = Comment.includes(:comment_thread).where(
+          author_id: id,
+          course_id: params[:course_id],
+          anonymous: false,
+          anonymous_to_peers: false
+        ).reject{ |comment| comment.standalone_context? }.count
       end
+      hash = hash.merge!("threads_count" => threads_count, "comments_count" => comments_count)
     end
     hash
   end
@@ -142,13 +139,18 @@ class User
     read_state.save
   end
 
-  include ::NewRelic::Agent::MethodTracer
-  add_method_tracer :to_hash
-  add_method_tracer :subscribed_thread_ids
-  add_method_tracer :upvoted_ids
-  add_method_tracer :downvoted_ids
-  add_method_tracer :subscribe
-  add_method_tracer :mark_as_read
+  begin
+    require 'new_relic/agent/method_tracer'
+    include ::NewRelic::Agent::MethodTracer
+    add_method_tracer :to_hash
+    add_method_tracer :subscribed_thread_ids
+    add_method_tracer :upvoted_ids
+    add_method_tracer :downvoted_ids
+    add_method_tracer :subscribe
+    add_method_tracer :mark_as_read
+  rescue LoadError
+    logger.warn "NewRelic agent library not installed"
+  end
 
 end
 
