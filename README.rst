@@ -2,37 +2,46 @@ Part of `edX code`__.
 
 __ http://code.edx.org/
 
-comment_as_a_service
-====================
+edX Comments Service/Forums   |Travis|_ |Codecov|_
+==================================================
+.. |Travis| image:: https://travis-ci.org/edx/cs_comments_service.svg?branch=master
+.. _Travis: https://travis-ci.org/edx/cs_comments_service
+
+.. |Codecov| image:: http://codecov.io/github/edx/cs_comments_service/coverage.svg?branch=master
+.. _Codecov: http://codecov.io/github/edx/cs_comments_service?branch=master
 
 An independent comment system which supports voting and nested comments. It
 also supports features including instructor endorsement for education-aimed
 discussion platforms.
 
-Running The Server
-----
-Elasticsearch and MongoDB servers need to be available, and correctly referenced
-in config/application.yml and config/mongoid.yml, respectively.
+
+Running the Server
+------------------
+If you are running cs_comments_service as part of edx-platform__ development under
+devstack, it is strongly recommended to read `those setup documents`__ first.  Note that
+devstack will take care of just about all of the installation, configuration, and
+service management on your behalf. If running outside of devstack, continue reading below.
+
+__ https://github.com/edx/edx-platform
+__ https://github.com/edx/configuration/wiki/edX-Developer-Stack
+
+This service relies on Elasticsearch and MongoDB. By default the service will use the Elasticsearch server available at
+`http://localhost:9200` and the MongoDB server available at `localhost:27017`. This is suitable for local development;
+however, if you wish to change these values, refer to `config/application.yml` and `config/mongoid.yml` for the
+environment variables that can be set to override the defaults.
 
 Before the server is first run, ensure gems are installed by doing ``bundle install``.
 
 To run the server, do ``ruby app.rb [-p PORT]`` where PORT defaults to 4567.
 
-If you are running cs_comments_service as part of edx-platform__ development under
-devstack, it is strongly recommended to read `those setup documents`__ first.  Note that
-devstack will take care of just about all of the installation, configuration, and 
-service management on your behalf.
-
-__ https://github.com/edx/edx-platform
-__ https://github.com/edx/configuration/wiki/edX-Developer-Stack
 
 Running Tests
-----
+-------------
 To run tests, do ``bundle exec rspec``.  Append ``--help`` or see rspec documentation
 for additional options to this command.
 
-Internationalization and Localization
-----
+Internationalization (i18n) and Localization (l10n)
+---------------------------------------------------
 
 To run the comments service in a language other than English, set the
 ``SERVICE_LANGUAGE`` environment variable to the `language code` for the

@@ -1,7 +1,6 @@
 require 'new_relic/agent/method_tracer'
 
 helpers do
-
   def commentable
     @commentable ||= Commentable.find(params[:commentable_id])
   end
@@ -10,13 +9,23 @@ helpers do
     raise ArgumentError, t(:user_id_is_required) unless @user || params[:user_id]
     @user ||= User.find_by(external_id: params[:user_id])
   end
-  
+
   def thread
     @thread ||= CommentThread.find(params[:thread_id])
   end
 
   def comment
     @comment ||= Comment.find(params[:comment_id])
+  end
+
+  def verify_or_fix_cached_comment_count(comment, comment_hash)
+    # if child count cached value gets stale; re-calculate and update it
+    unless comment_hash["children"].nil?
+      if comment_hash["child_count"] != comment_hash["children"].length
+        comment.update_cached_child_count
+        comment_hash["child_count"] = comment.get_cached_child_count
+      end
+    end
   end
 
   def source
@@ -46,7 +55,7 @@ helpers do
     obj.save
     obj.reload.to_hash.to_json
   end
-  
+
   def un_flag_as_abuse(obj)
     raise ArgumentError, t(:user_id_is_required) unless user
     if params["all"]
@@ -56,7 +65,7 @@ helpers do
     else
       obj.abuse_flaggers.delete user.id
     end
-    
+
     obj.save
     obj.reload.to_hash.to_json
   end
@@ -68,7 +77,6 @@ helpers do
     end
     obj.reload.to_hash.to_json
   end
-  
 
   def pin(obj)
     raise ArgumentError, t(:user_id_is_required) unless user
@@ -76,22 +84,24 @@ helpers do
     obj.save
     obj.reload.to_hash.to_json
   end
-  
+
   def unpin(obj)
     raise ArgumentError, t(:user_id_is_required) unless user
     obj.pinned = nil
     obj.save
     obj.reload.to_hash.to_json
-  end  
-  
-  
-  
+  end
+
   def value_to_boolean(value)
     !!(value.to_s =~ /^true$/i)
   end
 
   def bool_recursive
     value_to_boolean params["recursive"]
+  end
+
+  def bool_with_responses
+    value_to_boolean params["with_responses"] || "true"
   end
 
   def bool_mark_as_read
@@ -127,12 +137,10 @@ helpers do
     filter_unread,
     filter_unanswered,
     sort_key,
-    sort_order,
     page,
     per_page,
     context=:course
   )
-
     context_threads = comment_threads.where({:context => context})
 
     if not group_ids.empty?
@@ -148,7 +156,7 @@ helpers do
         comment_ids = Comment.where(:course_id => course_id).
           where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true).
           collect{|c| c.comment_thread_id}.uniq
-          
+
         thread_ids = comment_threads.where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true).
           collect{|c| c.id}
 
@@ -161,12 +169,12 @@ helpers do
         endorsed_thread_ids = Comment.where(:course_id => course_id).
           where(:parent_id.exists => false, :endorsed => true).
           collect{|c| c.comment_thread_id}.uniq
-          
+
         comment_threads = comment_threads.where({"thread_type" => :question}).nin({"_id" => endorsed_thread_ids})
       end
     end
 
-    sort_criteria = get_sort_criteria(sort_key, sort_order)
+    sort_criteria = get_sort_criteria(sort_key)
     if not sort_criteria
       {}
     else
@@ -190,24 +198,21 @@ helpers do
         to_skip = (page - 1) * per_page
         has_more = false
         # batch_size is used to cap the number of documents we might load into memory at any given time
-        # TODO: starting with Mongoid 3.1, you can just do comment_threads.batch_size(size).each()
-        comment_threads.query.batch_size(CommentService.config["manual_pagination_batch_size"].to_i)
-        Mongoid.unit_of_work(disable: :current) do # this is to prevent Mongoid from memoizing every document we look at
-          comment_threads.each do |thread|
-            thread_key = thread._id.to_s
-            if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
-              if skipped >= to_skip
-                if threads.length == per_page
-                  has_more = true
-                  break
-                end
-                threads << thread
-              else
-                skipped += 1
+        comment_threads.batch_size(CommentService.config["manual_pagination_batch_size"].to_i).each do |thread|
+         thread_key = thread._id.to_s
+          if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
+            if skipped >= to_skip
+              if threads.length == per_page
+                has_more = true
+                break
               end
+              threads << thread
+            else
+              skipped += 1
             end
           end
         end
+
         # The following trick makes frontend pagers work without recalculating
         # the number of all unread threads per user on every request (since the number
         # of threads in a course could be tens or hundreds of thousands).  It has the 
@@ -219,22 +224,22 @@ helpers do
         # let the installed paginator library handle pagination
         num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
         page = [1, page].max
-        threads = comment_threads.page(page).per(per_page).to_a
+        threads = comment_threads.paginate(:page => page, :per_page => per_page).to_a
       end
-      
+
       if threads.length == 0
         collection = []
       else
         pres_threads = ThreadListPresenter.new(threads, request_user, course_id)
         collection = pres_threads.to_hash
       end
-      {collection: collection, num_pages: num_pages, page: page}
+      {collection: collection, num_pages: num_pages, page: page, thread_count: comment_threads.count}
     end
   end
 
   # Given query params, return sort criteria appropriate for passing to the
   # order_by function of a Mongoid query. Returns nil if params are not valid.
-  def get_sort_criteria(sort_key, sort_order)
+  def get_sort_criteria(sort_key)
     sort_key_mapper = {
       "date" => :created_at,
       "activity" => :last_activity_at,
@@ -242,16 +247,11 @@ helpers do
       "comments" => :comment_count,
     }
 
-    sort_order_mapper = {
-      "desc" => :desc,
-      "asc" => :asc,
-    }
-
     sort_key = sort_key_mapper[params["sort_key"] || "date"]
-    sort_order = sort_order_mapper[params["sort_order"] || "desc"]
 
-    if sort_key && sort_order
-      sort_criteria = [[:pinned, :desc], [sort_key, sort_order]]
+    if sort_key
+      # only sort order of :desc is supported.  support for :asc would require new indices.
+      sort_criteria = [[:pinned, :desc], [sort_key, :desc]]
       if ![:created_at, :last_activity_at].include? sort_key
         sort_criteria << [:created_at, :desc]
       end
@@ -321,11 +321,11 @@ helpers do
       current_thread = thread_map[c.comment_thread_id]
 
       #do not include threads or comments who have current or historical abuse flags
-      if current_thread.abuse_flaggers.to_a.empty? and 
-        current_thread.historical_abuse_flaggers.to_a.empty? and 
-        c.abuse_flaggers.to_a.empty? and 
+      if current_thread.abuse_flaggers.to_a.empty? and
+        current_thread.historical_abuse_flaggers.to_a.empty? and
+        c.abuse_flaggers.to_a.empty? and
         c.historical_abuse_flaggers.to_a.empty?
-        
+
           user_ids = subscriptions_map[c.comment_thread_id.to_s]
           user_ids.each do |u|
             if not notification_map.keys.include? u
@@ -358,7 +358,6 @@ helpers do
     end
 
     notification_map.to_json
-
   end
 
   def filter_blocked_content body
@@ -368,14 +367,14 @@ helpers do
     rescue
       # body was nil, or the hash function failed somehow - never mind
       return
-    end  
+    end
     if CommentService.blocked_hashes.include? hash then
       msg = t(:blocked_content_with_body_hash, :hash => hash) 
       logger.warn msg
       error 503, [msg].to_json
     end
   end
-  
+
   include ::NewRelic::Agent::MethodTracer
   add_method_tracer :user
   add_method_tracer :thread
@@ -383,5 +382,4 @@ helpers do
   add_method_tracer :flag_as_abuse
   add_method_tracer :un_flag_as_abuse
   add_method_tracer :handle_threads_query
-
 end

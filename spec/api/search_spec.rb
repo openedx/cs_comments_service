@@ -21,18 +21,13 @@ describe "app" do
         result.should == {}
       end
 
-      it "returns an empty reuslt if text parameter is missing" do
+      it "returns an empty result if text parameter is missing" do
         get "/api/v1/search/threads", course_id: course_id
         assert_empty_response
       end
 
-      it "returns an empty reuslt if sort key is invalid" do
-        get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "invalid", sort_order: "desc"
-        assert_empty_response
-      end
-
-      it "returns an empty reuslt if sort order is invalid" do
-        get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "date", sort_order: "invalid"
+      it "returns an empty result if sort key is invalid" do
+        get "/api/v1/search/threads", course_id: course_id, text: "foobar", sort_key: "invalid"
         assert_empty_response
       end
 
@@ -159,8 +154,8 @@ describe "app" do
           threads
         end
 
-        def check_sort(sort_key, sort_order, expected_thread_indexes)
-          get "/api/v1/search/threads", text: "text", course_id: course_id, sort_key: sort_key, sort_order: sort_order
+        def check_sort(sort_key, expected_thread_indexes)
+          get "/api/v1/search/threads", text: "text", course_id: course_id, sort_key: sort_key
           last_response.should be_ok
           result = parse(last_response.body)
           actual_ids = get_result_ids(result)
@@ -169,29 +164,23 @@ describe "app" do
         end
 
         it "by date" do
-          asc_order = [0, 1, 2, 3, 4, 5]
-          check_sort("date", "asc", asc_order)
-          check_sort("date", "desc", asc_order.reverse)
+          check_sort("date", [5, 4, 3, 2, 1, 0])
         end
 
         it "by activity" do
-          asc_order = [0, 2, 5, 1, 3, 4]
-          check_sort("activity", "asc", asc_order)
-          check_sort("activity", "desc", asc_order.reverse)
+          check_sort("activity", [5, 4, 3, 2, 1, 0])
         end
 
         it "by votes" do
-          check_sort("votes", "asc", [5, 4, 3, 0, 2, 1])
-          check_sort("votes", "desc", [2, 1, 5, 4, 3, 0])
+          check_sort("votes", [2, 1, 5, 4, 3, 0])
         end
 
         it "by comments" do
-          check_sort("comments", "asc", [5, 4, 2, 0, 3, 1])
-          check_sort("comments", "desc", [3, 1, 5, 4, 2, 0])
+          check_sort("comments", [3, 1, 5, 4, 2, 0])
         end
 
         it "by default" do
-          check_sort(nil, nil, [5, 4, 3, 2, 1, 0])
+          check_sort(nil, [5, 4, 3, 2, 1, 0])
         end
       end
 

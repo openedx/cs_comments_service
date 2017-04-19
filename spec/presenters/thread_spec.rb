@@ -3,6 +3,8 @@ require 'spec_helper'
 describe ThreadPresenter do
   
   context "#to_hash" do
+    let(:default_resp_limit) { CommentService.config["thread_response_default_size"] }
+
     shared_examples "to_hash arguments" do |thread_type, endorse_responses|
       before(:each) do
         User.all.delete
@@ -77,21 +79,35 @@ describe ThreadPresenter do
         @reader = create_test_user('thread reader')
       end
 
-      it "handles with_responses=false" do
+      it "handles with_responses=false and recursive has no impact" do
         @threads_with_num_comments.each do |thread, num_comments|
           is_endorsed = num_comments > 0 && endorse_responses
-          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash
+          # with response=false and recursive=false
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(false, 0, nil, false)
+          check_thread_result(@reader, thread, hash)
+          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be_false }
+          # with response=false and recursive=true
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(false, 0, nil, true)
           check_thread_result(@reader, thread, hash)
           ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be_false }
         end
       end
 
-      it "handles with_responses=true" do
+      it "handles with_responses=true and recursive=true" do
         @threads_with_num_comments.each do |thread, num_comments|
           is_endorsed = num_comments > 0 && endorse_responses
-          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash true
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, default_resp_limit, true)
           check_thread_result(@reader, thread, hash)
-          check_thread_response_paging(thread, hash)
+          check_thread_response_paging(thread, hash, 0, default_resp_limit, false, true)
+        end
+      end
+
+      it "handles with_responses=true and recursive=false" do
+        @threads_with_num_comments.each do |thread, num_comments|
+          is_endorsed = num_comments > 0 && endorse_responses
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, default_resp_limit, false)
+          check_thread_result(@reader, thread, hash)
+          check_thread_response_paging(thread, hash, 0, default_resp_limit)
         end
       end
 
@@ -99,9 +115,9 @@ describe ThreadPresenter do
         @threads_with_num_comments.each do |thread, num_comments|
           is_endorsed = num_comments > 0 && endorse_responses
           [0, 1, 2, 9, 10, 11, 1000].each do |skip|
-            hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash true, skip
+            hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, skip, default_resp_limit, true)
             check_thread_result(@reader, thread, hash)
-            check_thread_response_paging(thread, hash, skip)
+            check_thread_response_paging(thread, hash, skip, default_resp_limit)
           end
         end
       end
@@ -111,7 +127,7 @@ describe ThreadPresenter do
           is_endorsed = num_comments > 0 && endorse_responses
           [1, 2, 3, 9, 10, 11, 1000].each do |limit|
             [0, 1, 2, 9, 10, 11, 1000].each do |skip|
-              hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash true, skip, limit
+              hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, skip, limit, true)
               check_thread_result(@reader, thread, hash)
               check_thread_response_paging(thread, hash, skip, limit)
             end
@@ -122,9 +138,9 @@ describe ThreadPresenter do
       it "fails with invalid arguments" do
         @threads_with_num_comments.each do |thread, num_comments|
           is_endorsed = num_comments > 0 && endorse_responses
-          expect{ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, -1, nil)}.to raise_error(ArgumentError)
+          expect{ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, -1, nil, true)}.to raise_error(ArgumentError)
           [-1, 0].each do |limit|
-            expect{ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, limit)}.to raise_error(ArgumentError)
+            expect{ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(true, 0, limit, true)}.to raise_error(ArgumentError)
           end
         end
       end

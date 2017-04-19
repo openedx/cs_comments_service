@@ -76,19 +76,18 @@ namespace :benchmark do
 
     Benchmark.bm(31) do |x|
       sort_keys = %w[date activity votes comments]
-      sort_order = "desc"
 
       x.report("querying threads in a course") do
         
         (1..COURSE_THREAD_QUERY).each do |seed|
-          query_params = { course_id: "1", sort_key: sort_keys[seed % 4], sort_order: sort_order, page: seed % 5 + 1, per_page: 5 }
+          query_params = { course_id: "1", sort_key: sort_keys[seed % 4], page: seed % 5 + 1, per_page: 5 }
           RestClient.get "#{PREFIX}/threads", params: query_params
         end
       end
       x.report("searching threads in a course") do
         
         (1..COURSE_THREAD_QUERY).each do |seed|
-          query_params = { course_id: "1", text: "token#{seed % 10} token#{(seed * seed) % 10}", sort_key: sort_keys[seed % 4], sort_order: sort_order, page: seed % 5 + 1, per_page: 5 }
+          query_params = { course_id: "1", text: "token#{seed % 10} token#{(seed * seed) % 10}", sort_key: sort_keys[seed % 4], page: seed % 5 + 1, per_page: 5 }
           RestClient.get "#{PREFIX}/search/threads", params: query_params
         end
       end

@@ -42,10 +42,15 @@ describe "app" do
       end
       it "returns error if new information has conflict with other users" do
         put "/api/v1/users/1", username: "user2"
-        last_response.status.should == 400 
+        last_response.status.should == 400
       end
     end
+
     describe "GET /api/v1/users/:user_id" do
+      let(:author) { User.find_by(external_id: "1") }
+      let(:reader) { User.find_by(external_id: "2") }
+      let(:thread) { make_standalone_thread(author) }
+
       it "returns user information" do
         get "/api/v1/users/1"
         last_response.status.should == 200
@@ -54,10 +59,28 @@ describe "app" do
         res["external_id"].should == user1.external_id
         res["username"].should == user1.username
       end
+
       it "returns 404 if user does not exist" do
         get "/api/v1/users/3"
         last_response.status.should == 404
       end
+
+      it "returns no threads when user hasn't voted" do
+        get "/api/v1/users/1", complete: "true"
+        last_response.status.should == 200
+        res = parse(last_response.body)
+        res["upvoted_ids"].should == []
+      end
+
+      it "returns threads when user votes" do
+        reader.vote(thread, :up)
+
+        get "/api/v1/users/2", complete: "true"
+        last_response.status.should == 200
+        res = parse(last_response.body)
+        res["upvoted_ids"].should == [thread.id.to_s]
+      end
+
       describe "Returns threads_count and comments_count" do
           before(:each) { setup_10_threads }
 
@@ -361,5 +384,22 @@ describe "app" do
 
       include_examples "unicode data"
     end
+
+    describe "POST /api/v1/users/:user_id/read" do
+
+      before(:each) { setup_10_threads }
+
+      it "marks a thread as read for the user" do
+        thread = @threads["t0"]
+        user = create_test_user(42)
+        post "/api/v1/users/#{user.external_id}/read", source_type: "thread", source_id: thread.id
+        last_response.should be_ok
+        user.reload
+        read_states = user.read_states.where(course_id: thread.course_id).to_a
+        read_date = read_states.first.last_read_times[thread.id.to_s]
+        read_date.should >= thread.updated_at
+      end
+    end
+
   end
 end
