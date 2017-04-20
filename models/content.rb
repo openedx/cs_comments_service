@@ -16,7 +16,7 @@ class Content
   index({comment_thread_id: 1, endorsed: 1}, {sparse: true})
   index({commentable_id: 1}, {sparse: true, background: true})
 
-  scope :flagged, where(:abuse_flaggers.ne => [],:abuse_flaggers.exists => true)
+  scope :flagged, -> { where(:abuse_flaggers.ne => [], :abuse_flaggers.exists => true) }
 
   ES_INDEX_NAME = 'content'
 
