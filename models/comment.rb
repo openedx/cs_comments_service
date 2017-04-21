@@ -53,6 +53,7 @@ class Comment < Content
 
   before_destroy :destroy_children
   before_create :set_thread_last_activity_at
+  after_update :set_thread_last_activity_at
   before_save :set_sk
 
   def self.hash_tree(nodes)
