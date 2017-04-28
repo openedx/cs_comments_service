@@ -16,13 +16,11 @@ end
 
 get "#{APIPREFIX}/flagged_threads" do
   flagged = Content.flagged
-
   page = (params["page"] || DEFAULT_PAGE).to_i
   per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
   num_pages = [1, (flagged.count / per_page.to_f).ceil].max
   page = [1, page].max
   flagged_array = flagged.page(page).per(per_page).to_a
-
   flagged_threads = []
   flagged_array.each do |f|
     flagged_threads << {
@@ -31,6 +29,5 @@ get "#{APIPREFIX}/flagged_threads" do
       comment_thread_id: f.comment_thread_id,
     }
   end
-
   flagged_threads.to_json
 end
