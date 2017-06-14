@@ -3,7 +3,7 @@ version: "2"
 
 services:
   elasticsearch:
-    image: edxops/elasticsearch:0.9.13
+    image: elasticsearch:1.5.2
     container_name: "es.edx"
   mongo:
     image: mongo:3.0.14
