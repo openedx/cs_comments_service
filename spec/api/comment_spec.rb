@@ -12,7 +12,7 @@ describe 'Comment API' do
       comment = thread.comments.first
       get "/api/v1/comments/#{comment.id}"
       last_response.should be_ok
-      last_response.content_type.should == 'application/json;charset=utf-8'
+      last_response.content_type.should == 'application/json'
     end
 
     it 'retrieves information of a single comment' do

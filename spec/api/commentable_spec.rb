@@ -166,7 +166,7 @@ describe 'app' do
 
         thread = CommentThread.find(body['id'])
         expect(thread).to_not be_nil
-        expect(thread['anonymous']).to be_true
+        expect(thread['anonymous']).to be true
       end
 
       it 'returns error when title, body or course id does not exist' do

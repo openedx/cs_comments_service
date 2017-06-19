@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-ruby "1.9.3"
+ruby "2.4.1"
 
 gem 'pry'
 gem 'pry-nav'
@@ -16,9 +16,8 @@ gem 'sinatra-param', '~> 1.4'
 
 gem 'yajl-ruby'
 
-
 gem 'mongoid', '~> 5.0.0'
-gem 'bson', '~>3.1'
+gem 'bson', '~> 3.1'
 gem 'bson_ext'
 gem 'protected_attributes'
 
@@ -49,12 +48,13 @@ group :test do
   gem 'guard'
   gem 'guard-unicorn'
   gem 'rack-test', :require => 'rack/test'
-  gem 'rspec', '~> 2.11.0'
-  gem 'webmock', '~> 1.22'
+  gem 'rspec', '~> 3.6.0'
+  gem 'rspec-its'
+  gem 'rspec-collection_matchers'
+  gem 'webmock', '~> 3.0.1'
 end
 
-# FIXME Remove version restriction once ruby upgraded to 2.x
-gem 'newrelic_rpm', '~> 3.16.0'
+gem 'newrelic_rpm'
 gem 'unicorn'
 gem "rack-timeout"
 gem "i18n"

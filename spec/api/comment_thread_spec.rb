@@ -439,7 +439,7 @@ describe 'app' do
       it { should be_ok }
 
       it 'returns JSON' do
-        expect(subject.content_type).to eq 'application/json;charset=utf-8'
+        expect(subject.content_type).to eq 'application/json'
       end
 
       it 'get information of a single comment thread' do
@@ -697,7 +697,7 @@ describe 'app' do
         changed_thread.comment_count.should == orig_count + 1
         comment = changed_thread.comments.select { |c| c["body"] == "new comment" }.first
         comment.should_not be_nil
-        comment.anonymous.should be_true
+        comment.anonymous.should be true
       end
       it "returns 400 when the thread does not exist" do
         post "/api/v1/threads/does_not_exist/comments", default_params

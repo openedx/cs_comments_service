@@ -5,10 +5,10 @@ services:
 language: ruby
 
 rvm:
-  - "1.9.3"
+  - "2.4.1"
 
 install:
-  - docker-compose -f ./.travis/docker-compose-travis.yml up -d
+  - docker-compose -f ./.travis/docker-compose-travis.yml build test-forum
 
 script:
-  - docker exec forum_testing /edx/app/forum/cs_comments_service/.travis/run_tests.sh
+  - docker-compose -f ./.travis/docker-compose-travis.yml run --rm test-forum

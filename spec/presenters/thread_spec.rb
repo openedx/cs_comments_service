@@ -85,11 +85,11 @@ describe ThreadPresenter do
           # with response=false and recursive=false
           hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(false, 0, nil, false)
           check_thread_result(@reader, thread, hash)
-          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be_false }
+          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be false }
           # with response=false and recursive=true
           hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed).to_hash(false, 0, nil, true)
           check_thread_result(@reader, thread, hash)
-          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be_false }
+          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be false }
         end
       end
 
