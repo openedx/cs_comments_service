@@ -1,7 +1,7 @@
 require 'tmpdir'
 
 # Load app.rb to get all dependencies.
-require 'app.rb'
+require File.expand_path('../../app.rb', __FILE__)
 
 # Make sure elasticsearch is configured correctly
 UnicornHelpers.exit_on_invalid_index
