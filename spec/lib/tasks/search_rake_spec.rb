@@ -5,7 +5,7 @@ describe "search:rebuild_index" do
   include_context "rake"
 
   before do
-    TaskHelpers::ElasticsearchHelper.stub!(:rebuild_index)
+    TaskHelpers::ElasticsearchHelper.stub(:rebuild_index)
   end
 
   its(:prerequisites) { should include("environment") }
@@ -34,7 +34,7 @@ describe "search:catchup" do
   include_context "rake"
 
   before do
-    TaskHelpers::ElasticsearchHelper.stub!(:catchup_index)
+    TaskHelpers::ElasticsearchHelper.stub(:catchup_index)
   end
 
   its(:prerequisites) { should include("environment") }

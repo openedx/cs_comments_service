@@ -31,3 +31,5 @@ log/
 .redcar/
 /nbproject
 .idea/
+
+.ruby-version

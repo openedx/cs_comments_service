@@ -8,13 +8,21 @@ services:
   mongo:
     image: mongo:3.0.14
     container_name: "mongo.edx"
-  forum:
-    image: edxops/forum:latest
+  forum-base:
+    image: edxops/forum:ruby2.4.1 # TODO: switch back to latest after configuration release
 
     container_name: forum_testing
     volumes:
       - ..:/edx/app/forum/cs_comments_service
+  forum:
+    extends: forum-base
     command: tail -f /dev/null
     depends_on:
-          - "elasticsearch"
-          - "mongo"
+      - "elasticsearch"
+      - "mongo"
+  test-forum:
+    extends: forum-base
+    command: /edx/app/forum/cs_comments_service/.travis/run_tests.sh
+    depends_on:
+      - "elasticsearch"
+      - "mongo"
