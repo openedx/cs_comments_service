@@ -1,4 +1,8 @@
+require 'logger'
 require_relative 'constants'
+
+logger = Logger.new(STDOUT)
+logger.level = Logger::WARN
 
 class User
   include Mongoid::Document
