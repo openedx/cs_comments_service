@@ -1,3 +1,4 @@
+require 'logger'
 require_relative 'thread_utils'
 
 class ThreadPresenter
@@ -118,7 +119,8 @@ class ThreadPresenter
     end
     top_level
   end
-
+  logger = Logger.new(STDOUT)
+  logger.level = Logger::WARN
   begin
     require 'new_relic/agent/method_tracer'
     include ::NewRelic::Agent::MethodTracer
