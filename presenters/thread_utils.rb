@@ -1,3 +1,6 @@
+require 'logger'
+
+
 module ThreadUtils
 
   def self.get_endorsed(threads)
@@ -40,6 +43,8 @@ module ThreadUtils
   end
 
   class << self
+    logger = Logger.new(STDOUT)
+    logger.level = Logger::WARN
     begin
       require 'new_relic/agent/method_tracer'
       include ::NewRelic::Agent::MethodTracer

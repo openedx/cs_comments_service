@@ -1,6 +1,11 @@
+require 'logger'
 require_relative 'concerns/searchable'
 require_relative 'content'
 require_relative 'constants'
+
+logger = Logger.new(STDOUT)
+logger.level = Logger::WARN
+
 
 class CommentThread < Content
   include Mongoid::Timestamps
