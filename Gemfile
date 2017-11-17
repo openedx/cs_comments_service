@@ -16,6 +16,8 @@ gem 'sinatra-param', '~> 1.4'
 
 gem 'yajl-ruby'
 
+gem 'activemodel', '~> 4.2.8'
+
 gem 'mongoid', '~> 5.0.0'
 gem 'bson', '~> 3.1'
 gem 'bson_ext'
