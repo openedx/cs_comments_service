@@ -31,7 +31,7 @@ gem 'mongoid_magic_counter_cache'
 
 gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
-gem 'nokogiri', "~>1.6.8"
+gem 'nokogiri', "~>1.8.1"
 
 gem 'elasticsearch', '~> 1.1.2'
 gem 'elasticsearch-model', '~> 0.1.9'
