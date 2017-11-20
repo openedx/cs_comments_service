@@ -215,6 +215,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  activemodel (~> 4.2.8)
   bson (~> 3.1)
   bson_ext
   bundler
@@ -255,6 +256,9 @@ DEPENDENCIES
   webmock (~> 3.0.1)
   will_paginate_mongoid (~> 2.0)
   yajl-ruby
+
+RUBY VERSION
+   ruby 2.4.1p111
 
 BUNDLED WITH
    1.16.0
