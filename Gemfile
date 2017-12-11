@@ -14,7 +14,7 @@ gem 'rake'
 gem 'sinatra'
 gem 'sinatra-param', '~> 1.4'
 
-gem 'yajl-ruby'
+gem 'yajl-ruby', '~> 1.3.1'
 
 gem 'activemodel', '~> 4.2.8'
 
