@@ -8,6 +8,8 @@ common: &default_client
     retry_interval: <%= ENV['MONGOID_RETRY_INTERVAL'] || 0 %>
     timeout: <%= ENV['MONGOID_TIMEOUT'] || 0.5 %>
     ssl: <%= ENV['MONGOID_USE_SSL'] || false %>
+    # not setting this env variable should result in backwards compatiblity
+    auth_source: <%= ENV['MONGOID_AUTH_SOURCE'] %>
 
 common_uri: &default_uri
   uri: <%= ENV['MONGOHQ_URL'] %>
