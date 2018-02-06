@@ -27,7 +27,7 @@ module Searchable
     end
 
     def delete_document
-      __elasticsearch__.delete_document if CommentService.search_enabled?
+      __elasticsearch__.delete_document ignore: 404 if CommentService.search_enabled?
     end
   end
 end
