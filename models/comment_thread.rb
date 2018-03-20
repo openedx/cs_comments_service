@@ -32,6 +32,7 @@ class CommentThread < Content
   field :last_activity_at, type: Time
   field :group_id, type: Integer
   field :pinned, type: Boolean
+  field :retired_username, type: String, default: nil
 
   index({author_id: 1, course_id: 1})
 
@@ -58,7 +59,7 @@ class CommentThread < Content
   has_many :comments, dependent: :destroy # Use destroy to invoke callback on the top-level comments
   has_many :activities, autosave: true
 
-  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type
+  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type, :retired_username
 
   validates_presence_of :thread_type
   validates_presence_of :context
