@@ -401,5 +401,56 @@ describe "app" do
       end
     end
 
+    describe "POST /api/v1/users/:user_id/retire" do
+
+      before :each do
+        User.all.delete
+        Content.all.delete
+        init_without_subscriptions
+      end
+
+      it "retires a user and all the user's data" do
+        retired_username = "retired_user_ABCD1234"
+        user = User.where(external_id: '1').first
+        # User should have original username.
+        expect(user.username).to eq('user1')
+        # User should be subscribed to threads.
+        get "/api/v1/users/#{user.external_id}/subscribed_threads", course_id: "1"
+        expect(last_response).to be_ok
+        expect(JSON.parse(last_response.body)['thread_count']).to eq(1)
+        get "/api/v1/users/#{user.external_id}/subscribed_threads", course_id: "2"
+        expect(last_response).to be_ok
+        body = JSON.parse(last_response.body)
+        expect(body['thread_count']).to eq(1)
+        comment_id = body['collection'][0]['id']
+
+        # Retire the user.
+        post "/api/v1/users/#{user.external_id}/retire", retired_username: retired_username
+        expect(last_response).to be_ok
+
+        user.reload
+        # User should have retired username.
+        expect(user.username).to eq(retired_username)
+        # User should have blank email.
+        expect(user.email).to eq('')
+        # User should be subscribed to no threads.
+        get "/api/v1/users/#{user.external_id}/subscribed_threads", course_id: "1"
+        expect(last_response).to be_ok
+        expect(JSON.parse(last_response.body)['thread_count']).to eq(0)
+        get "/api/v1/users/#{user.external_id}/subscribed_threads", course_id: "2"
+        expect(last_response).to be_ok
+        expect(JSON.parse(last_response.body)['thread_count']).to eq(0)
+        # User's comments should be blanked out.
+        comments = user.all_comments
+        comments.each do |single_comment|
+          if single_comment._type == 'CommentThread'
+            expect(single_comment.title).to match(RETIRED_TITLE)
+          end
+          expect(single_comment.body).to match(RETIRED_BODY)
+          expect(single_comment.author_username).to match(retired_username)
+        end
+      end
+    end
+
   end
 end
