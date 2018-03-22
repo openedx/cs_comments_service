@@ -25,6 +25,7 @@ class Comment < Content
   field :at_position_list, type: Array, default: []
   field :sk, type: String, default: nil
   field :child_count, type: Integer
+  field :retired_username, type: String, default: nil
 
   index({author_id: 1, course_id: 1})
   index({_type: 1, comment_thread_id: 1, author_id: 1, updated_at: 1})
@@ -46,7 +47,7 @@ class Comment < Content
   belongs_to :comment_thread, index: true
   belongs_to :author, class_name: 'User', index: true
 
-  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement
+  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement, :retired_username
 
   validates_presence_of :comment_thread, autosave: false
   validates_presence_of :body

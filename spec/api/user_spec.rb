@@ -12,37 +12,37 @@ describe "app" do
     describe "POST /api/v1/users" do
       it "creates a user" do
         post "/api/v1/users", id: "100", username: "user100"
-        last_response.should be_ok
+        expect(last_response).to be_ok
         user = User.find_by(external_id: "100")
-        user.username.should == "user100"
+        expect(user.username).to eq("user100")
       end
       it "returns error when id / username already exists" do
         post "/api/v1/users", id: "1", username: "user100"
-        last_response.status.should == 400
+        expect(last_response.status).to eq(400)
         post "/api/v1/users", id: "100", username: "user1"
-        last_response.status.should == 400
+        expect(last_response.status).to eq(400)
       end
     end
     describe "PUT /api/v1/users/:user_id" do
       it "updates user information" do
         put "/api/v1/users/1", username: "new_user_1"
-        last_response.should be_ok
+        expect(last_response).to be_ok
         user = User.find_by("1")
-        user.username.should == "new_user_1"
+        expect(user.username).to eq("new_user_1")
       end
       it "does not update id" do
         put "/api/v1/users/1", id: "100"
-        last_response.should be_ok
+        expect(last_response).to be_ok
         user = User.find_by("1")
-        user.should_not be_nil
+        expect(user).not_to be_nil
       end
       it "returns error if user does not exist" do
         put "/api/v1/users/100", id: "100"
-        last_response.status.should == 400
+        expect(last_response.status).to eq(400)
       end
       it "returns error if new information has conflict with other users" do
         put "/api/v1/users/1", username: "user2"
-        last_response.status.should == 400
+        expect(last_response.status).to eq(400)
       end
     end
 
@@ -53,32 +53,32 @@ describe "app" do
 
       it "returns user information" do
         get "/api/v1/users/1"
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
         res = parse(last_response.body)
         user1 = User.find_by("1")
-        res["external_id"].should == user1.external_id
-        res["username"].should == user1.username
+        expect(res["external_id"]).to eq(user1.external_id)
+        expect(res["username"]).to eq(user1.username)
       end
 
       it "returns 404 if user does not exist" do
         get "/api/v1/users/3"
-        last_response.status.should == 404
+        expect(last_response.status).to eq(404)
       end
 
       it "returns no threads when user hasn't voted" do
         get "/api/v1/users/1", complete: "true"
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
         res = parse(last_response.body)
-        res["upvoted_ids"].should == []
+        expect(res["upvoted_ids"]).to eq([])
       end
 
       it "returns threads when user votes" do
         reader.vote(thread, :up)
 
         get "/api/v1/users/2", complete: "true"
-        last_response.status.should == 200
+        expect(last_response.status).to eq(200)
         res = parse(last_response.body)
-        res["upvoted_ids"].should == [thread.id.to_s]
+        expect(res["upvoted_ids"]).to eq([thread.id.to_s])
       end
 
       describe "Returns threads_count and comments_count" do
@@ -111,8 +111,8 @@ describe "app" do
 
           def parse_response_and_verify_counts(expected_threads, expected_comments)
              res = parse(last_response.body)
-             res["threads_count"].should == expected_threads
-             res["comments_count"].should == expected_comments
+             expect(res["threads_count"]).to eq(expected_threads)
+             expect(res["comments_count"]).to eq(expected_comments)
           end
 
           it "returns threads_count and comments_count" do
@@ -193,15 +193,15 @@ describe "app" do
 
       def thread_result(user_id, params)
         get "/api/v1/users/#{user_id}/active_threads", params
-        last_response.should be_ok
+        expect(last_response).to be_ok
         parse(last_response.body)["collection"]
       end
 
       it "requires that a course id be passed" do
         get "/api/v1/users/100/active_threads"
         # this is silly, but it is the legacy behavior
-        last_response.should be_ok
-        last_response.body.should == "{}"
+        expect(last_response).to be_ok
+        expect(last_response.body).to eq("{}")
       end
 
       context 'with standalone thread' do
@@ -213,7 +213,7 @@ describe "app" do
         end
 
         it "only returns threads with non-standalone activity from the specified user"  do
-          # `setup_10_threads` creates a thread "t3" and 5 comments all owned by user 103 
+          # `setup_10_threads` creates a thread "t3" and 5 comments all owned by user 103
           # we are hijacking a course thread comment owned by user 103 and making it owned
           # by user 100 instead, so this user has a comment on someone else's thread
           @comments["t3 c4"].author = @users["u100"]
@@ -227,7 +227,7 @@ describe "app" do
           results = thread_result 100, course_id: "xyz"
           # it should not include the standalone thread we created for user 100
           # not the standalone thread user 100 is a commenter on
-          results.length.should == 2
+          expect(results.length).to eq(2)
 
           # it should include the course thread owned by user 100 (t0)
           # and the course thread user 100 has a comment on (t3)
@@ -240,28 +240,28 @@ describe "app" do
         @threads["t1"].author = @users["u100"]
         @threads["t1"].save!
         rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
-        rs.length.should == 2
+        expect(rs.length).to eq(2)
         @threads["t1"].group_id = 43
         @threads["t1"].save!
         rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
-        rs.length.should == 1
+        expect(rs.length).to eq(1)
         @threads["t1"].group_id = 42
         @threads["t1"].save!
         rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
-        rs.length.should == 2
+        expect(rs.length).to eq(2)
       end
 
       it "filters by group_ids" do
         @threads["t1"].author = @users["u100"]
         @threads["t1"].save!
         rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42"
-        rs.length.should == 2
+        expect(rs.length).to eq(2)
         @threads["t1"].group_id = 43
         @threads["t1"].save!
         rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42"
-        rs.length.should == 1
+        expect(rs.length).to eq(1)
         rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42,43"
-        rs.length.should == 2
+        expect(rs.length).to eq(2)
       end
 
       it "does not return threads in which the user has only participated anonymously" do
@@ -272,9 +272,9 @@ describe "app" do
         @comments["t5 c1"].anonymous = true
         @comments["t5 c1"].save!
         rs = thread_result 100, course_id: "xyz"
-        rs.length.should == 1
+        expect(rs.length).to eq(1)
         check_thread_result_json(@users["u100"], @threads["t0"], rs.first)
-      end      
+      end
 
       it "only returns threads from the specified course" do
         @threads.each do |k, v|
@@ -284,7 +284,7 @@ describe "app" do
         @threads["t9"].course_id = "zzz"
         @threads["t9"].save!
         rs = thread_result 100, course_id: "xyz"
-        rs.length.should == 9
+        expect(rs.length).to eq(9)
       end
 
       it "correctly orders results by most recent update by selected user" do
@@ -303,13 +303,13 @@ describe "app" do
         @threads["t3"].save!
         rs = thread_result 100, course_id: "xyz"
         actual_order = rs.map {|v| v["title"]}
-        actual_order.should == ["t3", "t4", "t2", "t0"]
+        expect(actual_order).to eq(["t3", "t4", "t2", "t0"])
       end
 
       context "pagination" do
         def thread_result_page (page, per_page)
           get "/api/v1/users/100/active_threads", course_id: "xyz", page: page, per_page: per_page
-          last_response.should be_ok
+          expect(last_response).to be_ok
           parse(last_response.body)
         end
 
@@ -322,53 +322,53 @@ describe "app" do
 
         it "returns single page" do
           result = thread_result_page(1, 20)
-          result["collection"].length.should == 10
-          result["num_pages"].should == 1
-          result["page"].should == 1
+          expect(result["collection"].length).to eq(10)
+          expect(result["num_pages"]).to eq(1)
+          expect(result["page"]).to eq(1)
         end
         it "returns multiple pages" do
           result = thread_result_page(1, 5)
-          result["collection"].length.should == 5
-          result["num_pages"].should == 2
-          result["page"].should == 1
+          expect(result["collection"].length).to eq(5)
+          expect(result["num_pages"]).to eq(2)
+          expect(result["page"]).to eq(1)
 
           result = thread_result_page(2, 5)
-          result["collection"].length.should == 5
-          result["num_pages"].should == 2
-          result["page"].should == 2
+          expect(result["collection"].length).to eq(5)
+          expect(result["num_pages"]).to eq(2)
+          expect(result["page"]).to eq(2)
         end
         it "orders correctly across pages" do
-          expected_order = @threads.keys.reverse 
+          expected_order = @threads.keys.reverse
           actual_order = []
           per_page = 3
           num_pages = (@threads.length + per_page - 1) / per_page
           num_pages.times do |i|
             page = i + 1
             result = thread_result_page(page, per_page)
-            result["collection"].length.should == (page * per_page <= @threads.length ? per_page : @threads.length % per_page)
-            result["num_pages"].should == num_pages
-            result["page"].should == page
+            expect(result["collection"].length).to eq((page * per_page <= @threads.length ? per_page : @threads.length % per_page))
+            expect(result["num_pages"]).to eq(num_pages)
+            expect(result["page"]).to eq(page)
             actual_order += result["collection"].map {|v| v["title"]}
           end
-          actual_order.should == expected_order
+          expect(actual_order).to eq(expected_order)
         end
         it "accepts negative parameters" do
           result = thread_result_page(-5, -5)
-          result["collection"].length.should == 10
-          result["num_pages"].should == 1
-          result["page"].should == 1
+          expect(result["collection"].length).to eq(10)
+          expect(result["num_pages"]).to eq(1)
+          expect(result["page"]).to eq(1)
         end
         it "accepts excessively large parameters" do
           result = thread_result_page(9999, 9999)
-          result["collection"].length.should == 10
-          result["num_pages"].should == 1
-          result["page"].should == 1
+          expect(result["collection"].length).to eq(10)
+          expect(result["num_pages"]).to eq(1)
+          expect(result["page"]).to eq(1)
         end
         it "accepts empty parameters" do
           result = thread_result_page("", "")
-          result["collection"].length.should == 10
-          result["num_pages"].should == 1
-          result["page"].should == 1
+          expect(result["collection"].length).to eq(10)
+          expect(result["num_pages"]).to eq(1)
+          expect(result["page"]).to eq(1)
         end
       end
 
@@ -378,7 +378,7 @@ describe "app" do
         thread = make_thread(user, text, course_id, "unicode_commentable")
         make_comment(user, thread, text)
         result = thread_result(user.id, course_id: course_id)
-        result.length.should == 1
+        expect(result.length).to eq(1)
         check_thread_result_json(nil, thread, result.first)
       end
 
@@ -393,11 +393,62 @@ describe "app" do
         thread = @threads["t0"]
         user = create_test_user(42)
         post "/api/v1/users/#{user.external_id}/read", source_type: "thread", source_id: thread.id
-        last_response.should be_ok
+        expect(last_response).to be_ok
         user.reload
         read_states = user.read_states.where(course_id: thread.course_id).to_a
         read_date = read_states.first.last_read_times[thread.id.to_s]
         read_date.should >= thread.updated_at
+      end
+    end
+
+    describe "POST /api/v1/users/:user_id/retire" do
+
+      before :each do
+        User.all.delete
+        Content.all.delete
+        init_without_subscriptions
+      end
+
+      it "retires a user and all the user's data" do
+        retired_username = "retired_user_ABCD1234"
+        user = User.where(external_id: '1').first
+        # User should have original username.
+        expect(user.username).to eq('user1')
+        # User should be subscribed to threads.
+        get "/api/v1/users/#{user.external_id}/subscribed_threads", course_id: "1"
+        expect(last_response).to be_ok
+        expect(JSON.parse(last_response.body)['thread_count']).to eq(1)
+        get "/api/v1/users/#{user.external_id}/subscribed_threads", course_id: "2"
+        expect(last_response).to be_ok
+        body = JSON.parse(last_response.body)
+        expect(body['thread_count']).to eq(1)
+        comment_id = body['collection'][0]['id']
+
+        # Retire the user.
+        post "/api/v1/users/#{user.external_id}/retire", retired_username: retired_username
+        expect(last_response).to be_ok
+
+        user.reload
+        # User should have retired username.
+        expect(user.username).to eq(retired_username)
+        # User should have blank email.
+        expect(user.email).to eq('')
+        # User should be subscribed to no threads.
+        get "/api/v1/users/#{user.external_id}/subscribed_threads", course_id: "1"
+        expect(last_response).to be_ok
+        expect(JSON.parse(last_response.body)['thread_count']).to eq(0)
+        get "/api/v1/users/#{user.external_id}/subscribed_threads", course_id: "2"
+        expect(last_response).to be_ok
+        expect(JSON.parse(last_response.body)['thread_count']).to eq(0)
+        # User's comments should be blanked out.
+        comments = user.all_comments
+        comments.each do |single_comment|
+          if single_comment._type == 'CommentThread'
+            expect(single_comment.title).to match(RETIRED_TITLE)
+          end
+          expect(single_comment.body).to match(RETIRED_BODY)
+          expect(single_comment.author_username).to match(retired_username)
+        end
       end
     end
 

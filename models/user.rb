@@ -1,9 +1,6 @@
 require 'logger'
 require_relative 'constants'
 
-logger = Logger.new(STDOUT)
-logger.level = Logger::WARN
-
 class User
   include Mongoid::Document
   include Mongo::Voter
@@ -25,6 +22,9 @@ class User
   validates_uniqueness_of :username
 
   index( {external_id: 1}, {unique: true, background: true} )
+
+  logger = Logger.new(STDOUT)
+  logger.level = Logger::WARN
 
   def subscriptions_as_source
     Subscription.where(source_id: id.to_s, source_type: self.class.to_s)
@@ -135,6 +135,34 @@ class User
     subscription = Subscription.where(subscriber_id: self._id.to_s, source_id: source._id.to_s, source_type: source.class.to_s).first
     subscription.destroy if subscription
     subscription
+  end
+
+  def unsubscribe_all
+    # Unsubscribe this user from all their subscribed threads across all courses.
+    sub_threads = subscribed_threads
+    sub_threads.each {|sub_id| unsubscribe(sub_id) }
+  end
+
+  def all_comments
+    # Returns all comments authored by this user.
+    user_comments = Comment.where(author_id: self._id.to_s)
+    user_comments
+  end
+
+  def retire_comment(comment, retired_username)
+    # Retire a single comment.
+    comment.update(retired_username: retired_username)
+    comment.update(body: RETIRED_BODY)
+    if comment._type == "CommentThread"
+      comment.update(title: RETIRED_TITLE)
+    end
+    comment.save
+  end
+
+  def retire_all_comments(retired_username)
+    # Retire all comments authored by this user.
+    user_comments = all_comments
+    user_comments.each {|comment| retire_comment(comment, retired_username)}
   end
 
   def mark_as_read(thread)
