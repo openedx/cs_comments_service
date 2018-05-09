@@ -79,8 +79,14 @@ post "#{APIPREFIX}/users/:user_id/read" do |user_id|
 end
 
 post "#{APIPREFIX}/users/:user_id/retire" do |user_id|
-  return {}.to_json if not params["retired_username"]
-  user = User.find_by!(external_id: user_id)
+  if not params["retired_username"]
+    error 500, {message: "Missing retired_username param."}.to_json
+  end
+  begin
+    user = User.find_by(external_id: user_id)
+  rescue Mongoid::Errors::DocumentNotFound
+    error 404, {message: "User not found."}.to_json
+  end
   user.update_attribute(:email, "")
   user.update_attribute(:notification_ids, [])
   user.update_attribute(:read_states, [])

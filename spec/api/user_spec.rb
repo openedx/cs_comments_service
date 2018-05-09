@@ -409,6 +409,16 @@ describe "app" do
         init_without_subscriptions
       end
 
+      it "attempts to retire a user without sending retired_username" do
+        post "/api/v1/users/1/retire"
+        expect(last_response.status).to eq(500)
+      end
+
+      it "attempts to retire a non-existent user" do
+        post "/api/v1/users/1234/retire", retired_username: "retired_user_test"
+        expect(last_response.status).to eq(404)
+      end
+
       it "retires a user and all the user's data" do
         retired_username = "retired_user_ABCD1234"
         user = User.where(external_id: '1').first
