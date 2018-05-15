@@ -414,13 +414,30 @@ describe "app" do
         expect(last_response.status).to eq(500)
       end
 
+      it "attempts to retire a user with no subscribed threads" do
+        retired_username = "retired_user_test"
+        post "/api/v1/users/2/retire", retired_username: retired_username
+        expect(last_response).to be_ok
+        # User's comments should be blanked out.
+        user = User.where(external_id: '2').first
+        comments = user.all_comments + user.all_comment_threads
+        expect(comments.count).should_not eq(0)
+        comments.each do |single_comment|
+          if single_comment._type == 'CommentThread'
+            expect(single_comment.title).to match(RETIRED_TITLE)
+          end
+          expect(single_comment.body).to match(RETIRED_BODY)
+          expect(single_comment.author_username).to match(retired_username)
+        end
+      end
+
       it "attempts to retire a non-existent user" do
         post "/api/v1/users/1234/retire", retired_username: "retired_user_test"
         expect(last_response.status).to eq(404)
       end
 
       it "retires a user and all the user's data" do
-        retired_username = "retired_user_ABCD1234"
+        retired_username = "retired_username_ABCD1234"
         user = User.where(external_id: '1').first
         # User should have original username.
         expect(user.username).to eq('user1')
@@ -451,7 +468,8 @@ describe "app" do
         expect(last_response).to be_ok
         expect(JSON.parse(last_response.body)['thread_count']).to eq(0)
         # User's comments should be blanked out.
-        comments = user.all_comments
+        comments = user.all_comments + user.all_comment_threads
+        expect(comments.count).should_not eq(0)
         comments.each do |single_comment|
           if single_comment._type == 'CommentThread'
             expect(single_comment.title).to match(RETIRED_TITLE)

@@ -149,6 +149,12 @@ class User
     user_comments
   end
 
+  def all_comment_threads
+    # Returns all comment threads authored by this user.
+    user_comment_threads = CommentThread.where(author_id: self._id.to_s)
+    user_comment_threads
+  end
+
   def retire_comment(comment, retired_username)
     # Retire a single comment.
     comment.update(retired_username: retired_username)
@@ -159,10 +165,12 @@ class User
     comment.save
   end
 
-  def retire_all_comments(retired_username)
-    # Retire all comments authored by this user.
+  def retire_all_content(retired_username)
+    # Retire all content authored by this user.
     user_comments = all_comments
-    user_comments.each {|comment| retire_comment(comment, retired_username)}
+    user_comment_threads = all_comment_threads
+    user_content = all_comments + all_comment_threads
+    user_content.each {|comment| retire_comment(comment, retired_username)}
   end
 
   def mark_as_read(thread)
