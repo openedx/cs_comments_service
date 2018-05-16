@@ -1,7 +1,6 @@
 require 'rubygems'
 require 'bundler'
 require 'erb'
-require 'newrelic_rpm'
 
 Bundler.setup
 Bundler.require
@@ -188,8 +187,8 @@ def is_elasticsearch_available?
   false
 end
 
+newrelic_ignore '/heartbeat'
 get '/heartbeat' do
-  newrelic_ignore
   error 500, JSON.generate({OK: false, check: :db}) unless is_mongo_available?
   error 500, JSON.generate({OK: false, check: :es}) unless is_elasticsearch_available?
   JSON.generate({OK: true})
