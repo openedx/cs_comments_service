@@ -4,6 +4,7 @@ require 'erb'
 
 Bundler.setup
 Bundler.require
+extend ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
