@@ -19,7 +19,5 @@ Rack::Timeout.timeout = 20
 require "mongoid"
 use Mongoid::QueryCache::Middleware
 
-
 require './app'
-require 'newrelic_rpm'
 run Sinatra::Application
