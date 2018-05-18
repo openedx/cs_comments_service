@@ -4,6 +4,7 @@ require 'erb'
 
 Bundler.setup
 Bundler.require
+extend ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
@@ -187,6 +188,7 @@ def is_elasticsearch_available?
   false
 end
 
+newrelic_ignore '/heartbeat'
 get '/heartbeat' do
   error 500, JSON.generate({OK: false, check: :db}) unless is_mongo_available?
   error 500, JSON.generate({OK: false, check: :es}) unless is_elasticsearch_available?
