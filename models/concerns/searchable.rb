@@ -1,3 +1,8 @@
+require 'logger'
+
+logger = Logger.new(STDOUT)
+logger.level = Logger::WARN
+
 module Searchable
   extend ActiveSupport::Concern
 
@@ -23,11 +28,21 @@ module Searchable
 
     # This is named in this manner to prevent collisions with Mongoid's update_document method.
     def update_indexed_document
-      __elasticsearch__.update_document if CommentService.search_enabled?
+      begin
+        __elasticsearch__.update_document if CommentService.search_enabled?
+      rescue Elasticsearch::Transport::Transport::Errors::NotFound => e
+        # If attempting to update a document that doesn't exist, just continue.
+        logger.warn "ES update failed upon update_document - not found."
+      end
     end
 
     def delete_document
-      __elasticsearch__.delete_document if CommentService.search_enabled?
+      begin
+        __elasticsearch__.delete_document if CommentService.search_enabled?
+      rescue Elasticsearch::Transport::Transport::Errors::NotFound => e
+        # If attempting to delete a document that doesn't exist, just continue.
+        logger.warn "ES delete failed upon delete_document - not found."
+      end
     end
   end
 end
