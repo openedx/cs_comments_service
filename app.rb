@@ -4,7 +4,21 @@ require 'erb'
 
 Bundler.setup
 Bundler.require
-extend ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
+
+def get_logger(progname='', threshold=nil)
+  logger = Logger.new(STDERR)
+  logger.progname = progname
+  logger.level = threshold || Logger::INFO
+  logger
+end
+
+logger = get_logger('')
+
+begin
+  extend ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
+rescue NameError
+  logger.warn "NewRelic agent library not installed"
+end
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
@@ -28,12 +42,7 @@ if ENV["ENABLE_GC_PROFILER"]
   GC::Profiler.enable
 end
 
-def get_logger(progname, threshold=nil)
-  logger = Logger.new(STDERR)
-  logger.progname = progname
-  logger.level = threshold || Logger::INFO
-  logger
-end
+
 
 application_yaml = ERB.new(File.read("config/application.yml")).result()
 CommentService.config = YAML.load(application_yaml).with_indifferent_access
@@ -188,7 +197,11 @@ def is_elasticsearch_available?
   false
 end
 
-newrelic_ignore '/heartbeat'
+begin
+  newrelic_ignore '/heartbeat'
+rescue NameError
+  logger.warn "NewRelic agent library not installed"
+end
 get '/heartbeat' do
   error 500, JSON.generate({OK: false, check: :db}) unless is_mongo_available?
   error 500, JSON.generate({OK: false, check: :es}) unless is_elasticsearch_available?
