@@ -4,7 +4,13 @@ require 'erb'
 
 Bundler.setup
 Bundler.require
-extend ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
+
+
+begin
+  extend ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
+rescue LoadError
+  logger.warn "NewRelic agent library not installed"
+end
 
 env_index = ARGV.index("-e")
 env_arg = ARGV[env_index + 1] if env_index
@@ -188,7 +194,11 @@ def is_elasticsearch_available?
   false
 end
 
-newrelic_ignore '/heartbeat'
+begin
+  newrelic_ignore '/heartbeat'
+rescue LoadError
+  logger.warn "NewRelic agent library not installed"
+end
 get '/heartbeat' do
   error 500, JSON.generate({OK: false, check: :db}) unless is_mongo_available?
   error 500, JSON.generate({OK: false, check: :es}) unless is_elasticsearch_available?
