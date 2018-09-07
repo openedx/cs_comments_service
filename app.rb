@@ -5,10 +5,18 @@ require 'erb'
 Bundler.setup
 Bundler.require
 
+def get_logger(progname='', threshold=nil)
+  logger = Logger.new(STDERR)
+  logger.progname = progname
+  logger.level = threshold || Logger::INFO
+  logger
+end
+
+logger = get_logger('')
 
 begin
   extend ::NewRelic::Agent::Instrumentation::ControllerInstrumentation::ClassMethods
-rescue LoadError
+rescue NameError
   logger.warn "NewRelic agent library not installed"
 end
 
@@ -34,12 +42,7 @@ if ENV["ENABLE_GC_PROFILER"]
   GC::Profiler.enable
 end
 
-def get_logger(progname, threshold=nil)
-  logger = Logger.new(STDERR)
-  logger.progname = progname
-  logger.level = threshold || Logger::INFO
-  logger
-end
+
 
 application_yaml = ERB.new(File.read("config/application.yml")).result()
 CommentService.config = YAML.load(application_yaml).with_indifferent_access
@@ -196,7 +199,7 @@ end
 
 begin
   newrelic_ignore '/heartbeat'
-rescue LoadError
+rescue NameError
   logger.warn "NewRelic agent library not installed"
 end
 get '/heartbeat' do
