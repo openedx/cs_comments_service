@@ -156,13 +156,29 @@ class User
   end
 
   def retire_comment(comment, retired_username)
-    # Retire a single comment.
-    comment.update(retired_username: retired_username)
-    comment.update(body: RETIRED_BODY)
+    # Retire a single comment and return a bulk action for elasticsearch.
+    data = {
+        retired_username: retired_username,
+        body: RETIRED_BODY
+    }
     if comment._type == "CommentThread"
-      comment.update(title: RETIRED_TITLE)
+      data[:title] = RETIRED_TITLE
     end
-    comment.save
+    comment.enable_es(false)
+    comment.update!(data)
+    comment.enable_es(true)
+    # Craft a bulk action for elasticsearch.  This is a little bit of low-level boilerplate which is
+    # normally handled by the elasticsearch-rails package, but the high-level API bindings don't include
+    # support for bulk requests so we need to do the dirty work ourselves.
+    data[:author_username] = retired_username
+    {
+      update: {
+        _index: Content::ES_INDEX_NAME,
+        _type: comment.__elasticsearch__.document_type,
+        _id: comment._id,
+        data: { doc: data }
+      }
+    }
   end
 
   def retire_all_content(retired_username)
@@ -170,7 +186,14 @@ class User
     user_comments = all_comments
     user_comment_threads = all_comment_threads
     user_content = all_comments + all_comment_threads
-    user_content.each {|comment| retire_comment(comment, retired_username)}
+    # Retire each comment one at a time, deferring any ES updates.
+    bulk_data = user_content.map {|comment| retire_comment(comment, retired_username)}
+    # Finally, update ES with all the comment changes in one bulk HTTP request.  This is a bit of a time
+    # bomb since it might cause the request payload to blow up for that one user with 100k forum posts,
+    # but the failure mode before bulking was undeniably worse so at least we're making progress.  ES
+    # docs claim that a 10MB payload is a good starting point for a bulk request, which for our use case
+    # means blanking out about 36k forum posts.  That's a lot of flame wars for one user!
+    Elasticsearch::Model.client.bulk(body: bulk_data)
   end
 
   def mark_as_read(thread)
