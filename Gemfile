@@ -56,7 +56,10 @@ group :test do
   gem 'webmock', '~> 3.0.1'
 end
 
-gem 'newrelic_rpm'
+group 'newrelic_rpm' do
+  gem 'newrelic_rpm'
+end
+
 gem 'unicorn'
 gem "rack-timeout"
 gem "i18n"
