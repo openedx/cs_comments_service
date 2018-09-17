@@ -164,9 +164,9 @@ class User
     if comment._type == "CommentThread"
       data[:title] = RETIRED_TITLE
     end
-    comment.enable_es(false)
-    comment.update!(data)
-    comment.enable_es(true)
+    comment.without_es do
+      comment.update!(data)
+    end
     # Craft a bulk action for elasticsearch.  This is a little bit of low-level boilerplate which is
     # normally handled by the elasticsearch-rails package, but the high-level API bindings don't include
     # support for bulk requests so we need to do the dirty work ourselves.

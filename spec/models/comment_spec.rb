@@ -143,9 +143,21 @@ describe 'comment_with_es' do
     it 'results in ES proxy not called when explicitly disabled' do
       comment = make_comment(author, standalone_thread, "comment")
       expect(comment.__elasticsearch__).to_not receive(:update_document).and_call_original
-      comment.enable_es(false)
-      comment.update!({body: "changed"})
-      comment.enable_es(true)
+      comment.without_es do
+        comment.update!({body: "changed"})
+      end
+    end
+
+    it 'leaves the enable_es variable intact despite any errors during update' do
+      comment = make_comment(author, standalone_thread, "comment")
+      expect(comment.__elasticsearch__).to_not receive(:update_document).and_call_original
+      begin
+        comment.without_es do
+          raise  # this line simulates what would happen if the update command threw an exception
+        end
+      rescue
+        expect(comment.es_enabled?).to be(true)
+      end
     end
   end
 end
