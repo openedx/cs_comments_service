@@ -25,30 +25,40 @@ module Searchable
     # code runs single-threaded.
     @@enable_es = true
 
-    # The caller may opt to temporarily disable ES callbacks by using this toggle, e.g.:
-    #
-    #   comment.enable_es(false)
-    #   comment.update!(data)
-    #   comment.enable_es(true)
-    #
-    def enable_es(x)
-      @@enable_es = x
+    def es_enabled?
+      @@enable_es
     end
 
-    def is_es_enabled
-      @@enable_es
+    def without_es
+      # A "Context Manager" to temporarily disable elasticsearch callbacks.  Whatever happens, this makes
+      # sure that enable_es is restored.  E.g.:
+      #
+      #   comment.without_es do
+      #     comment.update!(data)
+      #   end
+      #
+      original_enable_es = es_enabled?
+      @@enable_es = false
+      begin
+        yield
+      rescue
+        @@enable_es = original_enable_es
+        raise
+      else
+        @@enable_es = original_enable_es
+      end
     end
 
     private # all methods below are private
 
     def index_document
-      __elasticsearch__.index_document if CommentService.search_enabled? && is_es_enabled
+      __elasticsearch__.index_document if CommentService.search_enabled? && es_enabled?
     end
 
     # This is named in this manner to prevent collisions with Mongoid's update_document method.
     def update_indexed_document
       begin
-        __elasticsearch__.update_document if CommentService.search_enabled? && is_es_enabled
+        __elasticsearch__.update_document if CommentService.search_enabled? && es_enabled?
       rescue Elasticsearch::Transport::Transport::Errors::NotFound => e
         # If attempting to update a document that doesn't exist, just continue.
         logger.warn "ES update failed upon update_document - not found."
@@ -57,7 +67,7 @@ module Searchable
 
     def delete_document
       begin
-        __elasticsearch__.delete_document if CommentService.search_enabled? && is_es_enabled
+        __elasticsearch__.delete_document if CommentService.search_enabled? && es_enabled?
       rescue Elasticsearch::Transport::Transport::Errors::NotFound => e
         # If attempting to delete a document that doesn't exist, just continue.
         logger.warn "ES delete failed upon delete_document - not found."
