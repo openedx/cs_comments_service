@@ -2,8 +2,15 @@ require 'rubygems'
 require 'bundler'
 require 'erb'
 
+groups = [:default]
+
+# optionally add newrelic
+if ENV["NEW_RELIC_ENABLE"]
+  groups.push(:newrelic_rpm)
+end
+
 Bundler.setup
-Bundler.require
+Bundler.require(*groups)
 
 logger = Logger.new(STDOUT)
 logger.level = Logger::WARN
