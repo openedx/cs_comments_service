@@ -186,14 +186,19 @@ class User
     user_comments = all_comments
     user_comment_threads = all_comment_threads
     user_content = all_comments + all_comment_threads
-    # Retire each comment one at a time, deferring any ES updates.
-    bulk_data = user_content.map {|comment| retire_comment(comment, retired_username)}
-    # Finally, update ES with all the comment changes in one bulk HTTP request.  This is a bit of a time
-    # bomb since it might cause the request payload to blow up for that one user with 100k forum posts,
-    # but the failure mode before bulking was undeniably worse so at least we're making progress.  ES
-    # docs claim that a 10MB payload is a good starting point for a bulk request, which for our use case
-    # means blanking out about 36k forum posts.  That's a lot of flame wars for one user!
-    Elasticsearch::Model.client.bulk(body: bulk_data)
+    # We must avoid sending empty bulk requests, so we wrap the following in a conditional.  Otherwise,
+    # Elasticsearch::Model.client.bulk() will blindly pass along an empty string to the bulk API
+    # endpoint which causes 400s and cryptic error messages.
+    unless user_content.empty?
+      # Retire each comment one at a time, deferring any ES updates.
+      bulk_data = user_content.map {|comment| retire_comment(comment, retired_username)}
+      # Finally, update ES with all the comment changes in one bulk HTTP request.  This is a bit of a time
+      # bomb since it might cause the request payload to blow up for that one user with 100k forum posts,
+      # but the failure mode before bulking was undeniably worse so at least we're making progress.  ES
+      # docs claim that a 10MB payload is a good starting point for a bulk request, which for our use case
+      # means blanking out about 36k forum posts.  That's a lot of flame wars for one user!
+      Elasticsearch::Model.client.bulk(body: bulk_data)
+    end
   end
 
   def mark_as_read(thread)
