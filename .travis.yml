@@ -4,6 +4,10 @@ services:
 
 language: ruby
 
+branches:
+  only:
+    - master
+
 rvm:
   - "2.4.1"
 
