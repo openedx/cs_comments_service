@@ -568,6 +568,7 @@ describe "app" do
         end
 
         it "attempts to replace username of a non-existant user" do
+          new_username = "test_username_replacement"
           post "/api/v1/users/1234/replace_username", new_username: new_username
           expect(last_response.status).to eq(404)
         end
