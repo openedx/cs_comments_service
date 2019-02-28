@@ -95,3 +95,17 @@ post "#{APIPREFIX}/users/:user_id/retire" do |user_id|
   user.update_attribute(:username, params["retired_username"])
   user.save
 end
+
+post "#{APIPREFIX}/users/:user_id/replace_username" do |user_id|
+  if not params["new_username"]
+    error 500, {message: "Missing new_username param. "}.to_json
+  end
+  begin
+    user = User.find_by(external_id: user_id)
+  rescue Mongoid::Errors::DocumentNotFound
+    error 404, {message: "User not found."}.to_json
+  end
+  user.update_attribute(:username, params["new_username"])
+  user.replace_username_in_all_content(params["new_username"])
+  user.save
+end

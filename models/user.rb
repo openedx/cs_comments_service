@@ -201,6 +201,36 @@ class User
     end
   end
 
+  def replace_comment_username(comment, new_username)
+    # Replace the username of a single comment with the new username
+    data = {
+      username: new_username
+    }
+    comment.without_es do
+      comment.update!(data)
+    end
+    {
+      update: {
+        _index: Content::ES_INDEX_NAME,
+        _type: comment.__elasticsearch__.document_type,
+        _id: comment._id,
+        data: { doc: data }
+      }
+    }
+  end
+
+  def replace_username_in_all_content(new_username)
+    # Replaces the username on all content authored by this user
+    user_comments = all_comments
+    user_comment_threads = all_comment_threads
+    user_content = all_comments + all_comment_threads
+    unless user_content.empty?
+      bulk_data = user_content.map {|comment| replace_comment_username(comment, new_username)}
+      Elasticsearch::Model.client.bulk(body: bulk_data)
+    end
+  end
+
+
   def mark_as_read(thread)
     read_state = read_states.find_or_create_by(course_id: thread.course_id)
     read_state.last_read_times[thread.id.to_s] = Time.now.utc
