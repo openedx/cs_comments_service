@@ -528,5 +528,73 @@ describe "app" do
       end
     end
 
+    describe "POST /api/v1/users/:user_id/replace_username" do
+      include_context 'search_enabled'
+
+      describe "with an inactive forums user," do
+        before :each do
+          User.all.delete
+          Content.all.delete
+          create_test_user(1)
+          # No user content
+        end
+
+        it "replaces a user's username" do
+          new_username = "test_username_replacement"
+          user = User.where(external_id: '1').first
+          # User should have original username.
+          expect(user.username).to eq('user1')
+
+          # Replace the username.
+          post "/api/v1/users/#{user.external_id}/replace_username", new_username: new_username
+          expect(last_response).to be_ok
+
+          user.reload
+          # User should have new username.
+          expect(user.username).to eq(new_username)
+        end
+      end
+
+      describe "with an active forums user," do
+        before :each do
+          User.all.delete
+          Content.all.delete
+          init_without_subscriptions
+        end
+
+        it "attempts to replace username without sending new username" do
+          post "/api/v1/users/1/replace_username"
+          expect(last_response.status).to eq(500)
+        end
+
+        it "attempts to replace username of a non-existant user" do
+          new_username = "test_username_replacement"
+          post "/api/v1/users/1234/replace_username", new_username: new_username
+          expect(last_response.status).to eq(404)
+        end
+
+        it "attempts to replace username and username on content" do
+          new_username = "test_username_replacement"
+          user = User.where(external_id: '1').first
+          # User should have original username.
+          expect(user.username).to eq('user1')
+
+          # Change the username.
+          post "/api/v1/users/#{user.external_id}/replace_username", new_username: new_username
+          expect(last_response).to be_ok
+
+          user.reload
+          # User should have new username.
+          expect(user.username).to eq(new_username)
+
+          # User's comments should all have new username.
+          comments = user.all_comments + user.all_comment_threads
+          expect(comments.count).should_not eq(0)
+          comments.each do |single_comment|
+            expect(single_comment.author_username).to match(new_username)
+          end
+        end
+      end
+    end
   end
 end
