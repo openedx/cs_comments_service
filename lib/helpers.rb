@@ -195,7 +195,9 @@ helpers do
         threads = []
         skipped = 0
         to_skip = (page - 1) * per_page
-        has_more = false
+        has_more = false        
+        thread_count = comment_threads.count
+        
         # batch_size is used to cap the number of documents we might load into memory at any given time
         comment_threads.batch_size(CommentService.config["manual_pagination_batch_size"].to_i).each do |thread|
          thread_key = thread._id.to_s
@@ -221,9 +223,14 @@ helpers do
         num_pages = has_more ? page + 1 : page
       else
         # let the installed paginator library handle pagination
-        num_pages = [1, (comment_threads.count / per_page.to_f).ceil].max
         page = [1, page].max
-        threads = comment_threads.paginate(:page => page, :per_page => per_page).to_a
+        paginated_collection = comment_threads.paginate(:page => page, :per_page => per_page) 
+        threads = paginated_collection.to_a
+
+        # Before updating will_paginate gem version, we need to make sure that property 'total_entries'
+        # exists otherwise use updated property name to fetch total collection count.
+        thread_count = paginated_collection.total_entries
+        num_pages = [1, (thread_count / per_page.to_f).ceil].max
       end
 
       if threads.length == 0
@@ -232,7 +239,7 @@ helpers do
         pres_threads = ThreadListPresenter.new(threads, request_user, course_id)
         collection = pres_threads.to_hash
       end
-      {collection: collection, num_pages: num_pages, page: page, thread_count: comment_threads.count}
+      {collection: collection, num_pages: num_pages, page: page, thread_count: thread_count}
     end
   end
 
