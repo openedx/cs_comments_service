@@ -19,7 +19,7 @@ gem 'yajl-ruby', '~> 1.3.1'
 gem 'activemodel', '~> 4.2.8'
 
 gem 'mongoid', '~> 5.0.0'
-gem 'bson', '~> 3.1'
+gem 'bson'
 gem 'bson_ext'
 gem 'protected_attributes'
 
