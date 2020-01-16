@@ -106,7 +106,7 @@ GEM
     mini_portile2 (2.3.0)
     minitest (5.10.2)
     mongo (2.5.3)
-      bson (>= 4.6.0, < 5.0.0)
+      bson (>= 4.3.0, < 5.0.0)
     mongoid (5.0.0)
       activemodel (~> 4.0)
       mongo (~> 2.1)
