@@ -1,18 +1,4 @@
 GIT
-  remote: https://github.com/macdiesel/mongoid-tree
-  revision: b381dd56f1b3b061df8f4b4181d5440dea1602d1
-  specs:
-    mongoid-tree (2.0.0)
-      mongoid (>= 4.0, <= 5.0)
-
-GIT
-  remote: https://github.com/navneet35371/voteable_mongo.git
-  revision: 55fcfe76705ab5da1c9e5670594331b33954c545
-  specs:
-    rs_voteable_mongo (1.0.2)
-      mongoid (>= 3.0, <= 5.0)
-
-GIT
   remote: https://github.com/rack/rack-contrib.git
   revision: 6ff3ca2b2d988911ca52a2712f6a7da5e064aa27
   ref: 6ff3ca2b2d988911ca52a2712f6a7da5e064aa27
@@ -23,17 +9,18 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (4.2.8)
-      activesupport (= 4.2.8)
+    activemodel (6.0.2.1)
+      activesupport (= 6.0.2.1)
       builder (~> 3.1)
-    activesupport (4.2.8)
-      i18n (~> 0.7)
+    activesupport (6.0.2.1)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      i18n (>= 0.7, < 2)
       minitest (~> 5.1)
-      thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
+      zeitwerk (~> 2.2)
     addressable (2.5.1)
       public_suffix (~> 2.0, >= 2.0.2)
-    bson (3.2.6)
+    bson (4.7.0)
     bson_ext (1.5.1)
     builder (3.2.3)
     codecov (0.1.10)
@@ -41,14 +28,15 @@ GEM
       simplecov
       url
     coderay (1.1.1)
+    concurrent-ruby (1.1.5)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     dalli (2.7.6)
-    delayed_job (4.1.3)
-      activesupport (>= 3.0, < 5.2)
-    delayed_job_mongoid (2.3.0)
+    delayed_job (4.1.8)
+      activesupport (>= 3.0, < 6.1)
+    delayed_job_mongoid (2.3.1)
       delayed_job (>= 3.0, < 5)
-      mongoid (>= 3.0, < 7)
+      mongoid (>= 3.0, < 8)
       mongoid-compatibility (>= 0.4.0)
     diff-lcs (1.3)
     docile (1.1.5)
@@ -91,7 +79,8 @@ GEM
     hashie (3.5.5)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
-    i18n (0.8.4)
+    i18n (0.9.5)
+      concurrent-ruby (~> 1.0)
     json (2.1.0)
     kgio (2.11.0)
     listen (3.1.5)
@@ -104,17 +93,19 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2016.0521)
     mini_portile2 (2.3.0)
-    minitest (5.10.2)
-    mongo (2.1.2)
-      bson (~> 3.0)
-    mongoid (5.0.0)
-      activemodel (~> 4.0)
-      mongo (~> 2.1)
+    minitest (5.14.0)
+    mongo (2.5.3)
+      bson (>= 4.3.0, < 5.0.0)
+    mongoid (7.0.5)
+      activemodel (>= 5.1, < 6.1)
+      mongo (>= 2.5.1, < 3.0.0)
       origin (~> 2.1)
       tzinfo (>= 0.3.37)
     mongoid-compatibility (0.4.1)
       activesupport
       mongoid (>= 2.0)
+    mongoid-tree (2.1.1)
+      mongoid (>= 4.0, < 8)
     mongoid_cleaner (1.2.0)
       mongoid (>= 4.0)
     mongoid_magic_counter_cache (1.1.1)
@@ -131,8 +122,8 @@ GEM
       nenv (~> 0.1)
       shellany (~> 0.0)
     origin (2.3.1)
-    protected_attributes (1.1.4)
-      activemodel (>= 4.0.1, < 5.0)
+    protected_attributes_continued (1.5.0)
+      activemodel (>= 5.0)
     pry (0.10.4)
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
@@ -156,6 +147,8 @@ GEM
       http-cookie (>= 1.0.2, < 2.0)
       mime-types (>= 1.16, < 4.0)
       netrc (~> 0.8)
+    rs_voteable_mongo (1.3.0)
+      mongoid (~> 7.0)
     rspec (3.6.0)
       rspec-core (~> 3.6.0)
       rspec-expectations (~> 3.6.0)
@@ -192,7 +185,7 @@ GEM
     thor (0.19.4)
     thread_safe (0.3.6)
     tilt (2.0.7)
-    tzinfo (1.2.3)
+    tzinfo (1.2.6)
       thread_safe (~> 0.1)
     unf (0.1.4)
       unf_ext
@@ -210,13 +203,14 @@ GEM
       mongoid
       will_paginate (~> 3.0)
     yajl-ruby (1.3.1)
+    zeitwerk (2.2.2)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  activemodel (~> 4.2.8)
-  bson (~> 3.1)
+  activemodel
+  bson
   bson_ext
   bundler
   codecov
@@ -231,13 +225,13 @@ DEPENDENCIES
   guard
   guard-unicorn
   i18n
-  mongoid (~> 5.0.0)
-  mongoid-tree!
+  mongoid
+  mongoid-tree
   mongoid_cleaner (~> 1.2.0)
   mongoid_magic_counter_cache
   newrelic_rpm
   nokogiri (~> 1.8.1)
-  protected_attributes
+  protected_attributes_continued
   pry
   pry-nav
   rack-contrib!
@@ -246,7 +240,7 @@ DEPENDENCIES
   rake
   rdiscount
   rest-client
-  rs_voteable_mongo!
+  rs_voteable_mongo (~> 1.3)
   rspec (~> 3.6.0)
   rspec-collection_matchers
   rspec-its
@@ -258,7 +252,7 @@ DEPENDENCIES
   yajl-ruby (~> 1.3.1)
 
 RUBY VERSION
-   ruby 2.4.1p111
+   ruby 2.5.7p206
 
 BUNDLED WITH
-   1.16.1
+   1.16.6
