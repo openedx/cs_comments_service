@@ -34,6 +34,21 @@ describe 'app' do
         expect(last_response.status).to eq status
       end
     end
+
+    it 'allows requests when jwt is valid' do
+      urls.each do |url, status|
+        get url, {}, {'HTTP_AUTHORIZATION' => create_test_jwt}
+        expect(last_response.status).to eq status
+      end
+    end
+
+    it 'return 401 when jwt is invalid' do
+      urls.each do |url, status|
+        get url, {}, {'HTTP_AUTHORIZATION' => "incorrect-#{create_test_jwt}"}
+        expect(last_response.status).to eq 401
+      end
+    end
+
   end
 
   describe 'heartbeat monitoring' do

@@ -11,6 +11,8 @@ gem 'bundler'
 
 gem 'rake'
 
+gem 'jwt'
+
 gem 'sinatra'
 gem 'sinatra-param', '~> 1.4'
 

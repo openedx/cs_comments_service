@@ -100,11 +100,26 @@ DEFAULT_PER_PAGE = 20
 before do
   pass if request.path_info == '/heartbeat'
   api_key = CommentService.config[:api_key]
-  error 401 unless params[:api_key] == api_key or env["HTTP_X_EDX_API_KEY"] == api_key
+  if env.key?('HTTP_AUTHORIZATION')
+    error 401 unless authorize_request
+  else
+    error 401 unless params[:api_key] == api_key or env["HTTP_X_EDX_API_KEY"] == api_key
+  end
 end
 
 before do
   content_type "application/json"
+end
+
+def authorize_request
+    jwt = env['HTTP_AUTHORIZATION']
+    jwt = jwt.split(' ').last if jwt
+
+    begin
+        jwt_secret_key = CommentService.config[:jwt_secret_key]
+        JWT.decode jwt, jwt_secret_key, true, { algorithm: 'HS256' }
+    rescue JWT::DecodeError
+    end
 end
 
 # use yajl implementation for to_json.

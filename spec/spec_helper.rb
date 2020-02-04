@@ -14,6 +14,7 @@ require 'rspec/its'
 require 'rspec/collection_matchers'
 require 'sinatra'
 require 'yajl'
+require 'jwt'
 
 require 'support/database_cleaner'
 require 'support/elasticsearch'
@@ -40,12 +41,18 @@ def app
 end
 
 TEST_API_KEY = 'comments-service-test-api-key'
+JWT_TEST_KEY = 'secret-key'
 CommentService.config[:api_key] = TEST_API_KEY
+CommentService.config[:jwt_secret_key] = JWT_TEST_KEY
+
+
+def create_test_jwt
+    return JWT.encode 'test-jwt', JWT_TEST_KEY, 'HS256'
+end
 
 def set_api_key_header
   current_session.header "X-Edx-Api-Key", TEST_API_KEY
 end
-
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
@@ -363,7 +370,7 @@ end
 # add standalone threads and comments to the @threads and @comments hashes
 # using the namespace "standalone t#{index}" for threads and "standalone t#{index} c#{i}" for comments
 # takes an index param if used within an iterator, otherwise will namespace using 0 for thread index
-# AKA this will overwrite "standalone t0" each time it is called. 
+# AKA this will overwrite "standalone t0" each time it is called.
 def make_standalone_thread_with_comments(author, index=0)
   thread = make_thread(
       author,
