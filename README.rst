@@ -22,7 +22,7 @@ devstack will take care of just about all of the installation, configuration, an
 service management on your behalf. If running outside of devstack, continue reading below.
 
 __ https://github.com/edx/edx-platform
-__ https://github.com/edx/configuration/wiki/edX-Developer-Stack
+__ https://edx.readthedocs.io/projects/edx-installing-configuring-and-running/en/latest/installation/install_devstack.html
 
 This service relies on Elasticsearch and MongoDB. By default the service will use the Elasticsearch server available at
 `http://localhost:9200` and the MongoDB server available at `localhost:27017`. This is suitable for local development;
