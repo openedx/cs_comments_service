@@ -6,10 +6,10 @@ services:
     image: elasticsearch:1.5.2
     container_name: "es.edx"
   mongo:
-    image: mongo:3.0.14
+    image: mongo:3.2.21
     container_name: "mongo.edx"
   forum-base:
-    image: edxops/forum:ruby2.4.1 # TODO: switch back to latest after configuration release
+    image: edxops/forum:latest
 
     container_name: forum_testing
     volumes:
