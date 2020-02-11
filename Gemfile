@@ -27,7 +27,7 @@ gem 'delayed_job'
 gem 'delayed_job_mongoid'
 
 gem "enumerize"
-gem 'mongoid-tree', :require => 'mongoid/tree'
+gem 'mongoid-tree', :git => 'https://github.com/edx/mongoid-tree'
 gem 'rs_voteable_mongo', '~> 1.3'
 gem 'mongoid_magic_counter_cache'
 
