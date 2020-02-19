@@ -8,6 +8,7 @@ class User
   field :_id, type: String, default: -> { external_id }
   field :external_id, type: String
   field :username, type: String
+  field :email, type: String
   field :default_sort_key, type: String, default: "date"
 
   embeds_many :read_states

@@ -9,7 +9,7 @@ branches:
     - master
 
 rvm:
-  - "2.4.1"
+  - "2.5.7"
 
 install:
   - docker-compose -f ./.travis/docker-compose-travis.yml build test-forum
