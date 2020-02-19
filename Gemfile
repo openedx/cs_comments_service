@@ -36,7 +36,7 @@ gem 'mongoid_magic_counter_cache'
 # function 'handle_threads_query'.
 gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
-gem 'nokogiri', "~>1.8.1"
+gem 'nokogiri', "~>1.10.4"
 
 gem 'elasticsearch', '~> 1.1.2'
 gem 'elasticsearch-model', '~> 0.1.9'
