@@ -312,7 +312,7 @@ helpers do
 
     #now build a thread to users subscription map
     subscriptions_map = {}
-    subscriptions.each do |s|
+    subscriptions.no_timeout.each do |s|
       if not subscriptions_map.keys.include? s.source_id.to_s
         subscriptions_map[s.source_id.to_s] = []
       end
