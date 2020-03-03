@@ -9,7 +9,8 @@ services:
     image: mongo:3.2.21
     container_name: "mongo.edx"
   forum-base:
-    image: edxops/forum:ruby257 # TODO: switch back to latest after configuration release
+    image: edxops/forum:latest
+
     container_name: forum_testing
     volumes:
       - ..:/edx/app/forum/cs_comments_service
