@@ -13,6 +13,8 @@ services:
     container_name: forum_testing
     volumes:
       - ..:/edx/app/forum/cs_comments_service
+    environment:
+      MONGOID_AUTH_MECH: ""
   forum:
     extends: forum-base
     command: tail -f /dev/null
