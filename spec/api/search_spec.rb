@@ -15,7 +15,7 @@ describe 'app' do
 
     describe "GET /api/v1/search/threads" do
       shared_examples_for 'response for invalid request' do
-        before (:each) { refresh_es_index }
+        before (:each) { refresh_es_indices }
         subject { get '/api/v1/search/threads', {course_id: course_id}.merge!(parameters) }
 
         it { should be_ok }
@@ -44,14 +44,14 @@ describe 'app' do
         def create_and_delete_comment_or_thread(factory_name, text)
           comment_or_thread = create(factory_name, course_id: course_id, body: text)
           comment_or_thread.destroy
-          refresh_es_index
+          refresh_es_indices
         end
 
         def update_comment_or_thread(factory_name, original_text, new_text)
           comment_or_thread = create(factory_name, course_id: course_id, body: original_text)
           comment_or_thread.body = new_text
           comment_or_thread.save!
-          refresh_es_index
+          refresh_es_indices
         end
 
         it 'returns an empty result if thread is deleted' do
@@ -119,7 +119,7 @@ describe 'app' do
             end
             thread
           end
-          refresh_es_index
+          refresh_es_indices
           threads
         end
 
@@ -213,7 +213,7 @@ describe 'app' do
             threads[i].save!
           end
           threads[4].save!
-          refresh_es_index
+          refresh_es_indices
           threads
         end
 
@@ -250,7 +250,7 @@ describe 'app' do
       describe "pagination" do
         let!(:threads) do
           threads = (1..50).map { |i| make_thread(author, "text", course_id, "dummy") }
-          refresh_es_index
+          refresh_es_indices
           threads
         end
 
@@ -292,7 +292,7 @@ describe 'app' do
         before(:each) do
           thread = make_thread(author, "a thread about green artichokes", course_id, commentable_id)
           make_comment(author, thread, "a comment about greed pineapples")
-          refresh_es_index
+          refresh_es_indices
         end
 
         it "can correct a word appearing only in a comment" do
@@ -334,7 +334,7 @@ describe 'app' do
             thread.group_id = 1
             thread.save!
           end
-          refresh_es_index
+          refresh_es_indices
 
           get "/api/v1/search/threads", text: "abot", course_id: course_id
           last_response.should be_ok
@@ -358,7 +358,7 @@ describe 'app' do
         end
         # Elasticsearch does not necessarily make newly indexed content
         # available immediately, so we must explicitly refresh the index
-        refresh_es_index
+        refresh_es_indices
 
         test_text = lambda do |text, expected_total_results, expected_num_pages|
           get '/api/v1/search/threads', course_id: course_id, text: text, per_page: '10'
@@ -382,7 +382,7 @@ describe 'app' do
 
         thread = create(:comment_thread, body: "#{search_term} #{text}")
         create(:comment, comment_thread: thread, body: text)
-        refresh_es_index
+        refresh_es_indices
 
         get '/api/v1/search/threads', course_id: thread.course_id, text: search_term
 

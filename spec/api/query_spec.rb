@@ -11,7 +11,7 @@ describe 'app' do
 
     shared_examples_for 'a search endpoint' do
       subject do
-        refresh_es_index
+        refresh_es_indices
         get '/api/v1/search/threads', text: body
       end
 
