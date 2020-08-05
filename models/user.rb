@@ -174,8 +174,7 @@ class User
     data[:author_username] = retired_username
     {
       update: {
-        _index: Content::ES_INDEX_NAME,
-        _type: comment.__elasticsearch__.document_type,
+        _index: Comment.index_name,
         _id: comment._id,
         data: { doc: data }
       }
@@ -212,8 +211,7 @@ class User
     end
     {
       update: {
-        _index: Content::ES_INDEX_NAME,
-        _type: comment.__elasticsearch__.document_type,
+        _index: Comment.index_name,
         _id: comment._id,
         data: { doc: data }
       }
