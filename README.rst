@@ -35,45 +35,35 @@ Install the requisite gems:
 
     $ bundle install
 
-To initialize the index:
+To initialize indices:
 
-Setup the search index. Note that the command below creates an alias with a unique name (e.g.
-content_20161220185820323), and assigns it a known alias: content. If you choose not to use the command below, you
-should still opt to reference your index by an alias rather than the actual index name. This will enable you to swap out
-indices (e.g. rebuild_index) without having to take downtime or modify code with a new index name.
+Setup search indices. Note that the command below creates `comment` and `comment_thread` indices.
 
 .. code-block:: bash
 
     $ bin/rake search:initialize
 
-To validate the 'content' alias exists and contains the proper mappings:
+To validate indices exist and contain the proper mappings:
 
 .. code-block:: bash
 
-    $ bin/rake search:validate_index
+    $ bin/rake search:validate_indices
 
-To rebuild the index:
+To rebuild indices:
 
-To rebuild a new index from the database and then point the alias 'content' to it, you can use the
-rebuild_index task. This task will also run catchup before and after the alias is moved, to minimize time where the
-alias does not contain all documents.
-
-.. code-block:: bash
-
-    $ bin/rake search:rebuild_index
-
-To rebuild a new index without moving the alias and without running catchup, use the following:
+To rebuild new indices from the database, you can use the rebuild_indices task. This task will also run catchup before
+and after indices are moved, to minimize time where indices don't contain all documents.
 
 .. code-block:: bash
 
-    $ bin/rake search:rebuild_index[false]
+    $ bin/rake search:rebuild_indices
 
 You can also adjust the batch size (e.g. 200) and the sleep time (e.g. 2 seconds) between batches to lighten the load
 on MongoDB.
 
 .. code-block:: bash
 
-    $ bin/rake search:rebuild_index[true,200,2]
+    $ bin/rake search:rebuild_indices[200,2]
 
 Run the server:
 
