@@ -1,58 +1,76 @@
 def get_thread_ids(context, group_ids, local_params, search_text)
-  filters = []
-  filters.push({term: {commentable_id: local_params['commentable_id']}}) if local_params['commentable_id']
-  filters.push({terms: {commentable_id: local_params['commentable_ids'].split(',')}}) if local_params['commentable_ids']
-  filters.push({term: {course_id: local_params['course_id']}}) if local_params['course_id']
+  must = []
+  filter = []
+  must.push({term: {commentable_id: local_params['commentable_id']}}) if local_params['commentable_id']
+  must.push({terms: {commentable_id: local_params['commentable_ids'].split(',')}}) if local_params['commentable_ids']
+  must.push({term: {course_id: local_params['course_id']}}) if local_params['course_id']
+  must.push(
+    {
+      multi_match: {
+        query: search_text,
+        fields: [:title, :body],
+        operator: :AND
+      }
+    }
+  )
+  group_id = local_params['group_id']
 
-  filters.push({or: [
-      {not: {exists: {field: :context}}},
-      {term: {context: context}}
-  ]})
+  if group_id
+    filter.push(
+      {
+        bool: {
+          should: [
+            {:bool => {:must_not => {:exists => {:field => :group_id}}}},
+            {:term => {:group_id => group_id}}
+          ]
+        }
+      }
+    )
+  end
+
+  filter.push(
+    {:bool => {:must_not => {:exists => {:field => context}}}},
+    {term: {context: context}}
+  )
 
   unless group_ids.empty?
-    filters.push(
-        {
-            bool: {
-                should: [
-                    {:not => {:exists => {:field => :group_id}}},
-                    {:terms => {:group_id => group_ids}}
-                ]
-            }
+    filter.push(
+      {
+        bool: {
+          should: [
+            {:bool => {:must_not => {:exists => {:field => :group_id}}}},
+            {:terms => {:group_id => group_ids}}
+          ]
         }
+      }
     )
   end
 
   body = {
-      size: CommentService.config['max_deep_search_comment_count'].to_i,
-      sort: [
-          {updated_at: :desc}
-      ],
-      query: {
-          filtered: {
-              query: {
-                  multi_match: {
-                      query: search_text,
-                      fields: [:title, :body],
-                      operator: :AND
-                  }
-              },
-              filter: {
-                  bool: {
-                      must: filters
-                  }
-              }
+    size: CommentService.config['max_deep_search_comment_count'].to_i,
+    sort: [
+      {updated_at: :desc}
+    ],
+    query: {
+      bool: {
+        must: must,
+        filter: {
+          bool: {
+            should: filter
           }
+        }
       }
+    }
   }
 
-  response = Elasticsearch::Model.client.search(index: Content::ES_INDEX_NAME, body: body)
+  response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES, body: body)
 
   thread_ids = Set.new
   response['hits']['hits'].each do |hit|
-    case hit['_type']
-      when CommentThread.document_type
+    case hit['_index']
+      when CommentThread.index_name
         thread_ids.add(hit['_id'])
-      when Comment.document_type
+      when Comment.index_name
         thread_ids.add(hit['_source']['comment_thread_id'])
       else
         # There shouldn't be any other document types. Nevertheless, ignore them, if they are present.
@@ -64,15 +82,19 @@ end
 
 def get_suggested_text(search_text)
   body = {
+    suggest: {
       suggestions: {
           text: search_text,
           phrase: {
-              field: :_all
+              field: :body
           }
       }
+    }
   }
-  response = Elasticsearch::Model.client.suggest(index: Content::ES_INDEX_NAME, body: body)
-  suggestions = response.fetch('suggestions', [])
+
+  response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES, body: body)
+  suggestions = response["suggest"].fetch('suggestions', [])
+
   if suggestions.length > 0
     options = suggestions[0]['options']
     if options.length > 0
