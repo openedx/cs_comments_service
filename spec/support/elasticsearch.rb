@@ -1,9 +1,5 @@
 require 'task_helpers'
 
-def refresh_es_indices()
-  TaskHelpers::ElasticsearchHelper.refresh_indices
-end
-
 
 RSpec.shared_context 'search_enabled' do
 

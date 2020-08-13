@@ -5,37 +5,36 @@ require_relative '../models/comment_thread'
 module TaskHelpers
   module ElasticsearchHelper
     LOG = Logger.new(STDERR)
-    INDEX_MODELS = [Comment, CommentThread]
-    INDEX_NAMES = [Comment.index_name, CommentThread.index_name]
+    INDEX_MODELS = [Comment, CommentThread].freeze
+    INDEX_NAMES = [Comment.index_name, CommentThread.index_name].freeze
 
     # Creates new indices and loads data from the database.
     #
     # Params:
     # +batch_size+:: (optional) The number of elements to index at a time. Defaults to 500.
-    # +sleep_time+:: (optional) The number of seconds to sleep between batches. Defaults to 0.
     # +extra_catchup_minutes+:: (optional) The number of extra minutes to catchup. Defaults to 5.
-    def self.rebuild_indices(batch_size=500, sleep_time=0, extra_catchup_minutes=5)
+    def self.rebuild_indices(batch_size=500, extra_catchup_minutes=5)
       create_indices
       INDEX_MODELS.each do |model|
         current_batch = 1
-        model.import(index: model.index_name,batch_size: batch_size) do |response|
-            batch_import_post_process(response, current_batch, sleep_time)
+        model.import(index: model.index_name, batch_size: batch_size) do |response|
+            batch_import_post_process(response, current_batch)
             current_batch += 1
         end
       end
 
       first_catchup_start_time = Time.now
-      adjusted_start_time = first_catchup_start_time - (extra_catchup_minutes * 60)
-      catchup_indices(adjusted_start_time, batch_size, sleep_time)
+      adjusted_start_time = first_catchup_start_time - extra_catchup_minutes * 60
+      catchup_indices(adjusted_start_time, batch_size)
 
       LOG.info "Rebuild indices complete."
     end
 
-    def self.catchup_indices(start_time, batch_size=100, sleep_time=0)
+    def self.catchup_indices(start_time, batch_size=100)
       INDEX_MODELS.each do |model|
         current_batch = 1
-        model.where(:updated_at.gte => start_time).import(index: model.index_name, batch_size: batch_size) do |response|
-            batch_import_post_process(response, current_batch, sleep_time)
+        model.import(index: model.index_name, batch_size: batch_size) do |response|
+            batch_import_post_process(response, current_batch)
             current_batch += 1
         end
       end
@@ -54,12 +53,11 @@ module TaskHelpers
       LOG.info "Delete indices."
     end
 
-    def self.batch_import_post_process(response, batch_number, sleep_time)
+    def self.batch_import_post_process(response, batch_number)
       response['items'].select { |i| i['index']['error'] }.each do |item|
           LOG.error "Error indexing. Response was: #{response}"
       end
       LOG.info "Imported batch #{batch_number} into the index"
-      sleep(sleep_time)
     end
 
     def self.get_index_shard_count(name)
@@ -80,7 +78,7 @@ module TaskHelpers
       if force_new_index or not exists_indices
         create_indices
       else
-        LOG.info "Skipping initialization. Indices already exists. If 'rake search:validate_indices' indicates "\
+        LOG.info "Skipping initialization. Indices already exist. If 'rake search:validate_indices' indicates "\
           "a problem with the mappings, you could either use 'rake search:rebuild_indices' to reload from the db or 'rake "\
           "search:initialize[true]' to force initialization with an empty index."
       end

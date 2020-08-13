@@ -3,13 +3,12 @@ version: "2"
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.8.0
+    image: elasticsearch:7.8.0
     container_name: "es.edx"
     environment:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - http.port=9200
     ulimits:
       memlock:
         soft: -1

@@ -43,7 +43,7 @@ Setup search indices. Note that the command below creates `comment` and `comment
 
     $ bin/rake search:initialize
 
-To validate indices exist and contain the proper mappings:
+To validate indices existence and content of the proper mappings:
 
 .. code-block:: bash
 
@@ -51,7 +51,7 @@ To validate indices exist and contain the proper mappings:
 
 To rebuild indices:
 
-To rebuild new indices from the database, you can use the rebuild_indices task. This task will also run catchup before
+To rebuild new indices from the database, you can use the rebuild_indices task. This task will also run catch up before
 and after indices are moved, to minimize time where indices don't contain all documents.
 
 .. code-block:: bash
