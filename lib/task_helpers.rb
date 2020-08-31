@@ -33,7 +33,7 @@ module TaskHelpers
     def self.catchup_indices(start_time, batch_size=100)
       INDEX_MODELS.each do |model|
         current_batch = 1
-        model.import(index: model.index_name, batch_size: batch_size) do |response|
+        model.where(:updated_at.gte => start_time).import(index: model.index_name, batch_size: batch_size) do |response|
             batch_import_post_process(response, current_batch)
             current_batch += 1
         end
