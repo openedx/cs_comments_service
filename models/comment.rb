@@ -43,6 +43,8 @@ class Comment < Content
     indexes :context, type: :keyword
     indexes :created_at, type: :date
     indexes :updated_at, type: :date
+    # NOTE: this field needs only for testing
+    indexes :title, type: :keyword
   end
 
   def as_indexed_json(options={})

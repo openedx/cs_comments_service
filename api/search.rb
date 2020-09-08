@@ -24,7 +24,7 @@ def get_thread_ids(context, group_ids, local_params, search_text)
 
   filter.push(
       {:bool => {:must_not => {:exists => {:field => context}}}},
-      {:term => {context => context}}
+      {:term => {:context => context}}
   )
 
   unless group_ids.empty?
@@ -67,22 +67,29 @@ end
 def get_suggested_text(search_text)
   body = {
     suggest: {
-      suggestions: {
-          text: search_text,
-          phrase: {
-              field: :body
-          }
+      body_suggestions: {
+        text: search_text,
+        phrase: {
+          field: :body
+        }
+      },
+      title_suggestions: {
+        text: search_text,
+        phrase: {
+          field: :title
+        }
       }
     }
   }
 
   response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES, body: body)
-  suggestions = response['suggest'].fetch('suggestions', [])
+  body_suggestions = response['suggest'].fetch('body_suggestions', [])
+  title_suggestions = response['suggest'].fetch('title_suggestions', [])
 
-  if suggestions.length > 0
-    options = suggestions[0]['options']
-    if options.length > 0
-      return options[0]['text']
+  [body_suggestions, title_suggestions].each do |suggestion|
+    if suggestion.length > 0
+      options = suggestion[0]['options']
+      return options[0]['text'] if options.length > 0
     end
   end
 
