@@ -136,9 +136,12 @@ helpers do
     user_id,
     course_id,
     group_ids,
+    author_id,
+    thread_type,
     filter_flagged,
     filter_unread,
     filter_unanswered,
+    count_flagged,
     sort_key,
     page,
     per_page,
@@ -151,6 +154,17 @@ helpers do
       comment_threads = comment_threads.all_of(context_threads.selector, group_threads.selector)
     else
       comment_threads = context_threads
+    end
+
+    if author_id
+      comment_threads = comment_threads.where(:author_id => author_id)
+      if author_id != user_id
+        comment_threads = comment_threads.where(:anonymous => false, :anonymous_to_peers => false)
+      end
+    end
+
+    if thread_type
+      comment_threads = comment_threads.where({:thread_type => thread_type})
     end
 
     if filter_flagged
@@ -236,7 +250,7 @@ helpers do
       if threads.length == 0
         collection = []
       else
-        pres_threads = ThreadListPresenter.new(threads, request_user, course_id)
+        pres_threads = ThreadListPresenter.new(threads, request_user, course_id, count_flagged)
         collection = pres_threads.to_hash
       end
       {collection: collection, num_pages: num_pages, page: page, thread_count: thread_count}

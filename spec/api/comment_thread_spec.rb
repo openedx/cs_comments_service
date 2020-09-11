@@ -125,6 +125,62 @@ describe 'app' do
             rs.length.should == 0
           end
         end
+        context "when filtering posts by author" do
+          it "returns posts authored by self" do
+            user = User.first
+            anon_thread = make_thread(user, "anon thread by author", DFLT_COURSE_ID, "anon_thread1")
+            anon_thread.anonymous = true
+            anon_thread.save!
+            anon_peers_thread = make_thread(user, "anon thread by author", DFLT_COURSE_ID, "anon_thread2")
+            anon_peers_thread.anonymous_to_peers = true
+            anon_peers_thread.save!
+            rs = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, author_id: user.id
+            # Your own anonymous thread should be returned
+            expect(rs.length).to eq 3
+            end
+          it "returns posts authored by other author" do
+            user = create_test_user(Random.rand(100..200))
+            make_thread(user, "thread by new author #{user}", DFLT_COURSE_ID, "new_thread")
+            anon_thread = make_thread(user, "anon thread by new author #{user}", DFLT_COURSE_ID, "anon_thread1")
+            anon_thread.anonymous = true
+            anon_thread.save!
+            anon_peers_thread = make_thread(user, "anon thread by new author #{user}", DFLT_COURSE_ID, "anon_thread2")
+            anon_peers_thread.anonymous_to_peers = true
+            anon_peers_thread.save!
+            rs = thread_result course_id: DFLT_COURSE_ID, user_id: User.first.id, author_id: user.id
+            # Other users' anonymous threads should *not* show up in results
+            expect(rs.length).to eq 1
+            expect(rs[0]["user_id"]).to eq user.id
+          end
+          it "returns all posts when absent" do
+            rs = thread_result course_id: DFLT_COURSE_ID, user_id: User.first.id
+            expect(rs.length).to eq 10
+          end
+        end
+        context "when filtering based on post type" do
+          it "returns threads that have post type discussion" do
+            @threads["t1"].thread_type = :question
+            @threads["t1"].save!
+            rs = thread_result course_id: DFLT_COURSE_ID, thread_type: :discussion
+            expect(rs.length).to eq 9
+            rs.each do |thread|
+              expect(thread["thread_type"]).to eq "discussion"
+            end
+          end
+          it "returns threads that have post type question" do
+            @threads["t1"].thread_type = :question
+            @threads["t1"].save!
+            rs = thread_result course_id: DFLT_COURSE_ID, thread_type: :question
+            expect(rs.length).to eq 1
+            rs.each do |thread|
+              expect(thread["thread_type"]).to eq "question"
+            end
+          end
+          it "returns all threads when thread_type is not provided" do
+            rs = thread_result course_id: DFLT_COURSE_ID
+            rs.length.should == 10
+          end
+        end
         it "filters unread posts" do
           user = create_test_user(Random.new)
           rs = thread_result course_id: DFLT_COURSE_ID, user_id: user.id
