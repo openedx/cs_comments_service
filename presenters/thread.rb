@@ -3,17 +3,22 @@ require_relative 'thread_utils'
 
 class ThreadPresenter
 
-  def self.factory(thread, user)
-    # use when working with one thread at a time.  fetches extended / 
+  def self.factory(thread, user, count_flagged=false)
+    # use when working with one thread at a time.  fetches extended /
     # derived attributes from the db and explicitly initializes an instance.
     course_id = thread.course_id
     thread_key = thread._id.to_s
-    is_read, unread_count = ThreadUtils.get_read_states([thread], user, course_id).fetch(thread_key, [false, thread.comment_count])
+    is_read, unread_count = ThreadUtils
+                              .get_read_states([thread], user, course_id)
+                              .fetch(thread_key, [false, thread.comment_count])
     is_endorsed = ThreadUtils.get_endorsed([thread]).fetch(thread_key, false)
-    self.new thread, user, is_read, unread_count, is_endorsed
+    abuse_flagged_count = count_flagged ?
+                            ThreadUtils.get_abuse_flagged_count([thread]).fetch(thread_key, nil) :
+                            nil
+    self.new thread, user, is_read, unread_count, is_endorsed, abuse_flagged_count
   end
 
-  def initialize(thread, user, is_read, unread_count, is_endorsed)
+  def initialize(thread, user, is_read, unread_count, is_endorsed, abuse_flagged_count)
     # generally not intended for direct use.  instantiated by self.factory or
     # by thread list presenters.
     @thread = thread
@@ -21,6 +26,7 @@ class ThreadPresenter
     @is_read = is_read
     @unread_count = unread_count
     @is_endorsed = is_endorsed
+    @abuse_flagged_count = abuse_flagged_count
   end
 
   def to_hash(with_responses=false, resp_skip=0, resp_limit=nil, recursive=true)
@@ -30,6 +36,9 @@ class ThreadPresenter
     h["read"] = @is_read
     h["unread_comments_count"] = @unread_count
     h["endorsed"] = @is_endorsed || false
+    unless @abuse_flagged_count.nil?
+      h["abuse_flagged_count"] = @abuse_flagged_count
+    end
     if with_responses
       if @thread.thread_type.discussion? && resp_skip == 0 && resp_limit.nil?
         if recursive
