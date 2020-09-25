@@ -9,15 +9,9 @@ services:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
     volumes:
       - data01:/usr/share/elasticsearch/data
       - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-    ports:
-      - "9200:9200"
   mongo:
     image: mongo:3.2.21
     container_name: "mongo.edx"
@@ -43,4 +37,3 @@ services:
 
 volumes:
   data01:
-    driver: local

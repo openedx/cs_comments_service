@@ -23,7 +23,7 @@ def get_thread_ids(context, group_ids, local_params, search_text)
   end
 
   filter.push(
-      {:bool => {:must_not => {:exists => {:field => context}}}},
+      {:bool => {:must_not => {:exists => {:field => :context}}}},
       {:term => {:context => context}}
   )
 

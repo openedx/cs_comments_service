@@ -14,6 +14,7 @@ module TaskHelpers
     # +batch_size+:: (optional) The number of elements to index at a time. Defaults to 500.
     # +extra_catchup_minutes+:: (optional) The number of extra minutes to catchup. Defaults to 5.
     def self.rebuild_indices(batch_size=500, extra_catchup_minutes=5)
+      initial_start_time = Time.now
       create_indices
       INDEX_MODELS.each do |model|
         current_batch = 1
@@ -23,8 +24,7 @@ module TaskHelpers
         end
       end
 
-      first_catchup_start_time = Time.now
-      adjusted_start_time = first_catchup_start_time - extra_catchup_minutes * 60
+      adjusted_start_time = initial_start_time - extra_catchup_minutes * 60
       catchup_indices(adjusted_start_time, batch_size)
 
       LOG.info "Rebuild indices complete."
@@ -45,12 +45,12 @@ module TaskHelpers
       INDEX_MODELS.each do |model|
         model.__elasticsearch__.create_index! force: true
       end
-      LOG.info "Created new indices."
+      LOG.info "New indices are created."
     end
 
     def self.delete_indices
       Elasticsearch::Model.client.indices.delete(index: INDEX_NAMES, ignore_unavailable: true)
-      LOG.info "Delete indices."
+      LOG.info "Indices are deleted."
     end
 
     def self.batch_import_post_process(response, batch_number)
@@ -97,6 +97,27 @@ module TaskHelpers
         if actual_mapping.keys != expected_mapping_keys
           fail "Actual mapping [#{actual_mapping.keys}] does not match expected mapping (including order) [#{expected_mapping.keys}]."
         end
+
+        actual_mapping_properties = actual_mapping['properties']
+        expected_mapping_properties = expected_mapping[:properties]
+        missing_fields = Array.new
+        invalid_field_types = Array.new
+
+        expected_mapping_properties.keys.each do |property|
+          if actual_mapping_properties.key?(property.to_s)
+            expected_type = expected_mapping_properties[property][:type].to_s
+            actual_type = actual_mapping_properties[property.to_s]['type']
+            if actual_type != expected_type
+              invalid_field_types.push("'#{property}' type '#{actual_type}' should be '#{expected_type}'")
+            end
+          else
+            missing_fields.push(property)
+          end
+        end
+        if missing_fields.any? or invalid_field_types.any?
+          fail "Index '#{model.index_name}' has missing or invalid field mappings.  Missing fields: #{missing_fields}. Invalid types: #{invalid_field_types}."
+        end
+
         # Check that expected field mappings of the correct type exist
         LOG.info "Passed: Index '#{model.index_name}' exists with up-to-date mappings."
       end

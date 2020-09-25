@@ -43,7 +43,7 @@ Setup search indices. Note that the command below creates `comment` and `comment
 
     $ bin/rake search:initialize
 
-To validate indices existence and content of the proper mappings:
+To validate indices exist and contain the proper mappings:
 
 .. code-block:: bash
 
