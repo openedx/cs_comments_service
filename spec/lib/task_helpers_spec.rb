@@ -4,12 +4,15 @@ require 'elasticsearch'
 describe TaskHelpers do
   describe TaskHelpers::ElasticsearchHelper do
 
+    before(:each) do
+      TaskHelpers::ElasticsearchHelper.delete_indices
+      TaskHelpers::ElasticsearchHelper.rebuild_indices
+    end
+
     context("#rebuild_indices") do
       include_context 'search_enabled'
 
       it "builds new index with content" do
-        TaskHelpers::ElasticsearchHelper.delete_indices
-        TaskHelpers::ElasticsearchHelper.rebuild_indices
         create(:comment_thread, body: 'the best test body', course_id: 'test_course_id')
         TaskHelpers::ElasticsearchHelper.refresh_indices
         Elasticsearch::Model.client.search(
@@ -19,7 +22,7 @@ describe TaskHelpers do
 
     end
 
-    context("#validate_index") do
+    context("#validate_indices") do
       subject { TaskHelpers::ElasticsearchHelper.validate_indices}
 
       it "validates the 'content' alias exists with proper mappings" do
@@ -27,8 +30,9 @@ describe TaskHelpers do
       end
 
       it "fails if one of the index doesn't exist" do
-        Elasticsearch::Model.client.indices.delete(index: Comment.index_name)
+        Elasticsearch::Model.client.indices.delete(index: TaskHelpers::ElasticsearchHelper::temporary_index_names[0])
         expect{subject}.to raise_error(Elasticsearch::Transport::Transport::Errors::NotFound)
+        Elasticsearch::Model.client.indices.delete(index: TaskHelpers::ElasticsearchHelper::temporary_index_names[1])
       end
 
     end

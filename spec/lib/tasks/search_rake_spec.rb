@@ -28,6 +28,20 @@ describe "search:rebuild_indices" do
   end
 end
 
+describe "search:delete_indices" do
+  include_context "rake"
+
+  its(:prerequisites) { should include("environment") }
+
+  it "calls delete_indices with parameter" do
+    delete_all_indices = true
+    TaskHelpers::ElasticsearchHelper.should_receive(:delete_indices).with(delete_all_indices)
+
+    subject.invoke(delete_all_indices)
+  end
+
+end
+
 describe "search:catchup" do
   include_context "rake"
 
