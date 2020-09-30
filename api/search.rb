@@ -47,14 +47,15 @@ def get_thread_ids(context, group_ids, local_params, search_text)
     }
   }
 
+  temporary_index_names = TaskHelpers::ElasticsearchHelper::temporary_index_names
   response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES, body: body)
 
   thread_ids = Set.new
   response['hits']['hits'].each do |hit|
     case hit['_index']
-      when CommentThread.index_name
+      when TaskHelpers::ElasticsearchHelper::get_index_model_rel(CommentThread.index_name, temporary_index_names)
         thread_ids.add(hit['_id'])
-      when Comment.index_name
+      when TaskHelpers::ElasticsearchHelper::get_index_model_rel(Comment.index_name, temporary_index_names)
         thread_ids.add(hit['_source']['comment_thread_id'])
       else
         # There shouldn't be any other document types. Nevertheless, ignore them, if they are present.

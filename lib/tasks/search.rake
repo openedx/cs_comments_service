@@ -19,9 +19,10 @@ namespace :search do
     )
   end
 
-  desc 'Generate new indices, without bringing it online.'
-  task :create_indices => :environment do
-    TaskHelpers::ElasticsearchHelper.create_indices
+  desc 'Delete current used or all indices.'
+  task :delete_indices, [:delete_all_indices] => :environment do |t, args|
+    args.with_defaults(:delete_all_indices => false)
+    TaskHelpers::ElasticsearchHelper.delete_indices(args[:delete_all_indices])
   end
 
   desc 'Creates a new search indices'
