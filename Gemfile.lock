@@ -36,7 +36,7 @@ GEM
     bson (3.2.6)
     bson_ext (1.5.1)
     builder (3.2.3)
-    codecov (0.1.10)
+    codecov (0.2.11)
       json
       simplecov
       url
