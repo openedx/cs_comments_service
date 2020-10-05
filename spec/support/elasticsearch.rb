@@ -34,7 +34,7 @@ RSpec.configure do |config|
 
   config.before(:each) do
     # Create the index before each test if it doesn't exist.
-    TaskHelpers::ElasticsearchHelper.create_indices
+    TaskHelpers::ElasticsearchHelper.initialize_indices
   end
 
   config.after(:suite) do
