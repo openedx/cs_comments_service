@@ -7,7 +7,7 @@ module TaskHelpers
     LOG = Logger.new(STDERR)
     INDEX_MODELS = [Comment, CommentThread].freeze
     INDEX_NAMES = [Comment.index_name, CommentThread.index_name].freeze
-    # local variable which store actual indices
+    # local variable which store actual indices for future deletion
     @@temporary_index_names = []
 
     def self.temporary_index_names
@@ -16,7 +16,6 @@ module TaskHelpers
 
     def self.add_temporary_index_names(index_names)
       # clone list of new index names which have been already created
-      # used for swapping old to new indices
       @@temporary_index_names = index_names
     end
 
@@ -27,48 +26,57 @@ module TaskHelpers
     # +extra_catchup_minutes+:: (optional) The number of extra minutes to catchup. Defaults to 5.
     def self.rebuild_indices(batch_size=500, extra_catchup_minutes=5)
       initial_start_time = Time.now
+
       index_names = create_indices
-      INDEX_MODELS.each do |model|
+      index_names.each do |index_name|
         current_batch = 1
-        index_name = get_index_model_rel(model.index_name, index_names)
+        model = get_index_model_rel(index_name)
         model.import(index: index_name, batch_size: batch_size) do |response|
-            batch_import_post_process(response, current_batch)
-            current_batch += 1
+          batch_import_post_process(response, current_batch)
+          current_batch += 1
         end
       end
 
-      adjusted_start_time = initial_start_time - extra_catchup_minutes * 60
+      # Just in case initial rebuild took days and first catch up takes hours,
+      # we catch up once before the alias move and once afterwards.
+      first_catchup_start_time = Time.now
+      adjusted_start_time = initial_start_time - (extra_catchup_minutes * 60)
       catchup_indices(index_names, adjusted_start_time, batch_size)
+
+      alias_names = []
+      index_names.each do |index_name|
+        current_batch = 1
+        model = get_index_model_rel(index_name)
+        model_index_name = model.index_name
+        alias_names.push(model_index_name)
+        move_alias(model_index_name, index_name, force_delete: true)
+      end
+
+      adjusted_start_time = first_catchup_start_time - (extra_catchup_minutes * 60)
+      catchup_indices(alias_names, adjusted_start_time, batch_size)
+
       add_temporary_index_names(index_names)
       LOG.info "Rebuild indices complete."
     end
 
-    # Get index name which corresponds to the model index name
-    def self.get_index_model_rel(model_index_name, current_indices)
-      current_indices.each do |index|
-        index_name = index.delete('^\[a-z]_')[0...-1]
-        if model_index_name == index_name
-          return index
-        end
+    # Get index name which corresponds to the model
+    def self.get_index_model_rel(index_name)
+      model = nil
+      if index_name.include? Comment.index_name
+        model = Comment
+      elsif index_name.include? CommentThread.index_name
+        model = CommentThread
       end
-    end
-
-    # Get model object which corresponds to the index name
-    def self.get_model_index_rel(current_index)
-      index_name = current_index.delete('^\[a-z]_')[0...-1]
-      INDEX_MODELS.each do |model|
-        if model.index_name == index_name
-          return model
-        end
-      end
+      model
     end
 
     def self.catchup_indices(index_names, start_time, batch_size=100)
-      INDEX_MODELS.each do |model|
+      index_names.each do |index_name|
         current_batch = 1
-        model.where(:updated_at.gte => start_time).import(index: model.index_name, batch_size: batch_size) do |response|
-            batch_import_post_process(response, current_batch)
-            current_batch += 1
+        model = get_index_model_rel(index_name)
+        model.where(:updated_at.gte => start_time).import(index: index_name, batch_size: batch_size) do |response|
+          batch_import_post_process(response, current_batch)
+          current_batch += 1
         end
       end
       LOG.info "Catch up from #{start_time} complete."
@@ -85,20 +93,24 @@ module TaskHelpers
           index: index_name,
           body: {"mappings": model.mapping.to_hash}
         )
-        move_alias(model.index_name, index_name, force_delete: true)
       end
       LOG.info "New indices #{index_names} are created."
       index_names
     end
 
+    def self.delete_index(name)
+      Elasticsearch::Model.client.indices.delete(index: name, ignore_unavailable: true)
+      LOG.info "Deleted index: #{name}."
+    end
+
     # Deletes current indices if they used by forum app
-    def self.delete_indices(delete_all_indices = false)
-      if temporary_index_names.length > 0 and not delete_all_indices
+    def self.delete_indices
+      # NOTE: elasticsearch cannot delete index by alias, so forum store names
+      # of current indices in the temporary_index_names variable. If it is empty
+      # forum indices cannot be deleted by forum
+      if temporary_index_names.length > 0
         Elasticsearch::Model.client.indices.delete(index: temporary_index_names, ignore_unavailable: true)
         LOG.info "Indices #{temporary_index_names} are deleted."
-      elsif delete_all_indices
-        Elasticsearch::Model.client.indices.delete(index: '_all')
-        LOG.info "All indices are deleted."
       else
         LOG.info "No Indices to delete."
       end
@@ -116,12 +128,16 @@ module TaskHelpers
       settings[name]['settings']['index']['number_of_shards']
     end
 
-    def self.exists_aliases(aliases)
-      Elasticsearch::Model.client.indices.exists_alias(name: aliases)
+    def self.exists_alias(alias_name)
+      Elasticsearch::Model.client.indices.exists_alias(name: alias_name)
     end
 
     def self.exists_indices
       Elasticsearch::Model.client.indices.exists(index: temporary_index_names)
+    end
+
+    def self.exists_aliases(aliases)
+      Elasticsearch::Model.client.indices.exists_alias(name: aliases)
     end
 
     def self.exists_index(index_name)
@@ -129,6 +145,26 @@ module TaskHelpers
     end
 
     def self.move_alias(alias_name, index_name, force_delete=false)
+      unless index_name != alias_name
+        raise ArgumentError, "Can't point alias [#{alias_name}] to an index of the same name."
+      end
+      unless exists_index(index_name)
+        raise ArgumentError, "Can't point alias to non-existent index [#{index_name}]."
+      end
+
+      # You cannot use an alias name if an index of the same name (that is not an alias) already exists.
+      # This could happen if the index was auto-created before the alias was properly set up.  In this
+      # case, we either warn the user or delete the already existing index.
+      if exists_index(alias_name) and not exists_alias(alias_name)
+        if force_delete
+          self.delete_index(alias_name)
+        else
+          raise ArgumentError, "Can't create alias [#{alias_name}] because there is already an " +
+              "auto-generated index of the same name. Try again with force_delete=true to first " +
+              "delete this pre-existing index."
+        end
+      end
+
       actions = [
           {add: {index: index_name, alias: alias_name}}
       ]
@@ -150,7 +186,7 @@ module TaskHelpers
 
     def self.refresh_indices
       if temporary_index_names.length > 0
-        Elasticsearch::Model.client.indices.refresh(index: temporary_index_names)
+        Elasticsearch::Model.client.indices.refresh(index: INDEX_NAMES)
       else
         fail "No indices to refresh"
       end
@@ -160,8 +196,8 @@ module TaskHelpers
       # When force_new_index is true, fresh indices will be created even if it already exists.
       if force_new_index or not exists_aliases(INDEX_NAMES)
         index_names = create_indices
-        INDEX_MODELS.each do |model|
-          index_name = get_index_model_rel(model.index_name, index_names)
+        index_names.each do |index_name|
+          model = get_index_model_rel(index_name)
           move_alias(model.index_name, index_name, force_delete: true)
         end
         add_temporary_index_names(index_names)
@@ -175,14 +211,14 @@ module TaskHelpers
     # Validates that each index includes the proper mappings.
     # There is no return value, but an exception is raised if the index is invalid.
     def self.validate_indices
-      actual_mappings = Elasticsearch::Model.client.indices.get_mapping(index: temporary_index_names)
+      actual_mappings = Elasticsearch::Model.client.indices.get_mapping(index: INDEX_NAMES)
 
       if actual_mappings.length == 0
         fail "Indices are not exist!"
       end
 
-      temporary_index_names.each do |index_name|
-        model = get_model_index_rel(index_name)
+      actual_mappings.keys.each do |index_name|
+        model = get_index_model_rel(index_name)
         expected_mapping = model.mappings.to_hash
         actual_mapping = actual_mappings[index_name]['mappings']
         expected_mapping_keys = expected_mapping.keys.map { |x| x.to_s }

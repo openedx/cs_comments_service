@@ -19,12 +19,6 @@ namespace :search do
     )
   end
 
-  desc 'Delete current used or all indices.'
-  task :delete_indices, [:delete_all_indices] => :environment do |t, args|
-    args.with_defaults(:delete_all_indices => false)
-    TaskHelpers::ElasticsearchHelper.delete_indices(args[:delete_all_indices])
-  end
-
   desc 'Creates a new search indices'
   task :initialize, [:force_new_index] => :environment do |t, args|
     # When force_new_index is true, a fresh index for "content" alias is created even if the
