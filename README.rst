@@ -37,7 +37,9 @@ Install the requisite gems:
 
 To initialize indices:
 
-Setup search indices. Note that the command below creates `comment` and `comment_thread` indices.
+Setup search indices. Note that the command below creates `comments_20161220185820323` and
+`comment_threads_20161220185820323` indices and assigns `comments` and `comment_threads` aliases. This will enable you
+to swap out indices (e.g. rebuild_index) without having to take downtime or modify code with a new index name.
 
 .. code-block:: bash
 
@@ -51,8 +53,9 @@ To validate indices exist and contain the proper mappings:
 
 To rebuild indices:
 
-To rebuild new indices from the database, you can use the rebuild_indices task. This task will also run catch up before
-and after indices are moved, to minimize time where indices don't contain all documents.
+To rebuild new indices from the database and then point the aliases `comments` and `comment_threads` to each index
+which has equivalent index prefix, you can use the rebuild_indices task. This task will also run catch up before
+and after aliases are moved, to minimize time where aliases do not contain all documents.
 
 .. code-block:: bash
 
