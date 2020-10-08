@@ -1,6 +1,6 @@
 level_limit: 3
 api_key: <%= ENV['API_KEY'] || 'PUT_YOUR_API_KEY_HERE' %>
-elasticsearch_server: <%= ENV['SEARCH_SERVER_ES7'] || 'http://elasticsearch:9200' %>
+elasticsearch_server: <%= ENV['SEARCH_SERVER_ES7'] || 'http://localhost:9200' %>
 max_deep_search_comment_count: 5000
 enable_search: true
 default_locale: <%= ENV['SERVICE_LANGUAGE'] || 'en-US' %>

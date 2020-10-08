@@ -39,7 +39,7 @@ describe "search:catchup" do
 
   it "calls catchup with defaults" do
     TaskHelpers::ElasticsearchHelper.should_receive(:catchup_indices).with(
-        anything, 500
+        TaskHelpers::ElasticsearchHelper::INDEX_NAMES, anything, 500
     ) do |start_time_arg|
       start_time_arg.should be_within(1.second).of Time.now
     end
@@ -52,7 +52,7 @@ describe "search:catchup" do
     minutes = '2'
     batch_size = '100'
     TaskHelpers::ElasticsearchHelper.should_receive(:catchup_indices).with(
-        anything, batch_size.to_i
+        TaskHelpers::ElasticsearchHelper::INDEX_NAMES, anything, batch_size.to_i
     ) do |start_time_arg|
       start_time_arg.should be_within((60 * minutes.to_i + 1).second).of Time.now
     end

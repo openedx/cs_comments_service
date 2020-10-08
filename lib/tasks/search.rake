@@ -2,10 +2,11 @@ require_relative '../task_helpers'
 
 namespace :search do
   desc 'Indexes content updated in the last N minutes.'
-  task :catchup, [:minutes, :batch_size] => :environment do |t, args|
+  task :catchup, [:comments_index_name, :comment_threads_index_name, :minutes, :batch_size] => :environment do |t, args|
     start_time = Time.now - (args[:minutes].to_i * 60)
     args.with_defaults(:batch_size => 500)
-    TaskHelpers::ElasticsearchHelper.catchup_indices(start_time, args[:batch_size].to_i)
+    indices = [args[:comments_index_name].to_s, args[:comment_threads_index_name].to_s]
+    TaskHelpers::ElasticsearchHelper.catchup_indices(indices, start_time, args[:batch_size].to_i)
   end
 
   desc 'Rebuilds new indices of all data from the database.'

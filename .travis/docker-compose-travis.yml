@@ -22,6 +22,7 @@ services:
       - ..:/edx/app/forum/cs_comments_service
     environment:
       MONGOID_AUTH_MECH: ""
+      SEARCH_SERVER_ES7: "http://elasticsearch:9200"
   forum:
     extends: forum-base
     command: tail -f /dev/null
