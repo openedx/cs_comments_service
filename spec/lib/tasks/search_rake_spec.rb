@@ -30,6 +30,9 @@ end
 
 describe "search:catchup" do
   include_context "rake"
+  let(:indices) { TaskHelpers::ElasticsearchHelper::INDEX_NAMES }
+  let(:comments_index_name) { Comment.index_name }
+  let(:comment_threads_index_name) { CommentThread.index_name }
 
   before do
     TaskHelpers::ElasticsearchHelper.stub(:catchup_indices)
@@ -38,25 +41,17 @@ describe "search:catchup" do
   its(:prerequisites) { should include("environment") }
 
   it "calls catchup with defaults" do
-    TaskHelpers::ElasticsearchHelper.should_receive(:catchup_indices).with(
-        TaskHelpers::ElasticsearchHelper::INDEX_NAMES, anything, 500
-    ) do |start_time_arg|
-      start_time_arg.should be_within(1.second).of Time.now
-    end
+    TaskHelpers::ElasticsearchHelper.should_receive(:catchup_indices).with(indices, anything, 500)
 
-    subject.invoke
+    subject.invoke(comments_index_name, comment_threads_index_name)
   end
 
   it "calls catchup with arguments" do
     # Rake calls receive arguments as strings.
     minutes = '2'
     batch_size = '100'
-    TaskHelpers::ElasticsearchHelper.should_receive(:catchup_indices).with(
-        TaskHelpers::ElasticsearchHelper::INDEX_NAMES, anything, batch_size.to_i
-    ) do |start_time_arg|
-      start_time_arg.should be_within((60 * minutes.to_i + 1).second).of Time.now
-    end
+    TaskHelpers::ElasticsearchHelper.should_receive(:catchup_indices).with(indices, anything, batch_size.to_i)
 
-    subject.invoke(minutes, batch_size)
+    subject.invoke(comments_index_name, comment_threads_index_name, minutes, batch_size)
   end
 end
