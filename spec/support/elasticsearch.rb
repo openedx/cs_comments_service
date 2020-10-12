@@ -34,11 +34,11 @@ RSpec.configure do |config|
 
   config.before(:each) do
     # Create the index before each test if it doesn't exist.
-    TaskHelpers::ElasticsearchHelper.initialize_indices
+    TaskHelpers::ElasticsearchHelper.initialize_indices(true)
   end
 
-  config.after(:suite) do
-    TaskHelpers::ElasticsearchHelper.delete_indices
+  config.after(:each) do
+    Elasticsearch::Model.client.indices.delete(index: "_all", ignore_unavailable: true)
   end
 
 end
