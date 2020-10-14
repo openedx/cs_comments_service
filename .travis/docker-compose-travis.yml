@@ -3,8 +3,15 @@ version: "2"
 
 services:
   elasticsearch:
-    image: elasticsearch:1.5.2
+    image: elasticsearch:7.8.0
     container_name: "es.edx"
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - data01:/usr/share/elasticsearch/data
+      - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
   mongo:
     image: mongo:3.2.21
     container_name: "mongo.edx"
@@ -15,6 +22,7 @@ services:
       - ..:/edx/app/forum/cs_comments_service
     environment:
       MONGOID_AUTH_MECH: ""
+      SEARCH_SERVER_ES7: "http://elasticsearch:9200"
   forum:
     extends: forum-base
     command: tail -f /dev/null
@@ -27,3 +35,6 @@ services:
     depends_on:
       - "elasticsearch"
       - "mongo"
+
+volumes:
+  data01:

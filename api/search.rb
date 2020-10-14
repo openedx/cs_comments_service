@@ -1,62 +1,63 @@
 def get_thread_ids(context, group_ids, local_params, search_text)
-  filters = []
-  filters.push({term: {commentable_id: local_params['commentable_id']}}) if local_params['commentable_id']
-  filters.push({terms: {commentable_id: local_params['commentable_ids'].split(',')}}) if local_params['commentable_ids']
-  filters.push({term: {course_id: local_params['course_id']}}) if local_params['course_id']
+  must = []
+  filter = []
+  must.push({term: {commentable_id: local_params['commentable_id']}}) if local_params['commentable_id']
+  must.push({terms: {commentable_id: local_params['commentable_ids'].split(',')}}) if local_params['commentable_ids']
+  must.push({term: {course_id: local_params['course_id']}}) if local_params['course_id']
+  must.push(
+    {
+      multi_match: {
+        query: search_text,
+        fields: [:title, :body],
+        operator: :AND
+      }
+    }
+  )
+  group_id = local_params['group_id']
 
-  filters.push({or: [
-      {not: {exists: {field: :context}}},
-      {term: {context: context}}
-  ]})
+  if group_id
+    filter.push(
+        {:bool => {:must_not => {:exists => {:field => :group_id}}}},
+        {:term => {:group_id => group_id}}
+    )
+  end
+
+  filter.push(
+      {:bool => {:must_not => {:exists => {:field => :context}}}},
+      {:term => {:context => context}}
+  )
 
   unless group_ids.empty?
-    filters.push(
-        {
-            bool: {
-                should: [
-                    {:not => {:exists => {:field => :group_id}}},
-                    {:terms => {:group_id => group_ids}}
-                ]
-            }
-        }
+    filter.push(
+        {:bool => {:must_not => {:exists => {:field => :group_id}}}},
+        {:terms => {:group_id => group_ids}}
     )
   end
 
   body = {
-      size: CommentService.config['max_deep_search_comment_count'].to_i,
-      sort: [
-          {updated_at: :desc}
-      ],
-      query: {
-          filtered: {
-              query: {
-                  multi_match: {
-                      query: search_text,
-                      fields: [:title, :body],
-                      operator: :AND
-                  }
-              },
-              filter: {
-                  bool: {
-                      must: filters
-                  }
-              }
-          }
+    size: CommentService.config['max_deep_search_comment_count'].to_i,
+    sort: [
+      {updated_at: :desc}
+    ],
+    query: {
+      bool: {
+        must: must,
+        should: filter
       }
+    }
   }
 
-  response = Elasticsearch::Model.client.search(index: Content::ES_INDEX_NAME, body: body)
+  response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES, body: body)
 
   thread_ids = Set.new
   response['hits']['hits'].each do |hit|
-    case hit['_type']
-      when CommentThread.document_type
-        thread_ids.add(hit['_id'])
-      when Comment.document_type
-        thread_ids.add(hit['_source']['comment_thread_id'])
-      else
-        # There shouldn't be any other document types. Nevertheless, ignore them, if they are present.
-        next
+    if hit['_index'].include? CommentThread.index_name
+      thread_ids.add(hit['_id'])
+    elsif hit['_index'].include? Comment.index_name
+      thread_ids.add(hit['_source']['comment_thread_id'])
+    else
+      # There shouldn't be any other indices. Nevertheless, ignore them, if they are present.
+      next
     end
   end
   thread_ids
@@ -64,19 +65,30 @@ end
 
 def get_suggested_text(search_text)
   body = {
-      suggestions: {
-          text: search_text,
-          phrase: {
-              field: :_all
-          }
+    suggest: {
+      body_suggestions: {
+        text: search_text,
+        phrase: {
+          field: :body
+        }
+      },
+      title_suggestions: {
+        text: search_text,
+        phrase: {
+          field: :title
+        }
       }
+    }
   }
-  response = Elasticsearch::Model.client.suggest(index: Content::ES_INDEX_NAME, body: body)
-  suggestions = response.fetch('suggestions', [])
-  if suggestions.length > 0
-    options = suggestions[0]['options']
-    if options.length > 0
-      return options[0]['text']
+
+  response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES, body: body)
+  body_suggestions = response['suggest'].fetch('body_suggestions', [])
+  title_suggestions = response['suggest'].fetch('title_suggestions', [])
+
+  [body_suggestions, title_suggestions].each do |suggestion|
+    if suggestion.length > 0
+      options = suggestion[0]['options']
+      return options[0]['text'] if options.length > 0
     end
   end
 

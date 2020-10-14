@@ -2,9 +2,6 @@ class Content
   include Mongoid::Document
   include Mongo::Voteable
 
-  ES_INDEX_NAME = 'content'
-
-
   field :visible, type: Boolean, default: true
   field :abuse_flaggers, type: Array, default: []
   field :historical_abuse_flaggers, type: Array, default: [] #preserve abuse flaggers after a moderator unflags

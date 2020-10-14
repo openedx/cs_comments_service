@@ -13,7 +13,7 @@ describe UnicornHelpers do
     end
 
     it "exits when index is invalid" do
-      TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
+      TaskHelpers::ElasticsearchHelper.delete_indices
       # code 101 is special code recongnized by forum-supervisor.sh
       lambda{subject}.should exit_with_code(101)
     end

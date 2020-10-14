@@ -11,6 +11,7 @@ class CommentThread < Content
   include Mongoid::Timestamps
   include Mongoid::Attributes::Dynamic
   include ActiveModel::MassAssignmentSecurity
+  include Elasticsearch::Model
   include Searchable
   extend Enumerize
 
@@ -36,23 +37,27 @@ class CommentThread < Content
 
   index({author_id: 1, course_id: 1})
 
-  index_name Content::ES_INDEX_NAME
+  index_name = "comment_thread"
 
-  mapping do
-    indexes :title, type: :string, analyzer: :english, boost: 5.0, stored: true, term_vector: :with_positions_offsets
-    indexes :body, type: :string, analyzer: :english, stored: true, term_vector: :with_positions_offsets
-    indexes :created_at, type: :date, included_in_all: false
-    indexes :updated_at, type: :date, included_in_all: false
-    indexes :last_activity_at, type: :date, included_in_all: false
-    indexes :comment_count, type: :integer, included_in_all: false
-    indexes :votes_point, type: :integer, as: 'votes_point', included_in_all: false
-    indexes :context, type: :string, index: :not_analyzed, included_in_all: false
-    indexes :course_id, type: :string, index: :not_analyzed, included_in_all: false
-    indexes :commentable_id, type: :string, index: :not_analyzed, included_in_all: false
-    indexes :author_id, type: :string, as: 'author_id', index: :not_analyzed, included_in_all: false
-    indexes :group_id, type: :integer, as: 'group_id', index: :not_analyzed, included_in_all: false
-    indexes :id, :index => :not_analyzed
-    indexes :thread_id, :analyzer => :keyword, :as => '_id'
+  mapping dynamic: 'false' do
+    indexes :title, type: :text, boost: 5.0, store: true, term_vector: :with_positions_offsets
+    indexes :body, type: :text, store: true, term_vector: :with_positions_offsets
+    indexes :created_at, type: :date
+    indexes :updated_at, type: :date
+    indexes :last_activity_at, type: :date
+    indexes :comment_count, type: :integer
+    indexes :votes_point, type: :integer
+    indexes :context, type: :keyword
+    indexes :course_id, type: :keyword
+    indexes :commentable_id, type: :keyword
+    indexes :author_id, type: :keyword
+    indexes :group_id, type: :integer
+    indexes :id, type: :keyword
+    indexes :thread_id, type: :keyword
+  end
+
+  def as_indexed_json(options={})
+    as_json(except: [:thread_id, :_id])
   end
 
   belongs_to :author, class_name: 'User', inverse_of: :comment_threads, index: true

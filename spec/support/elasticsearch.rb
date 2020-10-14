@@ -1,10 +1,5 @@
 require 'task_helpers'
 
-def refresh_es_index(index_name=nil)
-  index_name = index_name ? index_name : Content::ES_INDEX_NAME
-  TaskHelpers::ElasticsearchHelper.refresh_index(index_name)
-end
-
 
 RSpec.shared_context 'search_enabled' do
 
@@ -13,12 +8,12 @@ RSpec.shared_context 'search_enabled' do
 
     # Delete any previously created index to ensure our search tests start
     # with a clean slate. Each test will recreate the index.
-    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
+    TaskHelpers::ElasticsearchHelper.delete_indices
   end
 
   after(:each) do
     # Delete the index after each test so it will be re-created.
-    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
+    TaskHelpers::ElasticsearchHelper.delete_indices
   end
 
   after(:all) do
@@ -26,7 +21,7 @@ RSpec.shared_context 'search_enabled' do
     CommentService.config[:enable_search] = false
 
     # Ensure (once more) the index was deleted.
-    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
+    TaskHelpers::ElasticsearchHelper.delete_indices
   end
 
 end
@@ -39,14 +34,11 @@ RSpec.configure do |config|
 
   config.before(:each) do
     # Create the index before each test if it doesn't exist.
-    if not TaskHelpers::ElasticsearchHelper.exists_alias(Content::ES_INDEX_NAME)
-      test_index = TaskHelpers::ElasticsearchHelper.create_index
-      TaskHelpers::ElasticsearchHelper.move_alias(Content::ES_INDEX_NAME, test_index)
-    end
+    TaskHelpers::ElasticsearchHelper.initialize_indices(true)
   end
 
-  config.after(:suite) do
-    TaskHelpers::ElasticsearchHelper.delete_index(Content::ES_INDEX_NAME)
+  config.after(:each) do
+    Elasticsearch::Model.client.indices.delete(index: "_all", ignore_unavailable: true)
   end
 
 end
