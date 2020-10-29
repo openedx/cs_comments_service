@@ -9,7 +9,7 @@ begin
 
   RSpec::Core::RakeTask.new(:spec)
 
-  task :default => :spec
+  # No default included because a previous default would delete the database.
 rescue LoadError
   # no rspec available
 end
