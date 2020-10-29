@@ -9,7 +9,7 @@ begin
 
   RSpec::Core::RakeTask.new(:spec)
 
-  # No default included because a previous default would delete the database.
+  # No default included because by default, running rspec/tests clears the database, which is bad on production.
 rescue LoadError
   # no rspec available
 end
