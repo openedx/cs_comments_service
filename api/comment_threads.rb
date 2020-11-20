@@ -1,6 +1,10 @@
 
 get "#{APIPREFIX}/threads" do # retrieve threads by course
+  # "sort_key" parameter will change order of threads returned and so may not always return in order
+  # of most comments to least number of comments.
 
+  # Note also that sorting sorts the pinned threads first and is not handled by elasticsearch but rather as a
+  # part of the mongo query done once the thread IDs have been retrieved from ES.
   threads = CommentThread.where({"course_id" => params["course_id"]})
   if params[:commentable_ids]
     threads = threads.in({"commentable_id" => params[:commentable_ids].split(",")})
