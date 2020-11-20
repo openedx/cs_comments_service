@@ -19,6 +19,14 @@ get "#{APIPREFIX}/users/:user_id" do |user_id|
   end
 end
 
+get "#{APIPREFIX}/users/:user_id/content_exists" do |user_id|
+  begin
+    Content.where(author_id: user_id).exists?.to_json
+  rescue Mongoid::Errors::DocumentNotFound
+    error 404
+  end
+end
+
 get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
   return {}.to_json if not params["course_id"]
 
