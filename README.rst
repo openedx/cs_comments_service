@@ -4,8 +4,8 @@ __ http://code.edx.org/
 
 edX Comments Service/Forums   |Travis|_ |Codecov|_
 ==================================================
-.. |Travis| image:: https://travis-ci.org/edx/cs_comments_service.svg?branch=master
-.. _Travis: https://travis-ci.org/edx/cs_comments_service
+.. |Travis| image:: https://travis-ci.com/edx/cs_comments_service.svg?branch=master
+.. _Travis: https://travis-ci.com/edx/cs_comments_service
 
 .. |Codecov| image:: http://codecov.io/github/edx/cs_comments_service/coverage.svg?branch=master
 .. _Codecov: http://codecov.io/github/edx/cs_comments_service?branch=master
