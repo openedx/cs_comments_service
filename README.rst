@@ -99,7 +99,7 @@ __ http://rspec.info/
 
 
 Running Tests with Docker
----------------------
+-------------------------
 You can also use docker-compose to run your tests as follows (assuming you have
 docker-compose installed):
 
@@ -107,6 +107,30 @@ docker-compose installed):
 
     $ docker-compose -f .travis/docker-compose-travis.yml run --rm test-forum
 
+To debug the tests using docker-compose, first start up the containers:
+
+.. code-block::
+
+    $ # Note: Ignore errors creating forum_testing container after it was already started
+    $ docker-compose -f .travis/docker-compose-travis.yml up
+
+Next, shell into the container:
+
+.. code-block::
+
+    $ docker exec -it forum_testing bash
+
+Finally, from inside the container, start the tests:
+
+.. code-block::
+
+    $ cd /edx/app/forum/cs_comments_service/
+    $ .travis/run_tests.sh
+
+Tips:
+
+* After running for the first time, you can speed up ``run_tests.sh`` by commenting out ``bundle install`` and ``sleep 10``, which is only needed the first time.
+* Add ``binding.pry`` in code anywhere you want a breakpoint to start debugging.
 
 Internationalization (i18n) and Localization (l10n)
 ---------------------------------------------------
