@@ -139,6 +139,7 @@ end
 
 
 # these files must be required in order
+require_relative 'mongoutil'
 require './api/search'
 require './api/commentables'
 require './api/comment_threads'
@@ -171,24 +172,8 @@ end
 
 CommentService.blocked_hashes = Content.mongo_client[:blocked_hash].find(nil, projection: {hash: 1}).map { |d| d["hash"] }
 
-def get_db_is_master
-  Mongoid::Clients.default.command(isMaster: 1)
-end
-
 def elasticsearch_health
   Elasticsearch::Model.client.cluster.health
-end
-
-
-def is_mongo_available?
-  begin
-    response = get_db_is_master
-    return response.ok? && (response.documents.first['ismaster'] == true)
-  rescue
-    # ignored
-  end
-
-  false
 end
 
 def is_elasticsearch_available?
@@ -209,6 +194,7 @@ rescue NameError
 end
 
 get '/heartbeat' do
+  reconnect_mongo_primary
   error 500, JSON.generate({OK: false, check: :db}) unless is_mongo_available?
   error 500, JSON.generate({OK: false, check: :es}) unless is_elasticsearch_available?
   JSON.generate({OK: true})

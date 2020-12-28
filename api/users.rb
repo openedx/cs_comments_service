@@ -1,3 +1,5 @@
+require_relative '../mongoutil'
+
 post "#{APIPREFIX}/users" do
   user = User.new(external_id: params["id"])
   user.username = params["username"]
@@ -64,6 +66,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
 end
 
 put "#{APIPREFIX}/users/:user_id" do |user_id|
+  reconnect_mongo_primary
   user = User.find_or_create_by(external_id: user_id)
   user.update_attributes(params.slice(*%w[username default_sort_key]))
   if user.errors.any?
