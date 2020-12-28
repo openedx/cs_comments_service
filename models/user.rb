@@ -1,5 +1,7 @@
 require 'logger'
+
 require_relative 'constants'
+require_relative '../mongoutil'
 
 class User
   include Mongoid::Document
@@ -128,6 +130,7 @@ class User
     if source._id == self._id and source.class == self.class
       raise ArgumentError, "Cannot follow oneself"
     else
+      reconnect_mongo_primary
       Subscription.find_or_create_by(subscriber_id: self._id.to_s, source_id: source._id.to_s, source_type: source.class.to_s)
     end
   end
@@ -233,6 +236,7 @@ class User
 
 
   def mark_as_read(thread)
+    reconnect_mongo_primary
     read_state = read_states.find_or_create_by(course_id: thread.course_id)
     read_state.last_read_times[thread.id.to_s] = Time.now.utc
     read_state.save
