@@ -53,7 +53,11 @@ describe 'app' do
         result = double('result')
         result.stub(:ok?).and_return(response['ok'] == 1)
         result.stub(:documents).and_return([response])
-        db.should_receive(:command).with({:isMaster => 1}).and_return(result)
+        db.stub(:close).and_return(true)
+        db.stub(:reconnect).and_return(true)
+        db.stub(:options).and_return({read: {mode: :primary}})
+        # should be checked twice, because it will retry
+        db.should_receive(:command).with({:isMaster => 1}).twice.and_return(result)
 
         body = parse(subject.body)
         if is_success
@@ -84,7 +88,10 @@ describe 'app' do
       it 'reports failure when db command raises an error' do
         db = double('db')
         stub_const('Mongoid::Clients', Class.new).stub(:default).and_return(db)
-        db.should_receive(:command).with({:isMaster => 1}).and_raise(StandardError)
+        db.stub(:close).and_return(true)
+        db.stub(:reconnect).and_return(true)
+        # should be checked twice, because it will retry
+        db.should_receive(:command).with({:isMaster => 1}).twice.and_raise(StandardError)
 
         expect(subject.status).to eq 500
         expect(parse(subject.body)).to eq({'OK' => false, 'check' => 'db'})
