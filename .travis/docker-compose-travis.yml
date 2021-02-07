@@ -15,6 +15,9 @@ services:
   mongo:
     image: mongo:3.2.21
     container_name: "mongo.edx"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: supersecurepassword
   forum-base:
     image: edxops/forum:ruby257 # TODO: switch back to latest after configuration release
     container_name: forum_testing
@@ -35,6 +38,8 @@ services:
     depends_on:
       - "elasticsearch"
       - "mongo"
+    environment:
+      MONGOID_AUTH_SOURCE: admin
 
 volumes:
   data01:
