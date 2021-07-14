@@ -17,6 +17,23 @@ module ThreadUtils
     endorsed_threads
   end
 
+  def self.get_abuse_flagged_count(threads)
+    # returns a count of flagged threads for all comments within the thread
+    # only threads with at least one flag are returned
+    flagged_threads = {}
+    thread_ids = threads.collect {|t| t._id}
+    Comment.collection.aggregate([
+      {"$match" => {
+        "comment_thread_id" => {"$in" => thread_ids},
+        "abuse_flaggers"=> {"$ne"=> []},
+      }},
+      {"$group" => {"_id" => "$comment_thread_id", "flagged" => { "$sum" => 1}} }
+    ]).each do |res|
+      flagged_threads[res["_id"].to_s] = res["flagged"]
+    end
+    flagged_threads
+  end
+
   def self.get_read_states(threads, user, course_id)
     # returns sparse hash {thread_key => [is_read, unread_comment_count], ...}
     read_states = {}

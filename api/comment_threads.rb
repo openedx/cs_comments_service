@@ -15,9 +15,12 @@ get "#{APIPREFIX}/threads" do # retrieve threads by course
     params["user_id"],
     params["course_id"],
     get_group_ids_from_params(params),
+    params["author_id"],
+    params["thread_type"],
     value_to_boolean(params["flagged"]),
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),
+    value_to_boolean(params["count_flagged"]),
     params["sort_key"],
     params["page"],
     params["per_page"]
