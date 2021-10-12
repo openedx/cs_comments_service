@@ -27,6 +27,32 @@ get "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   ).to_json
 end
 
+get "#{APIPREFIX}/commentables/:course_id/counts" do |course_id|
+  commentable_counts = {}
+  Content.collection.aggregate(
+    [
+      # Match all threads in the course
+      { "$match" => { :course_id => course_id, :_type => "CommentThread" } },
+      # Group all the threads in the course by the type of thread and the topic of the thread
+      # (represented by commentable_id) and keep a count of each
+      {
+        "$group" => {
+          :_id => { :topic_id => "$commentable_id", :type => "$thread_type" },
+          :count => { "$sum" => 1 },
+        }
+      }
+    ]).each do |commentable|
+    # The data returned by mongo is structured as rows mapping a topic id and thread type pair with a count
+    # here we convert that to a map of topic id to thread counts of each type.
+    topic_id = commentable[:_id][:topic_id]
+    unless commentable_counts.has_key? topic_id
+      commentable_counts[topic_id] = { :discussion => 0, :question => 0 }
+    end
+    commentable_counts[topic_id].merge! commentable[:_id][:type] => commentable["count"]
+  end
+  commentable_counts.to_json
+end
+
 post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   filter_blocked_content params["body"]
   thread = CommentThread.new(params.slice(*%w[title body course_id ]).merge(commentable_id: commentable_id))
