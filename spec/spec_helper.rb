@@ -171,48 +171,48 @@ def check_thread_result(user, thread, hash, is_json=false)
   expected_keys += %w(comments_count unread_comments_count read endorsed last_activity_at)
   # these keys are checked separately, when desired, using check_thread_response_paging.
   actual_keys = hash.keys - [
-      "children", "endorsed_responses", "non_endorsed_responses", "resp_skip",
-      "resp_limit", "resp_total", "non_endorsed_resp_total"
+    "children", "endorsed_responses", "non_endorsed_responses", "resp_skip",
+    "resp_limit", "resp_total", "non_endorsed_resp_total"
   ]
-  actual_keys.sort.should == expected_keys.sort
+  expect(actual_keys.sort).to eq expected_keys.sort
 
-  hash["title"].should == thread.title
-  hash["body"].should == thread.body
-  hash["course_id"].should == thread.course_id
-  hash["anonymous"].should == thread.anonymous
-  hash["anonymous_to_peers"].should == thread.anonymous_to_peers
-  hash["commentable_id"].should == thread.commentable_id
-  hash["at_position_list"].should == thread.at_position_list
-  hash["closed"].should == thread.closed
-  hash["user_id"].should == thread.author.id
-  hash["username"].should == thread.author.username
-  hash["votes"]["point"].should == thread.votes["point"]
-  hash["votes"]["count"].should == thread.votes["count"]
-  hash["votes"]["up_count"].should == thread.votes["up_count"]
-  hash["votes"]["down_count"].should == thread.votes["down_count"]
-  hash["abuse_flaggers"].should == thread.abuse_flaggers
-  hash["tags"].should == []
-  hash["type"].should == "thread"
-  hash["group_id"].should == thread.group_id
-  hash["pinned"].should == thread.pinned?
-  hash["endorsed"].should == thread.endorsed?
-  hash["comments_count"].should == thread.comments.length
+  expect(hash["title"]).to eq thread.title
+  expect(hash["body"]).to eq thread.body
+  expect(hash["course_id"]).to eq thread.course_id
+  expect(hash["anonymous"]).to eq thread.anonymous
+  expect(hash["anonymous_to_peers"]).to eq thread.anonymous_to_peers
+  expect(hash["commentable_id"]).to eq thread.commentable_id
+  expect(hash["at_position_list"]).to eq thread.at_position_list
+  expect(hash["closed"]).to eq thread.closed
+  expect(hash["user_id"]).to eq thread.author.id
+  expect(hash["username"]).to eq thread.author.username
+  expect(hash["votes"]["point"]).to eq thread.votes["point"]
+  expect(hash["votes"]["count"]).to eq thread.votes["count"]
+  expect(hash["votes"]["up_count"]).to eq thread.votes["up_count"]
+  expect(hash["votes"]["down_count"]).to eq thread.votes["down_count"]
+  expect(hash["abuse_flaggers"]).to eq thread.abuse_flaggers
+  expect(hash["tags"]).to eq []
+  expect(hash["type"]).to eq "thread"
+  expect(hash["group_id"]).to eq thread.group_id
+  expect(hash["pinned"]).to eq thread.pinned?
+  expect(hash["endorsed"]).to eq thread.endorsed?
+  expect(hash["comments_count"]).to eq thread.comments.length
   hash["context"] = thread.context
 
   if is_json
-    hash["id"].should == thread._id.to_s
-    hash["created_at"].should == thread.created_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    hash["updated_at"].should == thread.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    hash["last_activity_at"].should == thread.last_activity_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    expect(hash["id"]).to eq thread._id.to_s
+    expect(hash["created_at"]).to eq thread.created_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    expect(hash["updated_at"]).to eq thread.updated_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    expect(hash["last_activity_at"]).to eq thread.last_activity_at.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
   else
-    hash["created_at"].should == thread.created_at
-    hash["updated_at"].should == thread.updated_at
-    hash["last_activity_at"].should == thread.last_activity_at
+    expect(hash["created_at"]).to eq thread.created_at
+    expect(hash["updated_at"]).to eq thread.updated_at
+    expect(hash["last_activity_at"]).to eq thread.last_activity_at
   end
 
   if user.nil?
-    hash["unread_comments_count"].should == thread.comments.length
-    hash["read"].should == false
+    expect(hash["unread_comments_count"]).to eq thread.comments.length
+    expect(hash["read"]).to eq false
   else
     expected_unread_cnt = thread.comments.length # initially assume nothing has been read
     read_states = user.read_states.where(course_id: thread.course_id).to_a
@@ -224,12 +224,12 @@ def check_thread_result(user, thread, hash, is_json=false)
             expected_unread_cnt -= 1
           end
         end
-        hash["read"].should == (read_date >= thread.last_activity_at)
+        expect(hash["read"]).to eq(read_date >= thread.last_activity_at)
       else
-        hash["read"].should == false
+        expect(hash["read"]).to eq false
       end
     end
-    hash["unread_comments_count"].should == expected_unread_cnt
+    expect(hash["unread_comments_count"]).to eq expected_unread_cnt
   end
 end
 
@@ -252,17 +252,17 @@ def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_j
   end
 end
 
-def check_comment(comment, hash, is_json, recursive=false)
-  hash["id"].should == (is_json ? comment.id.to_s : comment.id) # Convert from ObjectId if necessary
-  hash["body"].should == comment.body
-  hash["user_id"].should == comment.author_id
-  hash["username"].should == comment.author_username
-  hash["endorsed"].should == comment.endorsed
-  hash["endorsement"].should == comment.endorsement
-  children = Comment.where({"parent_id" => comment.id}).sort({"sk" => 1}).to_a
-  hash["child_count"].should == children.length
+def check_comment(comment, hash, is_json, recursive = false)
+  expect(hash["id"]).to eq(is_json ? comment.id.to_s : comment.id) # Convert from ObjectId if necessary
+  expect(hash["body"]).to eq comment.body
+  expect(hash["user_id"]).to eq comment.author_id
+  expect(hash["username"]).to eq comment.author_username
+  expect(hash["endorsed"]).to eq comment.endorsed
+  expect(hash["endorsement"]).to eq comment.endorsement
+  children = Comment.where({ "parent_id" => comment.id }).sort({ "sk" => 1 }).to_a
+  expect(hash["child_count"]).to eq children.length
   if recursive
-    hash["children"].length.should == children.length
+    expect(hash["children"].length).to eq children.length
     hash["children"].each_with_index do |child_hash, i|
       check_comment(children[i], child_hash, is_json)
     end
@@ -277,24 +277,24 @@ def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, 
 
   all_responses = thread.root_comments.sort({"sk" => 1}).to_a
   total_responses = all_responses.length
-  hash["resp_total"].should == total_responses
+  expect(hash["resp_total"]).to eq total_responses
   expected_responses = resp_limit.nil? ?
-      all_responses.drop(resp_skip) :
-      all_responses.drop(resp_skip).take(resp_limit)
-  hash["children"].length.should == expected_responses.length
+                         all_responses.drop(resp_skip) :
+                         all_responses.drop(resp_skip).take(resp_limit)
+  expect(hash["children"].length).to eq expected_responses.length
 
   hash["children"].each_with_index do |response_hash, i|
     check_comment(expected_responses[i], response_hash, is_json, recursive)
   end
-  hash["resp_skip"].to_i.should == resp_skip
-  hash["resp_limit"].to_i.should == resp_limit
+  expect(hash["resp_skip"].to_i).to eq resp_skip
+  expect(hash["resp_limit"].to_i).to eq resp_limit
 end
 
 def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
   all_responses = thread.root_comments.sort({"sk" => 1}).to_a
   endorsed_responses, non_endorsed_responses = all_responses.partition { |resp| resp.endorsed }
 
-  hash["endorsed_responses"].length.should == endorsed_responses.length
+  expect(hash["endorsed_responses"].length).to eq endorsed_responses.length
   hash["endorsed_responses"].each_with_index do |response_hash, i|
     check_comment(endorsed_responses[i], response_hash, is_json, recursive)
   end
@@ -303,18 +303,18 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
   expected_non_endorsed_responses = resp_limit.nil? ?
       non_endorsed_responses.drop(resp_skip) :
       non_endorsed_responses.drop(resp_skip).take(resp_limit)
-  hash["non_endorsed_responses"].length.should == expected_non_endorsed_responses.length
+  expect(hash["non_endorsed_responses"].length).to eq expected_non_endorsed_responses.length
   hash["non_endorsed_responses"].each_with_index do |response_hash, i|
     check_comment(expected_non_endorsed_responses[i], response_hash, is_json, recursive)
   end
   total_responses = endorsed_responses.length + non_endorsed_responses.length
-  hash["resp_total"].should == total_responses
+  expect(hash["resp_total"]).to eq total_responses
 
-  hash["resp_skip"].to_i.should == resp_skip
+  expect(hash["resp_skip"].to_i).to eq resp_skip
   if resp_limit.nil?
-    hash["resp_limit"].should be_nil
+    expect(hash["resp_limit"]).to be_nil
   else
-    hash["resp_limit"].to_i.should == resp_limit
+    expect(hash["resp_limit"].to_i).to eq resp_limit
   end
 end
 
@@ -419,7 +419,7 @@ end
 def test_thread_marked_as_read(thread_id, user_id)
   # get thread to assert its "read" status
   get "/api/v1/threads/#{thread_id}", user_id: user_id
-  last_response.should be_ok
+  expect(last_response).to be_ok
   retrieved_thread = parse last_response.body
-  retrieved_thread["read"].should == true
+  expect(retrieved_thread["read"]).to eq true
 end
