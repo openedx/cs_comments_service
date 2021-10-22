@@ -228,4 +228,96 @@ describe 'Comment API' do
       parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
     end
   end
+
+
+  describe "GET /api/v1/comments" do
+    before(:each) { setup_comments }
+
+    it "doesn't allow retrieving all comments" do
+      get "/api/v1/comments"
+      last_response.should_not be_ok
+    end
+
+    let(:user) { User.first }
+
+    it "does not allow filtering only by user" do
+      get "/api/v1/comments", user_id: user.id
+      last_response.should_not be_ok
+    end
+
+    it "does not allow filtering only by course" do
+      get "/api/v1/comments", course_id: "abc"
+      last_response.should_not be_ok
+    end
+
+    it "allows filtering by course and user" do
+      get "/api/v1/comments", user_id: user.id, course_id: "abc"
+      last_response.should be_ok
+      parsed = parse last_response.body
+      parsed["comment_count"].should == 25
+      for item in parsed["collection"]
+        item["username"].should == user.username
+        item["course_id"].should == "abc"
+      end
+    end
+
+    it "allows filtering by flagged status" do
+      get "/api/v1/comments", user_id: user.id, course_id: "abc", flagged: true
+      last_response.should be_ok
+      parsed = parse last_response.body
+      parsed["comment_count"].should == 5
+      for item in parsed["collection"]
+        item["abuse_flaggers"].should_not be_empty
+      end
+    end
+
+    it "paginates the comments with default values" do
+      get "/api/v1/comments", user_id: user.id, course_id: "abc"
+      parsed = parse last_response.body
+      parsed["page"].should == 1
+      parsed["collection"].length.should == DEFAULT_PER_PAGE
+      parsed["num_pages"].should == (25 / DEFAULT_PER_PAGE.to_f).ceil
+    end
+
+    it "allows specifying a page size" do
+      get "/api/v1/comments", user_id: user.id, course_id: "abc", per_page: 5
+      last_response.should be_ok
+      parsed = parse last_response.body
+      parsed["collection"].length.should == 5
+      parsed["num_pages"].should == 5
+    end
+
+    it "allows specifying a page number" do
+      get "/api/v1/comments", user_id: user.id, course_id: "abc", page: 2
+      parsed = parse last_response.body
+      parsed["page"].should == 2
+    end
+
+    it "handles the end of pagination correctly" do
+      get "/api/v1/comments", user_id: user.id, course_id: "abc", page: 2
+      parsed = parse last_response.body
+      parsed["collection"].length.should == 5
+    end
+
+    it "returns the correct items for each page" do
+      get "/api/v1/comments", user_id: user.id, course_id: "abc", per_page: 25
+      all_items = parse last_response.body
+
+      get "/api/v1/comments", user_id: user.id, course_id: "abc", page: 1
+      page_1 = parse last_response.body
+
+      get "/api/v1/comments", user_id: user.id, course_id: "abc", page: 2
+      page_2 = parse last_response.body
+
+      get "/api/v1/comments", user_id: user.id, course_id: "abc", page: 3
+      page_3 = parse last_response.body
+
+
+      all_items["collection"].should == (
+        page_1["collection"] +
+        page_2["collection"] +
+        page_3["collection"]
+      )
+    end
+  end
 end

@@ -362,7 +362,7 @@ end
 # add standalone threads and comments to the @threads and @comments hashes
 # using the namespace "standalone t#{index}" for threads and "standalone t#{index} c#{i}" for comments
 # takes an index param if used within an iterator, otherwise will namespace using 0 for thread index
-# AKA this will overwrite "standalone t0" each time it is called. 
+# AKA this will overwrite "standalone t0" each time it is called.
 def make_standalone_thread_with_comments(author, index=0)
   thread = make_thread(
       author,
@@ -400,6 +400,39 @@ def setup_10_threads
     end
   end
   @default_order = 10.times.map { |i| "t#{i}" }.reverse
+end
+
+def setup_comments
+  User.all.delete
+  Content.all.delete
+
+  # create 2 courses
+  courses = ["abc", "def"]
+
+  # create 2 users
+  users = 2.times.map { |i| create_test_user(i+100) }
+
+  # create a thread author
+  author = create_test_user(99)
+
+  for course in courses
+    # create 5 threads per course
+    5.times do |i|
+      thread = make_thread(author, "#{course} t#{i}", course, "pdq")
+      # each user comments 5 times per thread
+      for user in users
+        # flag one random comment from each thread
+        flag = rand(5)
+        5.times do |j|
+          comment = make_comment(user, thread, "c#{course} t#{i} u#{user.id} c#{j}")
+          if j == flag
+            comment.abuse_flaggers = [1]
+            comment.save!
+          end
+        end
+      end
+    end
+  end
 end
 
 # Creates a CommentThread with a Comment, and nested child Comment.

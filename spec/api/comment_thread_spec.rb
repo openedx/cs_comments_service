@@ -559,6 +559,20 @@ describe 'app' do
         end
       end
 
+      context 'when filtering comments by flagged status' do
+        subject do
+          create(:comment, comment_thread: thread, abuse_flaggers: [1])
+          get "/api/v1/threads/#{thread.id}", flagged_comments: true
+        end
+
+        it 'returns only flagged comments' do
+          parsed = parse(subject.body)
+          for child in parsed["children"] do
+            expect(child["abuse_flaggers"]).not_to be_empty
+          end
+        end
+      end
+
       it 'returns 404 when the thread does not exist' do
         thread.destroy
         expect(subject.status).to eq 404
