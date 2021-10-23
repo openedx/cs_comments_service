@@ -11,6 +11,65 @@ post "#{APIPREFIX}/users" do
   end
 end
 
+get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
+  user_data = {}
+  data = Content.collection.aggregate(
+    [
+      # Match all content in the course
+      { "$match" => { :course_id => course_id } },
+      # Keep a count of flags for each entry
+      {
+        "$set" => {
+          # Just using $ne with null will return true if the field is absent
+          # So we first fall all absent fields to null, then check if it's null,
+          # that way we match for the absence of the field or value = null
+          :is_reply => { "$ne" => [{ "$ifNull" => ["$parent_id", nil] }, nil] }
+        }
+      },
+      {
+        "$group" => {
+          # Here we're grouping items by the type (comment or thread), and the user, and whether the comment is a reply.
+          # For threads is_reply will always be false.
+          :_id => { :type => "$_type", :author_id => "$author_id", :is_reply => "$is_reply" },
+          # This will just count each group, so we get a breakdown of how many comments and threads a user has created.
+          :count => { "$sum" => 1 },
+          # These two will sum up the active and inactive reports in each category
+          # i.e. reported threads, reported comments, reported replies
+          # The way this works is (starting from inside out), we take the size of the abuse_flaggers list, we compare
+          # it to 0 using $cmp. If it's greater than zero then $cmp results in 1 otherwise 0.
+          # So we're summing up 1 for each abuse_flagger array that has entries, and 0 for the rest. This gives us a
+          # count of
+          :active_flags => { "$sum" => { "$cmp" => [{ "$size" => "$abuse_flaggers" }, 0] } },
+          :inactive_flags => { "$sum" => { "$cmp" => [{ "$size" => "$historical_abuse_flaggers" }, 0] } },
+        }
+      }
+    ])
+  data.each do |counts|
+    type, author_id, is_reply = counts[:_id].values_at "type", "author_id", "is_reply"
+    count, active_flags, inactive_flags = counts.values_at "count", "active_flags", "inactive_flags"
+    unless user_data.has_key? author_id
+      user_data[author_id] = {
+        :author_id => author_id,
+        :active_flags => 0,
+        :inactive_flags => 0,
+        :threads => 0,
+        :responses => 0,
+        :replies => 0
+      }
+    end
+    if type == "Comment" and is_reply
+      user_data[author_id][:replies] = count
+    elsif type == "Comment" and not is_reply
+      user_data[author_id][:responses] = count
+    else
+      user_data[author_id][:threads] = count
+    end
+    user_data[author_id][:active_flags] += active_flags
+    user_data[author_id][:inactive_flags] += inactive_flags
+  end
+  user_data.to_json
+end
+
 get "#{APIPREFIX}/users/:user_id" do |user_id|
   begin
     # Get any group_ids that may have been specified (will be an empty list if none specified).
