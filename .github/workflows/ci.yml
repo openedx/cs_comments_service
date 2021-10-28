@@ -1,0 +1,27 @@
+name: RUBY CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install Ruby
+        uses: ruby/setup-ruby@477b21f02be01bcb8030d50f37cfec92bfa615b6
+        with:
+          ruby-version: 2.5
+
+      - name: Build the stack
+        run: docker-compose -f ./.github/docker-compose-ci.yml build test-forum
+
+      - name: Test
+        run: docker-compose -f ./.github/docker-compose-ci.yml run --rm test-forum
