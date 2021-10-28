@@ -2,10 +2,10 @@ Part of `edX code`__.
 
 __ http://code.edx.org/
 
-edX Comments Service/Forums   |Travis|_ |Codecov|_
+edX Comments Service/Forums   |Build|_ |Codecov|_
 ==================================================
-.. |Travis| image:: https://travis-ci.com/edx/cs_comments_service.svg?branch=master
-.. _Travis: https://travis-ci.com/edx/cs_comments_service
+.. |Build| image:: https://github.com/edx/cs_comments_service/workflows/RUBY%20CI/badge.svg?branch=master
+.. _Build: https://github.com/edx/cs_comments_service/actions?query=workflow%3A%22RUBY+CI%22
 
 .. |Codecov| image:: http://codecov.io/github/edx/cs_comments_service/coverage.svg?branch=master
 .. _Codecov: http://codecov.io/github/edx/cs_comments_service?branch=master
@@ -105,14 +105,14 @@ docker-compose installed):
 
 .. code-block::
 
-    $ docker-compose -f .travis/docker-compose-travis.yml run --rm test-forum
+    $ docker-compose -f .github/docker-compose-ci.yml run --rm test-forum
 
 To debug the tests using docker-compose, first start up the containers:
 
 .. code-block::
 
     $ # Note: Ignore errors creating forum_testing container after it was already started
-    $ docker-compose -f .travis/docker-compose-travis.yml up
+    $ docker-compose -f .github/docker-compose-ci.yml up
 
 Next, shell into the container:
 
@@ -125,7 +125,7 @@ Finally, from inside the container, start the tests:
 .. code-block::
 
     $ cd /edx/app/forum/cs_comments_service/
-    $ .travis/run_tests.sh
+    $ .github/run_tests.sh
 
 Tips:
 

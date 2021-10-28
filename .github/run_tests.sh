@@ -11,6 +11,6 @@ sleep 10
 
 # Use 'bin/rspec -fd' to print test names for debugging
 # Printing test names can be especially helpful for tracking down test
-# failure differences between Travis and Mac, because tests are loaded
+# failure differences between CI and Mac, because tests are loaded
 # and run in different orders.
 bin/rspec

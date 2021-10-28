@@ -1,4 +1,4 @@
-# This is only currently used by Travis for testing
+# This is only currently used by CI for testing
 version: "2"
 
 services:
@@ -31,7 +31,7 @@ services:
       - "mongo"
   test-forum:
     extends: forum-base
-    command: /edx/app/forum/cs_comments_service/.travis/run_tests.sh
+    command: /edx/app/forum/cs_comments_service/.github/run_tests.sh
     depends_on:
       - "elasticsearch"
       - "mongo"
