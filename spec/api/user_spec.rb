@@ -384,6 +384,56 @@ describe "app" do
 
       include_examples "unicode data"
     end
+    describe "GET /api/v1/users/:course_id/stats" do
+      def add_flags(content, expected_result)
+        # Add a random number of abuse flaggers (0 to 2) and historical abuse flaggers
+        content.abuse_flaggers = (1..Random.rand(3)).to_a
+        content.historical_abuse_flaggers = (1..Random.rand(2)).to_a
+        content.save!
+        # If any flaggers were added, increment the count of reports for the user
+        expected_result[content.author.external_id]["active_flags"] += (content.abuse_flaggers.length > 0) ? 1 : 0
+        expected_result[content.author.external_id]["inactive_flags"] += (content.historical_abuse_flaggers.length > 0) ? 1 : 0
+      end
+
+      it "returns user's stats" do
+        course_id = Faker::Lorem.word
+        authors = %w[author-1 author-2 author-3].map { |id| create_test_user(id) }
+        expected_result = Hash[authors.map { |author| [author.external_id, {
+          "author_id" => author.external_id,
+          "active_flags" => 0,
+          "inactive_flags" => 0,
+          "threads" => 0,
+          "responses" => 0,
+          "replies" => 0,
+        }] }]
+        # Create 10 random threads with random authors
+        (0..10).each do
+          thread_author = authors.sample
+          expected_result[thread_author.external_id]["threads"] += 1
+          thread = make_thread(thread_author, Faker::Lorem.sentence, course_id, Faker::Lorem.word)
+          add_flags(thread, expected_result)
+          # For each thread create 5 random comments with random authors
+          (0..5).each do
+            comment_author = authors.sample
+            expected_result[comment_author.external_id]["responses"] += 1
+            comment = make_comment(comment_author, thread, Faker::Lorem.sentence)
+            add_flags(comment, expected_result)
+            # For each comment create 3 random replies with random authors
+            (0..2).each do
+              reply_author = authors.sample
+              expected_result[reply_author.external_id]["replies"] += 1
+              reply = make_comment(reply_author, comment, Faker::Lorem.sentence)
+              add_flags(reply, expected_result)
+            end
+          end
+        end
+
+        get "/api/v1/users/#{course_id}/stats"
+        expect(last_response.status).to eq(200)
+        res = parse(last_response.body)
+        expect(res).to eq expected_result
+      end
+    end
 
     describe "POST /api/v1/users/:user_id/read" do
 

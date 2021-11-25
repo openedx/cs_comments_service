@@ -13,7 +13,7 @@ services:
       - data01:/usr/share/elasticsearch/data
       - ./elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
   mongo:
-    image: mongo:3.2.21
+    image: mongo:4.2.14
     container_name: "mongo.edx"
   forum-base:
     image: edxops/forum:ruby257 # TODO: switch back to latest after configuration release
