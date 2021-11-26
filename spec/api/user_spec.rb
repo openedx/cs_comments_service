@@ -400,6 +400,7 @@ describe "app" do
         authors = %w[author-1 author-2 author-3].map { |id| create_test_user(id) }
         expected_result = Hash[authors.map { |author| [author.external_id, {
           "author_id" => author.external_id,
+          "username" => author.username,
           "active_flags" => 0,
           "inactive_flags" => 0,
           "threads" => 0,
