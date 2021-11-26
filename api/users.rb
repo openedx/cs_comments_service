@@ -41,14 +41,16 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
           # count of
           :active_flags => { "$sum" => { "$cmp" => [{ "$size" => "$abuse_flaggers" }, 0] } },
           :inactive_flags => { "$sum" => { "$cmp" => [{ "$size" => "$historical_abuse_flaggers" }, 0] } },
+          :author_username => { "$last" => "$author_username"},
         }
       }
     ])
   data.each do |counts|
     type, author_id, is_reply = counts[:_id].values_at "type", "author_id", "is_reply"
-    count, active_flags, inactive_flags = counts.values_at "count", "active_flags", "inactive_flags"
+    author_username, count, active_flags, inactive_flags = counts.values_at "author_username", "count", "active_flags", "inactive_flags"
     unless user_data.has_key? author_id
       user_data[author_id] = {
+        :username => author_username,
         :author_id => author_id,
         :active_flags => 0,
         :inactive_flags => 0,
