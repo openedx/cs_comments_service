@@ -6,6 +6,7 @@ class Content
   field :abuse_flaggers, type: Array, default: []
   field :historical_abuse_flaggers, type: Array, default: [] #preserve abuse flaggers after a moderator unflags
   field :author_username, type: String, default: nil
+  field :edit_reason_code, type: String, default: nil  # string code that represents why a thread or comment was edited
 
   index({_type: 1, course_id: 1, pinned: -1, created_at: -1}, {background: true})
   index({_type: 1, course_id: 1, pinned: -1, comment_count: -1, created_at: -1}, {background: true})

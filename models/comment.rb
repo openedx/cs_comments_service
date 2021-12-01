@@ -18,6 +18,7 @@ class Comment < Content
 
   field :course_id, type: String
   field :body, type: String
+  field :previous_body, type: String, default: nil
   field :endorsed, type: Boolean, default: false
   field :endorsement, type: Hash
   field :anonymous, type: Boolean, default: false
@@ -52,9 +53,11 @@ class Comment < Content
   end
 
   belongs_to :comment_thread, index: true
-  belongs_to :author, class_name: 'User', index: true
+  belongs_to :author, class_name: 'User', inverse_of: :comments, index: true
+  belongs_to :edited_by, class_name: 'User', inverse_of: :comments_edited, optional: true
 
-  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement, :retired_username
+  attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement, :retired_username,
+                  :edit_reason_code, :edited_by, :previous_body
 
   validates_presence_of :comment_thread, autosave: false
   validates_presence_of :body
@@ -102,12 +105,13 @@ class Comment < Content
       self.class.hash_tree(subtree_hash).first
     else
       as_document
-        .slice(BODY, COURSE_ID, ENDORSED, ENDORSEMENT, ANONYMOUS, ANONYMOUS_TO_PEERS, CREATED_AT, UPDATED_AT, AT_POSITION_LIST)
+        .slice(BODY, COURSE_ID, ENDORSED, ENDORSEMENT, ANONYMOUS, ANONYMOUS_TO_PEERS, CREATED_AT, UPDATED_AT, AT_POSITION_LIST, EDIT_REASON_CODE, PREVIOUS_BODY)
         .merge!("id" => _id,
                 "user_id" => author_id,
                 "username" => author_username,
                 "depth" => depth,
                 "closed" => comment_thread.nil? ? false : comment_thread.closed,
+                "edited_by" => edited_by? ? edited_by.username : nil,
                 "thread_id" => comment_thread_id,
                 "parent_id" => parent_ids[-1],
                 "commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id,
