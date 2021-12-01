@@ -693,6 +693,24 @@ describe 'app' do
         comment = thread.comments.first
         comment.endorsed = true
         comment.save
+        put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question", user_id: User.first.id
+        expect(last_response).to be_ok
+        changed_thread = CommentThread.find(thread.id)
+        expect(changed_thread.body).to eq("new body")
+        expect(changed_thread.title).to eq("new title")
+        expect(changed_thread.commentable_id).to eq("new_commentable_id")
+        expect(changed_thread.thread_type).to eq("question")
+        comment.reload
+        expect(comment.endorsed).to eq(false)
+        expect(comment.endorsement).to eq(nil)
+        check_unread_thread_result_json(changed_thread, parse(last_response.body))
+      end
+
+      it "updates information of comment thread without a user id" do
+        thread = CommentThread.first
+        comment = thread.comments.first
+        comment.endorsed = true
+        comment.save
         put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question"
         expect(last_response).to be_ok
         changed_thread = CommentThread.find(thread.id)
@@ -705,6 +723,30 @@ describe 'app' do
         expect(comment.endorsement).to eq(nil)
         check_unread_thread_result_json(changed_thread, parse(last_response.body))
       end
+
+      it "update close reason for thread" do
+        thread = CommentThread.first
+        expect(thread.closed).to be false
+        put "/api/v1/threads/#{thread.id}", closed: true, user_id: User.first.id, close_reason_code: "test_code"
+        last_response.should be_ok
+        changed_thread = CommentThread.find(thread.id)
+        expect(changed_thread.closed).to eq true
+        expect(changed_thread.close_reason_code).to eq "test_code"
+        expect(changed_thread.closed_by).to eq User.first
+      end
+
+      it "closing and reopening thread clears reason code" do
+        thread = CommentThread.first
+        expect(thread.closed).to be false
+        put "/api/v1/threads/#{thread.id}", closed: true, user_id: User.first.id, close_reason_code: "test_code"
+        last_response.should be_ok
+        put "/api/v1/threads/#{thread.id}", closed: false, user_id: User.first.id
+        changed_thread = CommentThread.find(thread.id)
+        expect(changed_thread.closed).to be false
+        expect(changed_thread.close_reason_code).to be_nil
+        expect(changed_thread.closed_by).to be_nil
+      end
+
       it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
         expect(last_response.status).to eq(400)
@@ -713,11 +755,11 @@ describe 'app' do
       it "returns 503 and does not update if the post body has been blocked" do
         thread = CommentThread.first
         original_body = thread.body
-        put "/api/v1/threads/#{thread.id}", body: "BLOCKED POST", title: "new title", commentable_id: "new_commentable_id"
+        put "/api/v1/threads/#{thread.id}", body: "BLOCKED POST", title: "new title", commentable_id: "new_commentable_id", user_id: User.first.id
         expect(last_response.status).to eq(503)
         thread.reload
         expect(thread.body).to eq(original_body)
-        put "/api/v1/threads/#{thread.id}", body: "blocked,   post...", title: "new title", commentable_id: "new_commentable_id"
+        put "/api/v1/threads/#{thread.id}", body: "blocked,   post...", title: "new title", commentable_id: "new_commentable_id", user_id: User.first.id
         expect(last_response.status).to eq(503)
         thread.reload
         expect(thread.body).to eq(original_body)
@@ -725,7 +767,7 @@ describe 'app' do
 
       def test_unicode_data(text)
         thread = CommentThread.first
-        put "/api/v1/threads/#{thread.id}", body: text, title: text
+        put "/api/v1/threads/#{thread.id}", body: text, title: text, user_id: User.first.id
         expect(last_response).to be_ok
         thread = CommentThread.find(thread.id)
         expect(thread.body).to eq(text)
@@ -734,6 +776,7 @@ describe 'app' do
 
       include_examples "unicode data"
     end
+
     describe "POST /api/v1/threads/:thread_id/comments" do
 
       before(:each) { init_without_subscriptions }
