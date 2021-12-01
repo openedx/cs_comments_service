@@ -2,6 +2,7 @@ require 'logger'
 require_relative 'concerns/searchable'
 require_relative 'content'
 require_relative 'constants'
+require_relative 'edit_history'
 
 logger = Logger.new(STDOUT)
 logger.level = Logger::WARN
@@ -34,8 +35,9 @@ class CommentThread < Content
   field :group_id, type: Integer
   field :pinned, type: Boolean
   field :retired_username, type: String, default: nil
+  field :close_reason_code, type: String, default: nil # string code that represents why a thread was closed.
 
-  index({author_id: 1, course_id: 1})
+  index({ author_id: 1, course_id: 1 })
 
   index_name = "comment_thread"
 
@@ -61,10 +63,13 @@ class CommentThread < Content
   end
 
   belongs_to :author, class_name: 'User', inverse_of: :comment_threads, index: true
+  belongs_to :closed_by, class_name: 'User', inverse_of: :threads_closed, optional: true
   has_many :comments, dependent: :destroy # Use destroy to invoke callback on the top-level comments
   has_many :activities, autosave: true
+  embeds_many :edit_history, cascade_callbacks: true
 
-  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed, :thread_type, :retired_username
+  attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed,
+                  :thread_type, :retired_username, :close_reason_code, :closed_by
 
   validates_presence_of :thread_type
   validates_presence_of :context
@@ -128,12 +133,14 @@ class CommentThread < Content
 
   def to_hash(params={})
     as_document
-      .slice(THREAD_TYPE, TITLE, BODY, COURSE_ID, ANONYMOUS, ANONYMOUS_TO_PEERS, COMMENTABLE_ID, CREATED_AT, UPDATED_AT, AT_POSITION_LIST, CLOSED, CONTEXT, LAST_ACTIVITY_AT)
+      .slice(THREAD_TYPE, TITLE, BODY, COURSE_ID, ANONYMOUS, ANONYMOUS_TO_PEERS, COMMENTABLE_ID, CREATED_AT, UPDATED_AT, AT_POSITION_LIST, CLOSED, CONTEXT, LAST_ACTIVITY_AT, CLOSE_REASON_CODE)
       .merge!("id" => _id,
               "user_id" => author_id,
               "username" => author_username,
               "votes" => votes.slice(COUNT, UP_COUNT, DOWN_COUNT, POINT),
               "abuse_flaggers" => abuse_flaggers,
+              "edit_history" => edit_history.map(&:to_hash),
+              "closed_by" => closed_by? ? closed_by.username : nil,
               "tags" => [],
               "type" => THREAD,
               "group_id" => group_id,
