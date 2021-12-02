@@ -68,7 +68,9 @@ Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Log
 # Example: Elasticsearch::Client.new(logger: get_logger('elasticsearch', Logger::WARN))
 Elasticsearch::Model.client = Elasticsearch::Client.new(
     host: CommentService.config[:elasticsearch_server],
-    log: false
+    log: false,
+    port: CommentService.config[:elasticsearch_port],
+    transport_options: {ssl: {verify: CommentService.config[:elasticsearch_verify_ssl]}}
 )
 
 # Setup i18n
