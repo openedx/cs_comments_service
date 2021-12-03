@@ -12,7 +12,7 @@ describe TaskHelpers do
 
     def assert_alias_points_to_index(alias_name, index_name)
       test_alias = Elasticsearch::Model.client.indices.get_alias(name: alias_name).keys[0]
-      test_alias.should == index_name
+      expect(test_alias).to eq(index_name)
     end
 
     context("#move_alias") do
@@ -46,9 +46,9 @@ describe TaskHelpers do
       it "builds new index with content" do
         create(:comment_thread, body: 'the best test body', course_id: 'test_course_id')
         TaskHelpers::ElasticsearchHelper.refresh_indices
-        Elasticsearch::Model.client.search(
+        expect(Elasticsearch::Model.client.search(
             index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES
-        )['hits']['total']['value'].should be > 0
+        )['hits']['total']['value']).to be > 0
       end
 
     end

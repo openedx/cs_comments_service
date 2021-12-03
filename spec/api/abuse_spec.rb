@@ -7,7 +7,7 @@ describe 'Abuse API' do
     let(:affected_entity_id) { affected_entity.id }
     let(:user_id) { create(:user).id }
 
-    it { should be_ok }
+    it { is_expected.to be_ok }
 
     it 'updates the abuse flaggers' do
       subject
@@ -19,13 +19,13 @@ describe 'Abuse API' do
 
     context 'if the comment does not exist' do
       let(:affected_entity_id) { 'does_not_exist' }
-      it { should be_bad_request }
+      it { is_expected.to be_bad_request }
       its(:body) { should eq "[\"#{I18n.t(:requested_object_not_found)}\"]" }
     end
 
     context 'if no user_id is provided' do
       let(:user_id) { nil }
-      it { should be_bad_request }
+      it { is_expected.to be_bad_request }
       its(:body) { should eq "[\"#{I18n.t(:user_id_is_required)}\"]" }
     end
   end

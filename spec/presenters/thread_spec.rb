@@ -108,11 +108,11 @@ describe ThreadPresenter do
           # with response=false and recursive=false
           hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed, nil).to_hash(false, 0, nil, false)
           check_thread_result(@reader, thread, hash)
-          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be false }
+          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| expect(hash.has_key? k).to be false }
           # with response=false and recursive=true
           hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed, nil).to_hash(false, 0, nil, true)
           check_thread_result(@reader, thread, hash)
-          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| (hash.has_key? k).should be false }
+          ['children', 'resp_skip', 'resp_limit', 'resp_total'].each {|k| expect(hash.has_key? k).to be false }
         end
       end
 
@@ -202,13 +202,13 @@ describe ThreadPresenter do
 
       pres = ThreadPresenter.new(nil, nil, nil, nil, nil, nil)
       responses = pres.merge_response_content([c0, c00, c01, c010])
-      responses.size.should == 1 # c0
-      responses[0]["id"].should == c0.id
-      responses[0]["children"].size.should == 2 # c00, c01
-      responses[0]["children"][0]["id"].should == c00.id
-      responses[0]["children"][1]["id"].should == c01.id
-      responses[0]["children"][1]["children"].size.should == 1 # c010
-      responses[0]["children"][1]["children"][0]["id"].should == c010.id
+      expect(responses.size).to eq(1) # c0
+      expect(responses[0]["id"]).to eq(c0.id)
+      expect(responses[0]["children"].size).to eq(2) # c00, c01
+      expect(responses[0]["children"][0]["id"]).to eq(c00.id)
+      expect(responses[0]["children"][1]["id"]).to eq(c01.id)
+      expect(responses[0]["children"][1]["children"].size).to eq(1) # c010
+      expect(responses[0]["children"][1]["children"][0]["id"]).to eq(c010.id)
     end
 
     it "handles orphaned child comments gracefully" do
@@ -224,10 +224,10 @@ describe ThreadPresenter do
 
       pres = ThreadPresenter.new(nil, nil, nil, nil, nil, nil)
       responses = pres.merge_response_content([c00, c000, c1, c10, c111])
-      responses.size.should == 1 # c1
-      responses[0]["id"].should == c1.id
-      responses[0]["children"].size.should == 1 # c10
-      responses[0]["children"][0]["id"].should == c10.id
+      expect(responses.size).to eq(1) # c1
+      expect(responses[0]["id"]).to eq(c1.id)
+      expect(responses[0]["children"].size).to eq(1) # c10
+      expect(responses[0]["children"][0]["id"]).to eq(c10.id)
     end
   end
 end

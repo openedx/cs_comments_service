@@ -18,8 +18,8 @@ describe 'app' do
         before (:each) { TaskHelpers::ElasticsearchHelper.refresh_indices }
         subject { get '/api/v1/search/threads', {course_id: course_id}.merge!(parameters) }
 
-        it { should be_ok }
-        it { should be_an_empty_response }
+        it { is_expected.to be_ok }
+        it { is_expected.to be_an_empty_response }
       end
 
       context 'without text parameter' do
@@ -36,9 +36,9 @@ describe 'app' do
         let(:course_id) { 'test/course/id' }
 
         def assert_result_total(expected_total)
-          last_response.should be_ok
+          expect(last_response).to be_ok
           result = parse(last_response.body)
-          result["total_results"].should == expected_total
+          expect(result["total_results"]).to eq(expected_total)
         end
 
         def create_and_delete_comment_or_thread(factory_name, text)
@@ -124,11 +124,11 @@ describe 'app' do
         end
 
         def assert_response_contains(expected_thread_indexes)
-          last_response.should be_ok
+          expect(last_response).to be_ok
           result = parse(last_response.body)
           actual_ids = Set.new get_result_ids(result)
           expected_ids = Set.new expected_thread_indexes.map { |i| threads[i].id.to_s }
-          actual_ids.should == expected_ids
+          expect(actual_ids).to eq(expected_ids)
         end
 
         it "by course_id" do
@@ -219,11 +219,11 @@ describe 'app' do
 
         def check_sort(sort_key, expected_thread_indexes)
           get "/api/v1/search/threads", text: "text", course_id: course_id, sort_key: sort_key
-          last_response.should be_ok
+          expect(last_response).to be_ok
           result = parse(last_response.body)
           actual_ids = get_result_ids(result)
           expected_ids = expected_thread_indexes.map { |i| threads[i].id.to_s }
-          actual_ids.should == expected_ids
+          expect(actual_ids).to eq(expected_ids)
         end
 
         it "by date" do
@@ -258,11 +258,11 @@ describe 'app' do
           result_ids = []
           (1..(num_pages + 1)).each do |i| # Go past the end to make sure non-existent pages are empty
             get "/api/v1/search/threads", text: "text", page: i, per_page: per_page
-            last_response.should be_ok
+            expect(last_response).to be_ok
             result = parse(last_response.body)
             result_ids += get_result_ids(result)
           end
-          result_ids.should == threads.reverse.map { |t| t.id.to_s }
+          expect(result_ids).to eq(threads.reverse.map { |t| t.id.to_s })
         end
 
         it "works correctly with page size 1" do
@@ -283,10 +283,10 @@ describe 'app' do
 
         def check_correction(original_text, corrected_text)
           get "/api/v1/search/threads", text: original_text
-          last_response.should be_ok
+          expect(last_response).to be_ok
           result = parse(last_response.body)
-          result["corrected_text"].should == corrected_text
-          result["collection"].first.should_not be_nil
+          expect(result["corrected_text"]).to eq(corrected_text)
+          expect(result["collection"].first).not_to be_nil
         end
 
         before(:each) do
@@ -337,10 +337,10 @@ describe 'app' do
           TaskHelpers::ElasticsearchHelper.refresh_indices
 
           get "/api/v1/search/threads", text: "abot", course_id: course_id
-          last_response.should be_ok
+          expect(last_response).to be_ok
           result = parse(last_response.body)
-          result["corrected_text"].should be_nil
-          result["collection"].should be_empty
+          expect(result["corrected_text"]).to be_nil
+          expect(result["collection"]).to be_empty
         end
       end
 
@@ -362,10 +362,10 @@ describe 'app' do
 
         test_text = lambda do |text, expected_total_results, expected_num_pages|
           get '/api/v1/search/threads', course_id: course_id, text: text, per_page: '10'
-          last_response.should be_ok
+          expect(last_response).to be_ok
           result = parse(last_response.body)
-          result["total_results"].should == expected_total_results
-          result["num_pages"].should == expected_num_pages
+          expect(result["total_results"]).to eq(expected_total_results)
+          expect(result["num_pages"]).to eq(expected_num_pages)
         end
 
         test_text.call("all", 100, 10)

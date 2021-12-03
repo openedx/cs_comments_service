@@ -51,7 +51,7 @@ describe CommentThread do
       seq = []
       rs = Comment.where(comment_thread_id: thread.id).order_by({"sk"=>1})
       rs.each.map {|c| seq << c.body}
-      seq.should == ["a", "b", "c", "d", "e", "f"]
+      expect(seq).to eq(["a", "b", "c", "d", "e", "f"])
 
     end
   end
@@ -107,8 +107,8 @@ describe CommentThread do
   def test_unicode_data(text)
     thread = make_thread(author, text, "unicode_course", commentable_id: "unicode_commentable")
     retrieved = CommentThread.find(thread._id)
-    retrieved.title.should == text
-    retrieved.body.should == text
+    expect(retrieved.title).to eq(text)
+    expect(retrieved.body).to eq(text)
   end
 
   include_examples "unicode data"

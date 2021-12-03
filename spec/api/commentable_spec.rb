@@ -42,7 +42,7 @@ describe 'app' do
       context 'if the commentable does not exist' do
         subject { delete '/api/v1/does_not_exist/threads' }
 
-        it { should be_ok }
+        it { is_expected.to be_ok }
       end
     end
 
@@ -54,7 +54,7 @@ describe 'app' do
         let!(:ignored_threads) { create_list(:comment_thread, 3, commentable_id: commentable_id) }
         subject { get "/api/v1/#{commentable_id}/threads", parameters }
 
-        it { should be_ok }
+        it { is_expected.to be_ok }
 
         it 'returns the correct CommentThreads' do
           expect(returned_threads.length).to eq threads.length
@@ -118,7 +118,7 @@ describe 'app' do
       context 'when the commentable does not exist' do
         subject { get '/api/v1/does_not_exist/threads' }
 
-        it { should be_ok }
+        it { is_expected.to be_ok }
 
         it 'should not return any results' do
           expect(returned_threads.length).to eq 0
@@ -164,7 +164,7 @@ describe 'app' do
         end
       end
 
-      it { should be_ok }
+      it { is_expected.to be_ok }
 
       it_behaves_like 'CommentThread creation API'
       it_behaves_like 'CommentThread creation API', 'standalone' do

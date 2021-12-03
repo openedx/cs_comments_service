@@ -17,7 +17,7 @@ describe Comment do
   def test_unicode_data(text)
     comment = make_comment(author, course_thread, text)
     retrieved = Comment.find(comment._id)
-    retrieved.body.should == text
+    expect(retrieved.body).to eq(text)
   end
 
   include_examples "unicode data"

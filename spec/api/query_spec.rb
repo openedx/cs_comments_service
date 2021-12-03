@@ -17,7 +17,7 @@ describe 'app' do
 
       let(:matched_thread) { parse(subject.body)['collection'].select { |t| t['id'] == thread.id.to_s }.first }
 
-      it { should be_ok }
+      it { is_expected.to be_ok }
 
       it 'returns thread with query match' do
         expect(matched_thread).to_not be_nil
