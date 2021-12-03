@@ -7,6 +7,7 @@ RSpec::Matchers.define :be_an_empty_response do
 end
 
 RSpec::Matchers.define :exit_with_code do |exp_code|
+  supports_block_expectations
   actual = nil
 
   match do |block|
