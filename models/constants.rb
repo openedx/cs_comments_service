@@ -31,6 +31,7 @@ THREAD = "thread".freeze
 CLOSE_REASON_CODE = "close_reason_code".freeze
 EDIT_REASON_CODE = "edit_reason_code".freeze
 PREVIOUS_BODY = "previous_body".freeze
+EDIT_HISTORY = "edit_history".freeze
 
 RETIRED_TITLE = "[deleted]".freeze
 RETIRED_BODY = "[deleted]".freeze

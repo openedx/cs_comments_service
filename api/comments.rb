@@ -7,7 +7,7 @@ end
 
 put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   filter_blocked_content params["body"]
-  updated_content = params.slice(*%w[body endorsed edit_reason_code])
+  updated_content = params.slice(*%w[body endorsed])
   if params.has_key?("endorsed")
     new_endorsed_val = Boolean.mongoize(params["endorsed"])
     if new_endorsed_val != comment.endorsed
@@ -19,10 +19,10 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
       updated_content["endorsement"] = new_endorsed_val ? endorsement : nil
     end
   end
-  # Only set edited by when the current user isn't the same as the author
-  if updated_content.has_key? BODY and comment.author != user
-    updated_content["edited_by"] = user
-    updated_content["previous_body"] = comment.body
+  if updated_content.has_key? BODY and updated_content[BODY] != comment.body
+    edit_reason_code = params.fetch("edit_reason_code", nil)
+    comment.edit_history.build(original_body: comment.body, author: user, reason_code: edit_reason_code)
+    comment.save
   end
   comment.update_attributes(updated_content)
   if comment.errors.any?

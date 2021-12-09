@@ -66,12 +66,7 @@ end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   filter_blocked_content params["body"]
-  updated_content = params.slice(*%w[title body pinned closed commentable_id group_id thread_type edit_reason_code close_reason_code])
-  # Only set edited_by if the content has been edited by another user
-  if updated_content.has_key? BODY and thread.author != user
-    updated_content["edited_by"] = user
-    updated_content["previous_body"] = thread.body
-  end
+  updated_content = params.slice(*%w[title body pinned closed commentable_id group_id thread_type close_reason_code])
   # If a close reason code is provided, save it. If a thread is being reopened, clear the closed_by flag
   if updated_content.has_key? CLOSED and updated_content.has_key? CLOSE_REASON_CODE
     if updated_content[CLOSED]
@@ -79,6 +74,11 @@ put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
     else
       updated_content["closed_by"] = nil
     end
+  end
+  if updated_content.has_key? BODY and updated_content[BODY] != thread.body
+    edit_reason_code = params.fetch("edit_reason_code", nil)
+    thread.edit_history.build(original_body: thread.body, author: user, reason_code: edit_reason_code)
+    thread.save
   end
   thread.update_attributes(updated_content)
 
