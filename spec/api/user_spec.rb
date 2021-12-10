@@ -82,109 +82,109 @@ describe "app" do
       end
 
       describe "Returns threads_count and comments_count" do
-          before(:each) { setup_10_threads }
+        before(:each) { setup_10_threads }
 
-          def create_thread_and_comment_in_specific_group(user_id, group_id, thread)
-             # Changes the specified thread and a comment within that thread to be authored by the
-             # specified user in the specified group_id.
-             @threads[thread].author = @users["u"+user_id]
-             @threads[thread].group_id = group_id
-             @threads[thread].save!
-             first_comment_in_thread = thread + " c1"
-             @comments[first_comment_in_thread].author = @users["u"+user_id]
-             @comments[first_comment_in_thread].save!
+        def create_thread_and_comment_in_specific_group(user_id, group_id, thread)
+          # Changes the specified thread and a comment within that thread to be authored by the
+          # specified user in the specified group_id.
+          @threads[thread].author = @users["u" + user_id]
+          @threads[thread].group_id = group_id
+          @threads[thread].save!
+          first_comment_in_thread = thread + " c1"
+          @comments[first_comment_in_thread].author = @users["u" + user_id]
+          @comments[first_comment_in_thread].save!
+        end
+
+        def verify_counts(expected_threads, expected_comments, user_id, group_id = nil)
+          if group_id
+            get "/api/v1/users/" + user_id, course_id: "xyz", group_id: group_id
+          else
+            get "/api/v1/users/" + user_id, course_id: "xyz"
+          end
+          parse_response_and_verify_counts(expected_threads, expected_comments)
+        end
+
+        def verify_counts_multiple_groups(expected_threads, expected_comments, user_id, group_ids)
+          get "/api/v1/users/" + user_id, course_id: "xyz", group_ids: group_ids
+          parse_response_and_verify_counts(expected_threads, expected_comments)
+        end
+
+        def parse_response_and_verify_counts(expected_threads, expected_comments)
+          res = parse(last_response.body)
+          expect(res["threads_count"]).to eq(expected_threads)
+          expect(res["comments_count"]).to eq(expected_comments)
+        end
+
+        it "returns threads_count and comments_count" do
+          # "setup_10_threads" creates 1 thread ("t0") and 5 comments (in "t0") authored by user 100.
+          verify_counts(1, 5, "100")
+        end
+
+        it "returns threads_count and comments_count irrespective of group_id, if group_id is not specified" do
+          # Now change thread "t1" and comment in "t1" to be authored by user 100, but in a group (43).
+          # As long as we don't ask for user info for a specific group, these will always be included.
+          create_thread_and_comment_in_specific_group("100", 43, "t1")
+          verify_counts(2, 6, "100")
+        end
+
+        it "returns threads_count and comments_count filtered by group_id, if group_id is specified" do
+          create_thread_and_comment_in_specific_group("100", 43, "t1")
+
+          # The threads and comments created by "setup_10_threads" do not have a group_id specified, so are
+          # visible to all (group_id=3000 specified).
+          verify_counts(1, 5, "100", 3000)
+
+          # There is one additional thread and comment (created by create_thread_and_comment_in_specific_group),
+          # visible to only group_id 43.
+          verify_counts(2, 6, "100", 43)
+        end
+
+        it "handles comments correctly on threads not started by the author" do
+          # "setup_10_threads" creates 1 thread ("t1") and 5 comments (in "t1") authored by user 101.
+          verify_counts(1, 5, "101")
+
+          # The next call makes user 100 the author of "t1" and "t1 c1" (within group_id 43).
+          create_thread_and_comment_in_specific_group("100", 43, "t1")
+
+          # Therefore user 101 is now just the author of 4 comments.
+          verify_counts(0, 4, "101")
+
+          # We should get the same comment count when specifically asking for comments within group_id 43.
+          verify_counts(0, 4, "101", 43)
+
+          # We should get no comments for a different group.
+          verify_counts(0, 0, "101", 3000)
+        end
+
+        it "can return comments and threads for multiple groups" do
+          create_thread_and_comment_in_specific_group("100", 43, "t1")
+          create_thread_and_comment_in_specific_group("100", 3000, "t2")
+
+          # user 100 is now the author of:
+          #    visible to all groups-- 1 thread ("t0") and 5 comments
+          #    visible to group_id 43-- 1 thread ("t1") and 1 comment
+          #    visible to group_id 3000-- 1 thread ("t2") and 1 comment
+          verify_counts(3, 7, "100")
+          verify_counts_multiple_groups(3, 7, "100", "")
+          verify_counts_multiple_groups(3, 7, "100", "43, 3000")
+          verify_counts_multiple_groups(3, 7, "100", "43, 3000, 8")
+          verify_counts_multiple_groups(2, 6, "100", "43")
+          verify_counts_multiple_groups(2, 6, "100", "3000")
+          verify_counts_multiple_groups(1, 5, "100", "8")
+        end
+
+        context "standalone threads" do
+          before(:each) do
+            # creates a standalone thread with 3 comments by user 100
+            make_standalone_thread_with_comments(@users['u100'])
           end
 
-          def verify_counts(expected_threads, expected_comments, user_id, group_id=nil)
-             if group_id
-                get "/api/v1/users/" + user_id, course_id: "xyz", group_id: group_id
-             else
-                get "/api/v1/users/" + user_id, course_id: "xyz"
-             end
-             parse_response_and_verify_counts(expected_threads, expected_comments)
+          it 'does not return standalone thread or comments in counts' do
+            # user 100 already has 1 thread and 5 comments created by `setup_10_threads`
+            # verify that the new standalone thread is not added to the counts
+            verify_counts(1, 5, "100")
           end
-
-          def verify_counts_multiple_groups(expected_threads, expected_comments, user_id, group_ids)
-             get "/api/v1/users/" + user_id, course_id: "xyz", group_ids: group_ids
-             parse_response_and_verify_counts(expected_threads, expected_comments)
-          end
-
-          def parse_response_and_verify_counts(expected_threads, expected_comments)
-             res = parse(last_response.body)
-             expect(res["threads_count"]).to eq(expected_threads)
-             expect(res["comments_count"]).to eq(expected_comments)
-          end
-
-          it "returns threads_count and comments_count" do
-             # "setup_10_threads" creates 1 thread ("t0") and 5 comments (in "t0") authored by user 100.
-             verify_counts(1, 5, "100")
-          end
-
-          it "returns threads_count and comments_count irrespective of group_id, if group_id is not specified" do
-             # Now change thread "t1" and comment in "t1" to be authored by user 100, but in a group (43).
-             # As long as we don't ask for user info for a specific group, these will always be included.
-             create_thread_and_comment_in_specific_group("100", 43, "t1")
-             verify_counts(2, 6, "100")
-          end
-
-          it "returns threads_count and comments_count filtered by group_id, if group_id is specified" do
-             create_thread_and_comment_in_specific_group("100", 43, "t1")
-
-             # The threads and comments created by "setup_10_threads" do not have a group_id specified, so are
-             # visible to all (group_id=3000 specified).
-             verify_counts(1, 5, "100", 3000)
-
-             # There is one additional thread and comment (created by create_thread_and_comment_in_specific_group),
-             # visible to only group_id 43.
-             verify_counts(2, 6, "100", 43)
-          end
-
-          it "handles comments correctly on threads not started by the author" do
-             # "setup_10_threads" creates 1 thread ("t1") and 5 comments (in "t1") authored by user 101.
-             verify_counts(1, 5, "101")
-
-             # The next call makes user 100 the author of "t1" and "t1 c1" (within group_id 43).
-             create_thread_and_comment_in_specific_group("100", 43, "t1")
-
-             # Therefore user 101 is now just the author of 4 comments.
-             verify_counts(0, 4, "101")
-
-             # We should get the same comment count when specifically asking for comments within group_id 43.
-             verify_counts(0, 4, "101", 43)
-
-             # We should get no comments for a different group.
-             verify_counts(0, 0, "101", 3000)
-          end
-
-          it "can return comments and threads for multiple groups" do
-             create_thread_and_comment_in_specific_group("100", 43, "t1")
-             create_thread_and_comment_in_specific_group("100", 3000, "t2")
-
-             # user 100 is now the author of:
-             #    visible to all groups-- 1 thread ("t0") and 5 comments
-             #    visible to group_id 43-- 1 thread ("t1") and 1 comment
-             #    visible to group_id 3000-- 1 thread ("t2") and 1 comment
-             verify_counts(3, 7, "100")
-             verify_counts_multiple_groups(3, 7, "100", "")
-             verify_counts_multiple_groups(3, 7, "100", "43, 3000")
-             verify_counts_multiple_groups(3, 7, "100", "43, 3000, 8")
-             verify_counts_multiple_groups(2, 6, "100", "43")
-             verify_counts_multiple_groups(2, 6, "100", "3000")
-             verify_counts_multiple_groups(1, 5, "100", "8")
-          end
-
-          context "standalone threads" do
-            before(:each) do
-              # creates a standalone thread with 3 comments by user 100
-              make_standalone_thread_with_comments(@users['u100'])
-            end
-
-            it 'does not return standalone thread or comments in counts' do
-              # user 100 already has 1 thread and 5 comments created by `setup_10_threads`
-              # verify that the new standalone thread is not added to the counts
-              verify_counts(1, 5, "100")
-            end
-          end
+        end
       end
     end
     describe "GET /api/v1/users/:user_id/active_threads" do
@@ -212,7 +212,7 @@ describe "app" do
           make_standalone_thread_with_comments(@users['u101'], 1)
         end
 
-        it "only returns threads with non-standalone activity from the specified user"  do
+        it "only returns threads with non-standalone activity from the specified user" do
           # `setup_10_threads` creates a thread "t3" and 5 comments all owned by user 103
           # we are hijacking a course thread comment owned by user 103 and making it owned
           # by user 100 instead, so this user has a comment on someone else's thread
@@ -302,7 +302,7 @@ describe "app" do
         @threads["t3"].updated_at = base_time + 4
         @threads["t3"].save!
         rs = thread_result 100, course_id: "xyz"
-        actual_order = rs.map {|v| v["title"]}
+        actual_order = rs.map { |v| v["title"] }
         expect(actual_order).to eq(["t3", "t4", "t2", "t0"])
       end
 
@@ -348,7 +348,7 @@ describe "app" do
             expect(result["collection"].length).to eq((page * per_page <= @threads.length ? per_page : @threads.length % per_page))
             expect(result["num_pages"]).to eq(num_pages)
             expect(result["page"]).to eq(page)
-            actual_order += result["collection"].map {|v| v["title"]}
+            actual_order += result["collection"].map { |v| v["title"] }
           end
           expect(actual_order).to eq(expected_order)
         end
@@ -384,55 +384,210 @@ describe "app" do
 
       include_examples "unicode data"
     end
+
     describe "GET /api/v1/users/:course_id/stats" do
-      def add_flags(content, expected_result)
+
+      let(:course_id) { Faker::Lorem.word }
+
+      def add_flags(content, expected_data)
         # Add a random number of abuse flaggers (0 to 2) and historical abuse flaggers
         content.abuse_flaggers = (1..Random.rand(3)).to_a
         content.historical_abuse_flaggers = (1..Random.rand(2)).to_a
         content.save!
         # If any flaggers were added, increment the count of reports for the user
-        expected_result[content.author.external_id]["active_flags"] += (content.abuse_flaggers.length > 0) ? 1 : 0
-        expected_result[content.author.external_id]["inactive_flags"] += (content.historical_abuse_flaggers.length > 0) ? 1 : 0
+        expected_data[content.author.external_id]["active_flags"] += content.abuse_flaggers.empty? ? 0 : 1
+        expected_data[content.author.external_id]["inactive_flags"] += content.historical_abuse_flaggers.empty? ? 0 : 1
       end
 
-      it "returns user's stats" do
-        course_id = Faker::Lorem.word
+      def build_structure_and_response
         authors = %w[author-1 author-2 author-3].map { |id| create_test_user(id) }
-        expected_result = Hash[authors.map { |author| [author.external_id, {
-          "author_id" => author.external_id,
-          "username" => author.username,
-          "active_flags" => 0,
-          "inactive_flags" => 0,
-          "threads" => 0,
-          "responses" => 0,
-          "replies" => 0,
-        }] }]
+        expected_data = Hash[authors.map { |author| [
+          author.external_id,
+          {
+            "username" => author.username,
+            "active_flags" => 0,
+            "inactive_flags" => 0,
+            "threads" => 0,
+            "responses" => 0,
+            "replies" => 0,
+          }
+        ]
+        }]
         # Create 10 random threads with random authors
         (0..10).each do
           thread_author = authors.sample
-          expected_result[thread_author.external_id]["threads"] += 1
+          expected_data[thread_author.external_id]["threads"] += 1
           thread = make_thread(thread_author, Faker::Lorem.sentence, course_id, Faker::Lorem.word)
-          add_flags(thread, expected_result)
+          add_flags(thread, expected_data)
           # For each thread create 5 random comments with random authors
           (0..5).each do
             comment_author = authors.sample
-            expected_result[comment_author.external_id]["responses"] += 1
+            expected_data[comment_author.external_id]["responses"] += 1
             comment = make_comment(comment_author, thread, Faker::Lorem.sentence)
-            add_flags(comment, expected_result)
+            add_flags(comment, expected_data)
             # For each comment create 3 random replies with random authors
             (0..2).each do
               reply_author = authors.sample
-              expected_result[reply_author.external_id]["replies"] += 1
+              expected_data[reply_author.external_id]["replies"] += 1
               reply = make_comment(reply_author, comment, Faker::Lorem.sentence)
-              add_flags(reply, expected_result)
+              add_flags(reply, expected_data)
             end
           end
         end
+        authors.map { |author| build_course_stats_for_user(author, course_id) }
+        expected_data
+      end
+
+      it "returns user's stats with default/activity sort" do
+        expected_data = build_structure_and_response
+        # Sort the map entries using the default sort
+        expected_result = expected_data.values.sort_by { |val| [val["threads"], val["responses"], val["replies"]] }.reverse
 
         get "/api/v1/users/#{course_id}/stats"
         expect(last_response.status).to eq(200)
         res = parse(last_response.body)
-        expect(res).to eq expected_result
+        expect(res["user_stats"]).to eq expected_result
+      end
+
+      it "returns user's stats with flagged sort" do
+        expected_data = build_structure_and_response
+        # Sort the map entries using the default sort
+        expected_result = expected_data.values.sort_by { |val| [val["active_flags"], val["inactive_flags"]] }.reverse
+
+        get "/api/v1/users/#{course_id}/stats", sort_key: "flagged"
+        expect(last_response.status).to eq(200)
+        res = parse(last_response.body)
+        expect(res["user_stats"]).to eq expected_result
+      end
+
+      describe "changes to content" do
+
+        before(:each) do
+          expected_data = build_structure_and_response
+          get "/api/v1/users/#{course_id}/stats"
+          res = parse(last_response.body)
+          # Save stats for first entry
+          @original_stats = res["user_stats"][0]
+          @original_username = @original_stats["username"]
+        end
+
+        def get_new_stats
+          get "/api/v1/users/#{course_id}/stats"
+          res = parse(last_response.body)
+          res["user_stats"].detect { |stats| stats["username"] == @original_username }
+        end
+
+        it "handles deleting threads" do
+          CommentThread.where(:author_username => @original_username, :course_id => course_id).first.destroy
+          new_stats = get_new_stats
+          # Thread count should have gone down by 1
+          expect(new_stats["threads"]).to eq @original_stats["threads"] - 1
+          # Replies and responses should have gone down, or stayed the same since all comments and responses in a
+          # thread will be deleted.
+          expect(new_stats["responses"]).to be <= @original_stats["responses"]
+          expect(new_stats["replies"]).to be <= @original_stats["replies"]
+        end
+
+        it "handles updating threads" do
+          thread = CommentThread.where(:author_username => @original_username, :course_id => course_id).first
+          put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question"
+          last_response.should be_ok
+          new_stats = get_new_stats
+          # Counts should stay the same
+          expect(new_stats["threads"]).to eq @original_stats["threads"]
+          expect(new_stats["responses"]).to eq  @original_stats["responses"]
+          expect(new_stats["replies"]).to eq  @original_stats["replies"]
+        end
+
+        it "handles adding threads" do
+          post "/api/v1/commentable_id/threads",
+               title: "new thread",
+               body: "new thread",
+               course_id: course_id,
+               user_id: @original_username.delete_prefix("user")
+          last_response.should be_ok
+          new_stats = get_new_stats
+          # Thread count should stay the same
+          expect(new_stats["threads"]).to eq @original_stats["threads"] + 1
+          expect(new_stats["responses"]).to eq @original_stats["responses"]
+          expect(new_stats["replies"]).to eq @original_stats["replies"]
+        end
+
+        it "handles deleting responses" do
+          Comment.where(:author_username => @original_username, :course_id => course_id, :parent_id => nil).first.destroy
+          new_stats = get_new_stats
+          # Thread count should stay the same
+          expect(new_stats["threads"]).to eq @original_stats["threads"]
+          expect(new_stats["responses"]).to eq @original_stats["responses"] - 1
+          expect(new_stats["replies"]).to be <= @original_stats["replies"]
+        end
+
+        it "handles updating responses" do
+          comment = Comment.where(:author_username => @original_username, :course_id => course_id, :parent_id => nil).first
+          put "/api/v1/comments/#{comment.id}", body: 'new body'
+          last_response.should be_ok
+          new_stats = get_new_stats
+          # Thread count should stay the same
+          expect(new_stats["threads"]).to eq @original_stats["threads"]
+          expect(new_stats["responses"]).to eq @original_stats["responses"]
+          expect(new_stats["replies"]).to eq @original_stats["replies"]
+        end
+
+        it "handles adding responses" do
+          thread = CommentThread.where(:author_username => @original_username, :course_id => course_id, :parent_id => nil).first
+          puts "adding comment to #{thread.id}"
+          post "/api/v1/threads/#{thread.id}/comments", body: "new comment", course_id: course_id, user_id: @original_username.delete_prefix("user")
+          last_response.should be_ok
+          new_stats = get_new_stats
+          # Thread count should stay the same
+          expect(new_stats["threads"]).to eq @original_stats["threads"]
+          expect(new_stats["responses"]).to eq @original_stats["responses"] + 1
+          expect(new_stats["replies"]).to eq @original_stats["replies"]
+        end
+
+        it "handles deleting replies" do
+          Comment.where(:author_username => @original_username, :course_id => course_id, :parent_id.ne => nil).first.destroy
+          new_stats = get_new_stats
+          # Thread count should stay the same
+          expect(new_stats["threads"]).to eq @original_stats["threads"]
+          expect(new_stats["responses"]).to eq @original_stats["responses"]
+          expect(new_stats["replies"]).to eq @original_stats["replies"] - 1
+        end
+
+        it "handles abuse flags" do
+          # Find a comment with no flags
+          comment = Comment.where(:author_username => @original_username, :course_id => course_id, :abuse_flaggers => []).first
+          # Add a flag
+          put "/api/v1/comments/#{comment.id}/abuse_flag", user_id: 1
+          new_stats = get_new_stats
+          # The active flags should go up.
+          expect(new_stats["active_flags"]).to eq @original_stats["active_flags"] + 1
+          # All other counts should remain the same
+          expect(new_stats["threads"]).to eq @original_stats["threads"]
+          expect(new_stats["responses"]).to eq @original_stats["responses"]
+          expect(new_stats["replies"]).to eq @original_stats["replies"]
+          expect(new_stats["inactive_flags"]).to eq @original_stats["inactive_flags"]
+        end
+
+        it "handles removing flags" do
+          # Find a comment by this user and set its abuse flaggers to two users.
+          comment = Comment.where(:author_username => @original_username, :course_id => course_id, :abuse_flaggers.ne => []).first
+          comment.abuse_flaggers = ["1", "2"]
+          comment.save
+
+          # Remove the flag by that user
+          put "/api/v1/comments/#{comment.id}/abuse_unflag", user_id: 1
+          new_stats = get_new_stats
+          # The active flags should stay the same right now, since there is still a flagger left.
+          expect(new_stats["active_flags"]).to eq @original_stats["active_flags"]
+
+          put "/api/v1/comments/#{comment.id}/abuse_unflag", user_id: 2
+          get "/api/v1/users/#{course_id}/stats"
+          res = parse(last_response.body)
+          new_stats = res["user_stats"].detect { |stats| stats["username"] == @original_username }
+          # The active flags should reduce by one, since there are no more flags left.
+          expect(new_stats["active_flags"]).to eq @original_stats["active_flags"] - 1
+        end
       end
     end
 

@@ -12,64 +12,47 @@ post "#{APIPREFIX}/users" do
 end
 
 get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
-  user_data = {}
-  data = Content.collection.aggregate(
-    [
-      # Match all content in the course
-      { "$match" => { :course_id => course_id } },
-      # Keep a count of flags for each entry
-      {
-        "$set" => {
-          # Just using $ne with null will return true if the field is absent
-          # So we first fall all absent fields to null, then check if it's null,
-          # that way we match for the absence of the field or value = null
-          :is_reply => { "$ne" => [{ "$ifNull" => ["$parent_id", nil] }, nil] }
-        }
-      },
-      {
-        "$group" => {
-          # Here we're grouping items by the type (comment or thread), and the user, and whether the comment is a reply.
-          # For threads is_reply will always be false.
-          :_id => { :type => "$_type", :author_id => "$author_id", :is_reply => "$is_reply" },
-          # This will just count each group, so we get a breakdown of how many comments and threads a user has created.
-          :count => { "$sum" => 1 },
-          # These two will sum up the active and inactive reports in each category
-          # i.e. reported threads, reported comments, reported replies
-          # The way this works is (starting from inside out), we take the size of the abuse_flaggers list, we compare
-          # it to 0 using $cmp. If it's greater than zero then $cmp results in 1 otherwise 0.
-          # So we're summing up 1 for each abuse_flagger array that has entries, and 0 for the rest. This gives us a
-          # count of
-          :active_flags => { "$sum" => { "$cmp" => [{ "$size" => "$abuse_flaggers" }, 0] } },
-          :inactive_flags => { "$sum" => { "$cmp" => [{ "$size" => "$historical_abuse_flaggers" }, 0] } },
-          :author_username => { "$last" => "$author_username"},
-        }
-      }
-    ])
-  data.each do |counts|
-    type, author_id, is_reply = counts[:_id].values_at "type", "author_id", "is_reply"
-    author_username, count, active_flags, inactive_flags = counts.values_at "author_username", "count", "active_flags", "inactive_flags"
-    unless user_data.has_key? author_id
-      user_data[author_id] = {
-        :username => author_username,
-        :author_id => author_id,
-        :active_flags => 0,
-        :inactive_flags => 0,
-        :threads => 0,
-        :responses => 0,
-        :replies => 0
-      }
-    end
-    if type == "Comment" and is_reply
-      user_data[author_id][:replies] = count
-    elsif type == "Comment" and not is_reply
-      user_data[author_id][:responses] = count
-    else
-      user_data[author_id][:threads] = count
-    end
-    user_data[author_id][:active_flags] += active_flags
-    user_data[author_id][:inactive_flags] += inactive_flags
+  page = (params["page"] || DEFAULT_PAGE).to_i
+  page = [1, page].max
+  per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
+  per_page = DEFAULT_PER_PAGE if per_page <= 0
+
+  # There are two sorts available, activity sort and flagged sort.
+  sort_by = params["sort_key"]
+  if sort_by == "flagged"
+    # If sorting by flags we sort by active flags and then inactive flags
+    sort_criterion = [
+      ["course_stats.active_flags", :desc],
+      ["course_stats.inactive_flags", :desc],
+    ]
+  else
+    # If sorting by activity (default) sort by thread count, then responses, then replies.
+    sort_criterion = [
+      ["course_stats.threads", :desc],
+      ["course_stats.responses", :desc],
+      ["course_stats.replies", :desc],
+    ]
   end
-  user_data.to_json
+
+  paginated_stats = User
+                      .where("course_stats.course_id" => course_id)
+                      .only(:username, :'course_stats.$')  # Only return the username and the course stats document matched above.
+                      .order_by(sort_criterion)
+                      .paginate(:page => page, :per_page => per_page)
+  total_count = paginated_stats.total_entries
+
+  data = paginated_stats.to_a.map do |user_stats|
+    {
+      :username => user_stats["username"]
+    }.merge(user_stats["course_stats"].first.except("_id", "course_id"))
+  end
+
+  {
+    user_stats: data,
+    num_pages: [1, (total_count / per_page.to_f).ceil].max,
+    page: page,
+    count: total_count,
+  }.to_json
 end
 
 get "#{APIPREFIX}/users/:user_id" do |user_id|
