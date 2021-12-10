@@ -54,13 +54,17 @@ helpers do
 
   def flag_as_abuse(obj)
     raise ArgumentError, t(:user_id_is_required) unless user
+    first_flag_added = obj.abuse_flaggers.empty?
     obj.abuse_flaggers << user.id unless obj.abuse_flaggers.include? user.id
-    obj.save
+    obj.save!
+    # If this is the first abuse flag, count it, otherwise don't increment the count
+    obj.author.update_stats_for_course(obj.course_id, active_flags: 1) if first_flag_added
     obj.reload.to_hash.to_json
   end
 
   def un_flag_as_abuse(obj)
     raise ArgumentError, t(:user_id_is_required) unless user
+    has_no_historical_flags = obj.historical_abuse_flaggers.empty?
     if params["all"]
       obj.historical_abuse_flaggers += obj.abuse_flaggers
       obj.historical_abuse_flaggers = obj.historical_abuse_flaggers.uniq
@@ -68,8 +72,16 @@ helpers do
     else
       obj.abuse_flaggers.delete user.id
     end
+    obj.save!
 
-    obj.save
+    # Check that we started with no historical flags, but some exist now.
+    first_historical_flag = (has_no_historical_flags and (not obj.historical_abuse_flaggers.empty?))
+
+    # If a first historical flag was added increment the count.
+    obj.author.update_stats_for_course(obj.course_id, inactive_flags: 1) if first_historical_flag
+
+    # If this operation results in no more abuse flags, decrement the count.
+    obj.author.update_stats_for_course(obj.course_id, active_flags: -1) if obj.abuse_flaggers.empty?
     obj.reload.to_hash.to_json
   end
 

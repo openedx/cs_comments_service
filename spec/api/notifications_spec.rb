@@ -37,7 +37,7 @@ describe "app" do
       # Keys for the returned hash: content, title, commentable_id, group_id (only present if cohorted).
 
       start_time = Time.now
-      user = User.create(:external_id => 1,:username => "example")
+      user = create_test_user(Random.new)
       thread = create_thread(user, options)
 
       subscription = Subscription.create(:subscriber_id => user._id.to_s, :source_id => thread._id.to_s)
@@ -69,7 +69,7 @@ describe "app" do
 
     describe "POST /api/v1/notifications" do
       it "returns notifications by class and user" do
-        expected_comment_body = random_string = (0..5).map{ ('a'..'z').to_a[rand(26)] }.join
+        expected_comment_body = random_string = (0..5).map { ('a'..'z').to_a[rand(26)] }.join
         thread_notification = get_thread_notification(expected_comment_body)
         actual_comment_body = thread_notification["content"][0]["body"]
         actual_comment_body.should eq(expected_comment_body)
@@ -89,10 +89,10 @@ describe "app" do
 
         # first make a dummy thread and comment and a subscription
         commentable = Commentable.new("question_1")
-        user = User.create(:external_id => 1,:username => "example")
+        user = create_test_user(Random.new)
         thread = create_thread(user)
 
-        subscription = Subscription.create({:subscriber_id => user._id.to_s, :source_id => thread._id.to_s})
+        subscription = Subscription.create({ :subscriber_id => user._id.to_s, :source_id => thread._id.to_s })
 
         comment = Comment.new(body: "dummy body text", course_id: "1")
         comment.commentable_id = commentable.id
@@ -112,20 +112,20 @@ describe "app" do
         payload = JSON.parse last_response.body
         courses = payload[user.id.to_s]
         thread_ids = []
-        courses.each do |k,v|
-            v.each do |kk,vv|
-                thread_ids << kk
-            end
+        courses.each do |k, v|
+          v.each do |kk, vv|
+            thread_ids << kk
+          end
         end
         #now make sure the threads are a subset of the user's subscriptions
         subscriptions = Subscription.where(:subscriber_id => user.id.to_s)
-        subscribed_thread_ids = subscriptions.collect{|s| s.source_id}
+        subscribed_thread_ids = subscriptions.collect { |s| s.source_id }
 
         (subscribed_thread_ids.to_set.superset? thread_ids.to_set).should == true
 
       end
 
-        it "returns only unflagged threads" do
+      it "returns only unflagged threads" do
         start_time = Date.today - 100.days
        
 
@@ -141,28 +141,28 @@ describe "app" do
         payload = JSON.parse last_response.body
         courses = payload[user.id.to_s]
         thread_ids = []
-        courses.each do |k,v|
-            v.each do |kk,vv|
-                thread_ids << kk
-            end
+        courses.each do |k, v|
+          v.each do |kk, vv|
+            thread_ids << kk
+          end
         end
         #now flag the first thread
         thread = CommentThread.find thread_ids.first
         thread.historical_abuse_flaggers << ["1"]
 
         sleep 1
-        
+
         end_time = Time.now + 5.seconds
-        
+
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
         last_response.should be_ok
         payload = JSON.parse last_response.body
         courses = payload[user.id.to_s]
         new_thread_ids = []
-        courses.each do |k,v|
-            v.each do |kk,vv|
-                new_thread_ids << kk
-            end
+        courses.each do |k, v|
+          v.each do |kk, vv|
+            new_thread_ids << kk
+          end
         end
 
         (new_thread_ids.include? thread.id).should == false

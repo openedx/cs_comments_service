@@ -14,6 +14,7 @@ class User
   field :default_sort_key, type: String, default: "date"
 
   embeds_many :read_states
+  embeds_many :course_stats, class_name: 'CourseStats'
   has_many :comments, inverse_of: :author
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
@@ -232,12 +233,28 @@ class User
     end
   end
 
-
   def mark_as_read(thread)
     reconnect_mongo_primary
     read_state = read_states.find_or_create_by(course_id: thread.course_id)
     read_state.last_read_times[thread.id.to_s] = Time.now.utc
     read_state.save
+  end
+
+  ##
+  # Update stats for a the user for the specified course by the specified amounts.
+  # The amounts here can be specified in the stat hash as increments/decrements.
+  #
+  # @example
+  #   update_stats_for_course("abc", replies: 1) will increment replies by 1
+  #   update_stats_for_course("abc", active_flags: -1) will decrement active flags by 1
+  def update_stats_for_course(course_id, **stat)
+    begin
+      stats = course_stats.find(course_id: course_id)
+      stats.inc(stat)
+    rescue Mongoid::Errors::DocumentNotFound
+      # If the stats don't already exist, rebuild them from scratch, in which case they will have the correct counts.
+      build_course_stats_for_user(self, course_id)
+    end
   end
 
   begin
@@ -259,6 +276,24 @@ class ReadState
   include Mongoid::Document
   field :course_id, type: String
   field :last_read_times, type: Hash, default: {}
+  embedded_in :user
+
+  validates_presence_of :course_id
+  validates_uniqueness_of :course_id
+
+  def to_hash
+    to_json
+  end
+end
+
+class CourseStats
+  include Mongoid::Document
+  field :course_id, type: String
+  field :active_flags, type: Integer, default: 0
+  field :inactive_flags, type: Integer, default: 0
+  field :threads, type: Integer, default: 0
+  field :responses, type: Integer, default: 0
+  field :replies, type: Integer, default: 0
   embedded_in :user
 
   validates_presence_of :course_id
