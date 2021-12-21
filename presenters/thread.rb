@@ -29,7 +29,7 @@ class ThreadPresenter
     @abuse_flagged_count = abuse_flagged_count
   end
 
-  def to_hash(with_responses=false, resp_skip=0, resp_limit=nil, recursive=true)
+  def to_hash(with_responses=false, resp_skip=0, resp_limit=nil, recursive=true, flagged_comments=false)
     raise ArgumentError unless resp_skip >= 0
     raise ArgumentError unless resp_limit.nil? or resp_limit >= 1
     h = @thread.to_hash
@@ -46,10 +46,16 @@ class ThreadPresenter
         else
           content = Comment.where(comment_thread_id: @thread._id, "parent_ids" => []).order_by({"sk" => 1})
         end
+        if flagged_comments
+          content = content.where(:abuse_flaggers.nin => [nil, []])
+        end
         h["children"] = merge_response_content(content)
         h["resp_total"] = content.to_a.select{|d| d.depth == 0 }.length
       else
         responses = Content.where(comment_thread_id: @thread._id).exists(parent_id: false)
+        if flagged_comments
+          responses = responses.where(:abuse_flaggers.nin => [nil, []])
+        end
         case @thread.thread_type
         when "question"
           endorsed_responses = responses.where(endorsed: true)

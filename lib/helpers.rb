@@ -127,6 +127,10 @@ helpers do
     value_to_boolean params["anonymous_to_peers"]
   end
 
+  def bool_flagged_comments
+    value_to_boolean params["flagged_comments"]
+  end
+
   def handle_paged_threads_query(paged_comment_threads)
 
   end
@@ -209,9 +213,9 @@ helpers do
         threads = []
         skipped = 0
         to_skip = (page - 1) * per_page
-        has_more = false        
+        has_more = false
         thread_count = comment_threads.count
-        
+
         # batch_size is used to cap the number of documents we might load into memory at any given time
         comment_threads.batch_size(CommentService.config["manual_pagination_batch_size"].to_i).each do |thread|
          thread_key = thread._id.to_s
@@ -230,7 +234,7 @@ helpers do
 
         # The following trick makes frontend pagers work without recalculating
         # the number of all unread threads per user on every request (since the number
-        # of threads in a course could be tens or hundreds of thousands).  It has the 
+        # of threads in a course could be tens or hundreds of thousands).  It has the
         # effect of showing that there's always just one more page of results, until
         # there definitely are no more pages.  This is really only acceptable for pagers
         # that don't actually reveal the total number of pages to the user onscreen.
@@ -238,7 +242,7 @@ helpers do
       else
         # let the installed paginator library handle pagination
         page = [1, page].max
-        paginated_collection = comment_threads.paginate(:page => page, :per_page => per_page) 
+        paginated_collection = comment_threads.paginate(:page => page, :per_page => per_page)
         threads = paginated_collection.to_a
 
         # Before updating will_paginate gem version, we need to make sure that property 'total_entries'
@@ -389,7 +393,7 @@ helpers do
       return
     end
     if CommentService.blocked_hashes.include? hash then
-      msg = t(:blocked_content_with_body_hash, :hash => hash) 
+      msg = t(:blocked_content_with_body_hash, :hash => hash)
       logger.warn msg
       error 503, [msg].to_json
     end

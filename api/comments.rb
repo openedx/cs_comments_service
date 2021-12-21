@@ -1,3 +1,39 @@
+get "#{APIPREFIX}/comments" do
+  # The `user_id` is passed via a query string, as opposed to making
+  # comments a sub-resource of a user-specific endpoint, so that this
+  # endpoint is decoupled from the specific use case of getting comments
+  # from an user, and can be extended, in the future, with alternative
+  # methods of filtering.
+
+  # handle filters
+  error 400, "user_id is required" unless params['user_id']
+  query = Comment.where(
+    author_id: params['user_id'],
+    anonymous: false,
+    anonymous_to_peers: false,
+  )
+
+  error 400, "course_id is required" unless params['course_id']
+  query = query.where(course_id: params['course_id'])
+
+  if value_to_boolean(params["flagged"])
+    query = query.where(:abuse_flaggers.nin => [nil, []])
+  end
+
+  # handle pagination
+  page = (params['page'] || DEFAULT_PAGE).to_i
+  per_page = (params['per_page'] || DEFAULT_PER_PAGE).to_i
+  paginated_collection = query.paginate(:page => page, :per_page => per_page)
+  comment_count = paginated_collection.total_entries
+
+  {
+    collection: paginated_collection.map { |c| c.to_hash },
+    comment_count: comment_count,
+    num_pages: [1, (comment_count / per_page.to_f).ceil].max,
+    page: page,
+  }.to_json
+end
+
 get "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   @comment = comment
   comment_hash = @comment.to_hash(recursive: bool_recursive)
