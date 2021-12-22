@@ -9,4 +9,15 @@ class EditHistory
   belongs_to :author, class_name: 'User', inverse_of: :comment_edits
 
   embedded_in :comment
+
+  def to_hash(params={})
+    as_document
+      .slice(
+        :reason_code,
+        :original_body,
+      )
+      .merge!(
+        "author" => author.username,
+      )
+  end
 end
