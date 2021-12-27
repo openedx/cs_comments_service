@@ -11,6 +11,6 @@ class EditHistory
 
   embedded_in :comment
   def to_hash
-    as_document.slice(ORIGINAL_BODY, REASON_CODE, "editor_username", CREATED_AT)
+    as_document.slice(ORIGINAL_BODY, REASON_CODE, EDITOR_USERNAME, CREATED_AT)
   end
 end

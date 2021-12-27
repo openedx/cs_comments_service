@@ -86,7 +86,7 @@ describe 'Comment API' do
     def test_update_endorsed(true_val, false_val)
       comment = thread.comments.first
       before = DateTime.now
-      put "/api/v1/comments/#{comment.id}", endorsed: true_val, endorsement_user_id: "#{User.first.id}"
+      put "/api/v1/comments/#{comment.id}", endorsed: true_val, endorsement_user_id: User.first.id
       after = DateTime.now
       last_response.should be_ok
       comment.reload
@@ -111,15 +111,21 @@ describe 'Comment API' do
 
     it 'updates body correctly' do
       comment = thread.comments.first
-      put "/api/v1/comments/#{comment.id}", body: 'new body'
+      original_body = comment.body
+      put "/api/v1/comments/#{comment.id}", body: 'new body', user_id: User.first.id, edit_reason_code: "test_reason"
       last_response.should be_ok
       comment.reload
-      comment.body.should == 'new body'
+      expect(comment.body).to eq 'new body'
+      edit_history = comment.edit_history.map(&:to_hash)
+      expect(edit_history.length).to eq 1
+      expect(edit_history[0]["original_body"]).to eq original_body
+      expect(edit_history[0]["reason_code"]).to eq "test_reason"
+      expect(edit_history[0]["editor_username"]).to eq User.first.id
     end
 
     it 'can update endorsed and body simultaneously' do
       comment = thread.comments.first
-      put "/api/v1/comments/#{comment.id}", body: 'new body', endorsed: true
+      put "/api/v1/comments/#{comment.id}", body: 'new body', endorsed: true, user_id: User.first.id
       last_response.should be_ok
       comment.reload
       comment.body.should == 'new body'
@@ -136,7 +142,7 @@ describe 'Comment API' do
       blocked_hash = block_post_body(BLOCKED_BODY)
       comment = thread.comments.first
       original_body = comment.body
-      put "/api/v1/comments/#{comment.id}", body: BLOCKED_BODY, endorsed: true
+      put "/api/v1/comments/#{comment.id}", body: BLOCKED_BODY, endorsed: true, user_id: User.first.id
       last_response.status.should == 503
       parse(last_response.body).first.should == I18n.t(:blocked_content_with_body_hash, :hash => blocked_hash)
       comment.reload
@@ -145,7 +151,7 @@ describe 'Comment API' do
 
     def test_unicode_data(text)
       comment = thread.comments.first
-      put "/api/v1/comments/#{comment.id}", body: text
+      put "/api/v1/comments/#{comment.id}", body: text, user_id: User.first.id
       last_response.should be_ok
       comment.reload
       comment.body.should == text

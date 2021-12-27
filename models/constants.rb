@@ -34,6 +34,8 @@ CLOSE_REASON_CODE = "close_reason_code".freeze
 EDIT_REASON_CODE = "edit_reason_code".freeze
 ORIGINAL_BODY = "original_body".freeze
 EDIT_HISTORY = "edit_history".freeze
+EDITOR_USERNAME = "editor_username".freeze
+
 
 RETIRED_TITLE = "[deleted]".freeze
 RETIRED_BODY = "[deleted]".freeze
