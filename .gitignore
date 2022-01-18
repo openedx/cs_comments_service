@@ -33,3 +33,6 @@ log/
 .idea/
 
 .ruby-version
+
+# Store status of tests to allow reruning failures
+.rspec-test-status
