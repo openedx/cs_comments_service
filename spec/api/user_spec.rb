@@ -490,13 +490,13 @@ describe "app" do
 
         it "handles updating threads" do
           thread = CommentThread.where(:author_username => @original_username, :course_id => course_id).first
-          put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question"
+          put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question", user_id: 1
           last_response.should be_ok
           new_stats = get_new_stats
           # Counts should stay the same
           expect(new_stats["threads"]).to eq @original_stats["threads"]
-          expect(new_stats["responses"]).to eq  @original_stats["responses"]
-          expect(new_stats["replies"]).to eq  @original_stats["replies"]
+          expect(new_stats["responses"]).to eq @original_stats["responses"]
+          expect(new_stats["replies"]).to eq @original_stats["replies"]
         end
 
         it "handles adding threads" do
@@ -524,7 +524,7 @@ describe "app" do
 
         it "handles updating responses" do
           comment = Comment.where(:author_username => @original_username, :course_id => course_id, :parent_id => nil).first
-          put "/api/v1/comments/#{comment.id}", body: 'new body'
+          put "/api/v1/comments/#{comment.id}", body: "new body", user_id: 1
           last_response.should be_ok
           new_stats = get_new_stats
           # Thread count should stay the same
