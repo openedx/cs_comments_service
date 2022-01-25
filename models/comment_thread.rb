@@ -77,6 +77,17 @@ class CommentThread < Content
   before_create :set_last_activity_at
   after_update :clear_endorsements
   before_destroy :destroy_subscriptions
+  after_destroy do
+    unless anonymous or anonymous_to_peers
+      author.update_stats_for_course(course_id, threads: -1)
+    end
+  end
+  after_create do
+    # Don't count anonymous posts.
+    unless anonymous or anonymous_to_peers
+      author.update_stats_for_course(course_id, threads: 1)
+    end
+  end
 
   scope :active_since, ->(from_time) { where(:last_activity_at => {:$gte => from_time}) }
   scope :standalone_context, ->() { where(:context => :standalone) }

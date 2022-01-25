@@ -66,6 +66,25 @@ class Comment < Content
   before_destroy :destroy_children
   before_create :set_thread_last_activity_at
   before_save :set_sk
+  after_destroy do
+    unless anonymous or anonymous_to_peers
+      if parent_id.nil?
+        author.update_stats_for_course(course_id, responses: -1)
+      else
+        author.update_stats_for_course(course_id, replies: -1)
+      end
+    end
+  end
+  after_create do
+    # Don't count anonymous posts
+    unless anonymous or anonymous_to_peers
+      if parent_id.nil?
+        author.update_stats_for_course(course_id, responses: 1)
+      else
+        author.update_stats_for_course(course_id, replies: 1)
+      end
+    end
+  end
 
   def self.hash_tree(nodes)
     nodes.map { |node, sub_nodes| node.to_hash.merge('children' => hash_tree(sub_nodes).compact) }
@@ -184,4 +203,64 @@ class Comment < Content
   rescue LoadError
     logger.warn "NewRelic agent library not installed"
   end
+end
+
+
+def build_course_stats_for_user(user, course_id)
+  data = Content.collection.aggregate(
+    [
+      # Match all content in the course by the specified author
+      { "$match" => { :course_id => course_id, :author_id => user.external_id } },
+      # Keep a count of flags for each entry
+      {
+        "$addFields" => {
+          # Just using $ne with null will return true if the field is absent
+          # So we first fall all absent fields to null, then check if it's null,
+          # that way we match for the absence of the field or value = null
+          :is_reply => { "$ne" => [{ "$ifNull" => ["$parent_id", nil] }, nil] }
+        }
+      },
+      {
+        "$group" => {
+          # Here we're grouping items by the type (comment or thread), and whether the comment is a reply.
+          # For threads is_reply will always be false.
+          :_id => { :type => "$_type", :is_reply => "$is_reply" },
+          # This will just count each group, so we get a breakdown of how many comments and threads a user has created.
+          :count => { "$sum" => 1 },
+          # These two will sum up the active and inactive reports in each category
+          # i.e. reported threads, reported comments, reported replies
+          # The way this works is (starting from inside out), we take the size of the abuse_flaggers list, we compare
+          # it to 0 using $cmp. If it's greater than zero then $cmp results in 1 otherwise 0.
+          # So we're summing up 1 for each abuse_flagger array that has entries, and 0 for the rest. This gives us a
+          # count of how many threads and comments have active and inactive flags.
+          :active_flags => { "$sum" => { "$cmp" => [{ "$size" => "$abuse_flaggers" }, 0] } },
+          :inactive_flags => { "$sum" => { "$cmp" => [{ "$size" => "$historical_abuse_flaggers" }, 0] } },
+        }
+      }
+    ])
+  active_flags = 0
+  inactive_flags = 0
+  threads = 0
+  responses = 0
+  replies = 0
+  data.each do |counts|
+    type, is_reply = counts[:_id].values_at "type", "is_reply"
+    if type == "Comment" and is_reply
+      replies = counts["count"]
+    elsif type == "Comment" and not is_reply
+      responses = counts["count"]
+    else
+      threads = counts["count"]
+    end
+    active_flags += counts["active_flags"]
+    inactive_flags += counts["inactive_flags"]
+  end
+  stats = user.course_stats.find_or_create_by(course_id: course_id)
+  stats.replies = replies
+  stats.responses = responses
+  stats.threads = threads
+  stats.active_flags = active_flags
+  stats.inactive_flags = inactive_flags
+  stats.save
+  stats
 end
