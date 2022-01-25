@@ -51,7 +51,6 @@ RSpec.configure do |config|
   config.include Rack::Test::Methods
   config.filter_run focus: true
   config.run_all_when_everything_filtered = true
-  config.example_status_persistence_file_path = ".rspec-test-status"
 end
 
 Mongoid.configure do |config|
@@ -170,7 +169,6 @@ def check_thread_result(user, thread, hash, is_json=false)
   expected_keys += %w(anonymous anonymous_to_peers at_position_list closed user_id)
   expected_keys += %w(username votes abuse_flaggers tags type group_id pinned)
   expected_keys += %w(comments_count unread_comments_count read endorsed last_activity_at)
-  expected_keys += %w(closed_by edit_history)
   # these keys are checked separately, when desired, using check_thread_response_paging.
   actual_keys = hash.keys - [
     "children", "endorsed_responses", "non_endorsed_responses", "resp_skip",
@@ -186,7 +184,6 @@ def check_thread_result(user, thread, hash, is_json=false)
   expect(hash["commentable_id"]).to eq thread.commentable_id
   expect(hash["at_position_list"]).to eq thread.at_position_list
   expect(hash["closed"]).to eq thread.closed
-  expect(hash["closed_by"]).to eq thread.closed_by
   expect(hash["user_id"]).to eq thread.author.id
   expect(hash["username"]).to eq thread.author.username
   expect(hash["votes"]["point"]).to eq thread.votes["point"]
@@ -200,14 +197,6 @@ def check_thread_result(user, thread, hash, is_json=false)
   expect(hash["pinned"]).to eq thread.pinned?
   expect(hash["endorsed"]).to eq thread.endorsed?
   expect(hash["comments_count"]).to eq thread.comments.length
-  edit_history = thread.edit_history.map(&:to_hash).map do |item|
-    if is_json
-      item.merge("created_at"=>item["created_at"].utc.strftime("%Y-%m-%dT%H:%M:%SZ"))
-    else
-      item.merge
-    end
-  end
-  expect(hash["edit_history"]).to eq edit_history
   hash["context"] = thread.context
 
   if is_json
