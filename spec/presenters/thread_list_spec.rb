@@ -18,7 +18,7 @@ describe ThreadListPresenter do
     it "handles unread threads" do
       pres = ThreadListPresenter.new(@threads, @reader, 'foo')
       pres.to_hash.each_with_index do |h, i|
-        h.should == ThreadPresenter.factory(@threads[i], @reader).to_hash
+        expect(h).to eq(ThreadPresenter.factory(@threads[i], @reader).to_hash)
       end
     end
 
@@ -27,13 +27,13 @@ describe ThreadListPresenter do
       @reader.save!
       pres = ThreadListPresenter.new(@threads, @reader, 'foo')
       pres.to_hash.each_with_index do |h, i|
-        h.should == ThreadPresenter.factory(@threads[i], @reader).to_hash
+        expect(h).to eq(ThreadPresenter.factory(@threads[i], @reader).to_hash)
       end
     end
 
     it "handles empty list of threads" do
       pres = ThreadListPresenter.new([], @reader, 'foo')
-      pres.to_hash.should == []
+      expect(pres.to_hash).to eq([])
     end
 
   end

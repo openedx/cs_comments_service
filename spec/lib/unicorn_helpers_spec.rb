@@ -9,13 +9,13 @@ describe UnicornHelpers do
 
     it "doesn't exit when index is valid" do
       # code 101 is special code recongnized by forum-supervisor.sh
-      lambda{subject}.should_not exit_with_code(101)
+      expect{subject}.not_to exit_with_code(101)
     end
 
     it "exits when index is invalid" do
       TaskHelpers::ElasticsearchHelper.delete_indices
       # code 101 is special code recongnized by forum-supervisor.sh
-      lambda{subject}.should exit_with_code(101)
+      expect{subject}.to exit_with_code(101)
     end
 
   end

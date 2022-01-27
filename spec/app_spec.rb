@@ -49,15 +49,15 @@ describe 'app' do
     context 'db check' do
       def test_db_check(response, is_success)
         db = double("db")
-        stub_const('Mongoid::Clients', Class.new).stub(:default).and_return(db)
+        allow(stub_const('Mongoid::Clients', Class.new)).to receive(:default).and_return(db)
         result = double('result')
-        result.stub(:ok?).and_return(response['ok'] == 1)
-        result.stub(:documents).and_return([response])
-        db.stub(:close).and_return(true)
-        db.stub(:reconnect).and_return(true)
-        db.stub(:options).and_return({read: {mode: :primary}})
+        allow(result).to receive(:ok?).and_return(response['ok'] == 1)
+        allow(result).to receive(:documents).and_return([response])
+        allow(db).to receive(:close).and_return(true)
+        allow(db).to receive(:reconnect).and_return(true)
+        allow(db).to receive(:options).and_return({read: {mode: :primary}})
         # should be checked twice, because it will retry
-        db.should_receive(:command).with({:isMaster => 1}).twice.and_return(result)
+        expect(db).to receive(:command).with({:isMaster => 1}).twice.and_return(result)
 
         body = parse(subject.body)
         if is_success
@@ -87,11 +87,11 @@ describe 'app' do
 
       it 'reports failure when db command raises an error' do
         db = double('db')
-        stub_const('Mongoid::Clients', Class.new).stub(:default).and_return(db)
-        db.stub(:close).and_return(true)
-        db.stub(:reconnect).and_return(true)
+        allow(stub_const('Mongoid::Clients', Class.new)).to receive(:default).and_return(db)
+        allow(db).to receive(:close).and_return(true)
+        allow(db).to receive(:reconnect).and_return(true)
         # should be checked twice, because it will retry
-        db.should_receive(:command).with({:isMaster => 1}).twice.and_raise(StandardError)
+        expect(db).to receive(:command).with({:isMaster => 1}).twice.and_raise(StandardError)
 
         expect(subject.status).to eq 500
         expect(parse(subject.body)).to eq({'OK' => false, 'check' => 'db'})

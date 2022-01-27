@@ -12,7 +12,7 @@ describe 'app' do
 
       def thread_result(params)
         get "/api/v1/threads", params
-        last_response.should be_ok
+        expect(last_response).to be_ok
         parse(last_response.body)["collection"]
       end
 
@@ -23,10 +23,10 @@ describe 'app' do
             t.save!
           end
           rs = thread_result course_id: "abc"
-          rs.length.should == 2
+          expect(rs.length).to eq(2)
           rs.each_with_index { |res, i|
             check_thread_result_json(nil, @threads["t#{2-i}"], res)
-            res["course_id"].should == "abc"
+            expect(res["course_id"]).to eq("abc")
           }
         end
         it "does not return standalone threads" do
@@ -37,7 +37,7 @@ describe 'app' do
           @threads["t2"].context = :standalone
           @threads["t2"].save!
           rs = thread_result course_id: "abc"
-          rs.length.should == 2
+          expect(rs.length).to eq(2)
           check_thread_result_json(nil, @threads["t3"], rs[0])
           check_thread_result_json(nil, @threads["t1"], rs[1])
         end
@@ -55,7 +55,7 @@ describe 'app' do
           @threads["t4"].commentable_id = "commentable1"
           @threads["t4"].save!
           rs = thread_result course_id: "course1", commentable_ids: "commentable1,commentable3"
-          rs.length.should == 2
+          expect(rs.length).to eq(2)
           check_thread_result_json(nil, @threads["t3"], rs[0])
           check_thread_result_json(nil, @threads["t1"], rs[1])
         end
@@ -67,7 +67,7 @@ describe 'app' do
           @threads["t2"].group_id = 101
           @threads["t2"].save!
           rs = thread_result course_id: "omg", group_id: 100
-          rs.length.should == 1
+          expect(rs.length).to eq(1)
           check_thread_result_json(nil, @threads["t1"], rs.first)
         end
         it "returns only threads where course id and group ids match" do
@@ -78,7 +78,7 @@ describe 'app' do
           @threads["t2"].group_id = 101
           @threads["t2"].save!
           rs = thread_result course_id: "omg", group_ids: "100,101"
-          rs.length.should == 2
+          expect(rs.length).to eq(2)
         end
         it "returns only threads where course id and group id match or group id is nil" do
           @threads["t1"].course_id = "omg"
@@ -89,40 +89,40 @@ describe 'app' do
           @threads["t3"].group_id = 100
           @threads["t3"].save!
           rs = thread_result course_id: "omg", group_id: 100
-          rs.length.should == 2
+          expect(rs.length).to eq(2)
           rs.each_with_index { |res, i|
             check_thread_result_json(nil, @threads["t#{2-i}"], res)
-            res["course_id"].should == "omg"
+            expect(res["course_id"]).to eq("omg")
           }
         end
         it "returns an empty result when no threads match course_id" do
           rs = thread_result course_id: 99
-          rs.length.should == 0
+          expect(rs.length).to eq(0)
         end
         it "returns only group-less threads when no threads have matching group id" do
           @threads["t1"].group_id = 123
           @threads["t1"].save!
           rs = thread_result course_id: DFLT_COURSE_ID, group_id: 321
-          rs.each.map { |res| res["group_id"].should be_nil }
+          rs.each.map { |res| expect(res["group_id"]).to be_nil }
         end
         context "when filtering flagged posts" do
           it "returns threads that are flagged" do
             @threads["t1"].abuse_flaggers = [1]
             @threads["t1"].save!
             rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
-            rs.length.should == 1
+            expect(rs.length).to eq(1)
             check_thread_result_json(nil, @threads["t1"], rs.first)
           end
           it "returns threads that have flagged comments" do
             @comments["t2 c3"].abuse_flaggers = [1]
             @comments["t2 c3"].save!
             rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
-            rs.length.should == 1
+            expect(rs.length).to eq(1)
             check_thread_result_json(nil, @threads["t2"], rs.first)
           end
           it "returns an empty result when no posts were flagged" do
             rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
-            rs.length.should == 0
+            expect(rs.length).to eq(0)
           end
         end
         context "when filtering posts by author" do
@@ -178,28 +178,28 @@ describe 'app' do
           end
           it "returns all threads when thread_type is not provided" do
             rs = thread_result course_id: DFLT_COURSE_ID
-            rs.length.should == 10
+            expect(rs.length).to eq(10)
           end
         end
         it "filters unread posts" do
           user = create_test_user(Random.new)
           rs = thread_result course_id: DFLT_COURSE_ID, user_id: user.id
-          rs.length.should == 10
+          expect(rs.length).to eq(10)
           rs2 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
-          rs2.should == rs
+          expect(rs2).to eq(rs)
           user.mark_as_read(@threads[rs.first["title"]])
           rs3 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
-          rs3.should == rs[1..9]
+          expect(rs3).to eq(rs[1..9])
           rs[1..8].each { |r| user.mark_as_read(@threads[r["title"]]) }
           rs4 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
-          rs4.should == rs[9, 1]
+          expect(rs4).to eq(rs[9, 1])
           user.mark_as_read(@threads[rs.last["title"]])
           rs5 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
-          rs5.should == []
+          expect(rs5).to eq([])
           make_comment(create_test_user(Random.new), @threads[rs.first["title"]], "new activity")
           rs6 = thread_result course_id: DFLT_COURSE_ID, user_id: user.id, unread: true
-          rs6.length.should == 1
-          rs6.first["title"].should == rs.first["title"]
+          expect(rs6.length).to eq(1)
+          expect(rs6.first["title"]).to eq(rs.first["title"])
         end
         it "filters unanswered questions" do
           %w[t9 t7 t5 t3 t1].each do |thread_key|
@@ -207,22 +207,22 @@ describe 'app' do
             @threads[thread_key].save!
           end
           rs = thread_result course_id: DFLT_COURSE_ID, unanswered: true
-          rs.length.should == 5
+          expect(rs.length).to eq(5)
           @comments["t1 c0"].endorsed = true
           @comments["t1 c0"].save!
           rs2 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
-          rs2.length.should == 4
+          expect(rs2.length).to eq(4)
           %w[t9 t7 t5].each do |thread_key|
             comment = @threads[thread_key].comments.first
             comment.endorsed = true
             comment.save!
           end
           rs3 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
-          rs3.length.should == 1
+          expect(rs3.length).to eq(1)
           @comments["t3 c0"].endorsed = true
           @comments["t3 c0"].save!
           rs3 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
-          rs3.length.should == 0
+          expect(rs3.length).to eq(0)
         end
         it "ignores endorsed comments that are not question responses" do
           thread = @threads["t0"]
@@ -232,7 +232,7 @@ describe 'app' do
           comment.endorsed = true
           comment.save!
           rs = thread_result course_id: DFLT_COURSE_ID, unanswered: true
-          rs.length.should == 1
+          expect(rs.length).to eq(1)
         end
         it "correctly considers read state" do
           user = create_test_user(123)
@@ -241,52 +241,52 @@ describe 'app' do
             t.save!
           end
           rs = thread_result course_id: "abc", user_id: "123"
-          rs.length.should == 2
+          expect(rs.length).to eq(2)
           rs.each_with_index { |result, i|
             check_thread_result_json(user, @threads["t#{2-i}"], result)
-            result["course_id"].should == "abc"
-            result["unread_comments_count"].should == 5
-            result["read"].should == false
+            expect(result["course_id"]).to eq("abc")
+            expect(result["unread_comments_count"]).to eq(5)
+            expect(result["read"]).to eq(false)
           }
 
           user.mark_as_read(@threads["t1"])
           rs = thread_result course_id: "abc", user_id: "123"
-          rs.length.should == 2
+          expect(rs.length).to eq(2)
           rs.each_with_index { |result, i|
             check_thread_result_json(user, @threads["t#{2-i}"], result)
           }
-          rs[1]["read"].should == true
-          rs[1]["unread_comments_count"].should == 0
-          rs[0]["read"].should == false
-          rs[0]["unread_comments_count"].should == 5
+          expect(rs[1]["read"]).to eq(true)
+          expect(rs[1]["unread_comments_count"]).to eq(0)
+          expect(rs[0]["read"]).to eq(false)
+          expect(rs[0]["unread_comments_count"]).to eq(5)
 
           @threads["t1"].updated_at += 1 # 1 second later
           @threads["t1"].save!
           rs = thread_result course_id: "abc", user_id: "123"
-          rs.length.should == 2
+          expect(rs.length).to eq(2)
           rs.each_with_index { |result, i|
             check_thread_result_json(user, @threads["t#{2-i}"], result)
           }
-          rs[1]["read"].should == true
-          rs[1]["unread_comments_count"].should == 0
-          rs[0]["read"].should == false
-          rs[0]["unread_comments_count"].should == 5
+          expect(rs[1]["read"]).to eq(true)
+          expect(rs[1]["unread_comments_count"]).to eq(0)
+          expect(rs[0]["read"]).to eq(false)
+          expect(rs[0]["unread_comments_count"]).to eq(5)
 
           # author's own posts should not count as unread
           make_comment(user, @threads["t1"], "my two cents")
           rs = thread_result course_id: "abc", user_id: "123"
-          rs[1]["unread_comments_count"].should == 0
+          expect(rs[1]["unread_comments_count"]).to eq(0)
 
           # other's posts do, though
           make_comment(@threads["t1"].author, @threads["t1"], "the last word")
           rs = thread_result course_id: "abc", user_id: "123"
-          rs[1]["unread_comments_count"].should == 1
+          expect(rs[1]["unread_comments_count"]).to eq(1)
         end
 
         context "sorting" do
           def thread_result_order (sort_key)
             results = thread_result course_id: DFLT_COURSE_ID, sort_key: sort_key
-            results.length.should == 10
+            expect(results.length).to eq(10)
             results.map { |t| t["title"] }
           end
 
@@ -307,7 +307,7 @@ describe 'app' do
           it "sorts using create date / descending" do
             actual_order = thread_result_order("date")
             expected_order = @default_order
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
           end
           it "sort unchanged using last activity / descending when thread is updated" do
             t5 = @threads["t5"]
@@ -315,7 +315,7 @@ describe 'app' do
             t5.save!
             actual_order = thread_result_order("activity")
             expected_order = @default_order
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
           end
           it "sort unchanged using last activity / descending when comment is updated" do
             t5c = @threads["t5"].comments.first
@@ -323,7 +323,7 @@ describe 'app' do
             t5c.save!
             actual_order = thread_result_order("activity")
             expected_order = @default_order
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
           end
           it "sorts using last activity / descending when response is created" do
             t5 = @threads["t5"]
@@ -333,7 +333,7 @@ describe 'app' do
 
             actual_order = thread_result_order("activity")
             expected_order = move_to_front(@default_order, "t5")
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
           end
           it "sorts using vote count / descending" do
             user = User.all.first
@@ -342,13 +342,13 @@ describe 'app' do
             t5.save!
             actual_order = thread_result_order("votes")
             expected_order = move_to_front(@default_order, "t5")
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
           end
           it "sorts using comment count / descending" do
             make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
             actual_order = thread_result_order("comments")
             expected_order = move_to_front(@default_order, "t5")
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
           end
           it "sorts pinned items first" do
             make_comment(@threads["t5"].author, @threads["t5"], "extra comment")
@@ -357,60 +357,60 @@ describe 'app' do
 
             actual_order = thread_result_order("comments")
             expected_order = move_to_front(@default_order, "t7", "t5")
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
 
             @threads["t8"].pinned = true
             @threads["t8"].save!
 
             actual_order = thread_result_order("comments")
             expected_order = move_to_front(@default_order, "t8", "t7", "t5")
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
 
             actual_order = thread_result_order("date")
             expected_order = move_to_front(@default_order, "t8", "t7")
-            actual_order.should == expected_order
+            expect(actual_order).to eq(expected_order)
           end
 
           context "pagination" do
             def thread_result_page (sort_key, page, per_page, course_id=DFLT_COURSE_ID, user_id=nil, unread=false)
               get "/api/v1/threads", course_id: course_id, sort_key: sort_key, page: page, per_page: per_page, user_id: user_id, unread: unread
-              last_response.should be_ok
+              expect(last_response).to be_ok
               parse(last_response.body)
             end
             it "returns single page with no threads in a course" do
               result = thread_result_page("date", 1, 20, "99")
-              result["collection"].length.should == 0
-              result["thread_count"].should == 0
-              result["num_pages"].should == 1
-              result["page"].should == 1
+              expect(result["collection"].length).to eq(0)
+              expect(result["thread_count"]).to eq(0)
+              expect(result["num_pages"]).to eq(1)
+              expect(result["page"]).to eq(1)
             end
             it "returns single page" do
               result = thread_result_page("date", 1, 20)
-              result["collection"].length.should == 10
-              result["thread_count"].should == 10
-              result["num_pages"].should == 1
-              result["page"].should == 1
+              expect(result["collection"].length).to eq(10)
+              expect(result["thread_count"]).to eq(10)
+              expect(result["num_pages"]).to eq(1)
+              expect(result["page"]).to eq(1)
             end
             it "returns multiple pages" do
               result = thread_result_page("date", 1, 5)
-              result["collection"].length.should == 5
-              result["thread_count"].should == 10
-              result["num_pages"].should == 2
-              result["page"].should == 1
+              expect(result["collection"].length).to eq(5)
+              expect(result["thread_count"]).to eq(10)
+              expect(result["num_pages"]).to eq(2)
+              expect(result["page"]).to eq(1)
 
               result = thread_result_page("date", 2, 5)
-              result["collection"].length.should == 5
-              result["thread_count"].should == 10
-              result["num_pages"].should == 2
-              result["page"].should == 2
+              expect(result["collection"].length).to eq(5)
+              expect(result["thread_count"]).to eq(10)
+              expect(result["num_pages"]).to eq(2)
+              expect(result["page"]).to eq(2)
             end
             it "returns page exceeding available pages with no results" do
               #TODO: Review whether we can switch pagination endpoint to raise an exception; rather than an empty page
               result = thread_result_page("date", 3, 5)
-              result["collection"].length.should == 0
-              result["thread_count"].should == 10
-              result["num_pages"].should == 2
-              result["page"].should == 3
+              expect(result["collection"].length).to eq(0)
+              expect(result["thread_count"]).to eq(10)
+              expect(result["num_pages"]).to eq(2)
+              expect(result["page"]).to eq(3)
             end
 
             def test_paged_order (sort_spec, expected_order, filter_spec=[], user_id=nil)
@@ -430,17 +430,17 @@ describe 'app' do
                     user_id,
                     filter_spec.include?("unread")
                 )
-                result["collection"].length.should == (page * per_page <= expected_order.length ? per_page : expected_order.length % per_page)
+                expect(result["collection"].length).to eq(page * per_page <= expected_order.length ? per_page : expected_order.length % per_page)
                 if filter_spec.include?("unread")
                   # because of the way we handle num_pages for the unread filter, this is a special case.
-                  result["num_pages"].should == (page == num_pages ? page : page + 1)
+                  expect(result["num_pages"]).to eq(page == num_pages ? page : page + 1)
                 else
-                  result["num_pages"].should == num_pages
+                  expect(result["num_pages"]).to eq(num_pages)
                 end
-                result["page"].should == page
+                expect(result["page"]).to eq(page)
                 actual_order += result["collection"].map { |v| v["title"] }
               end
-              actual_order.should == expected_order
+              expect(actual_order).to eq(expected_order)
             end
 
             it "orders correctly across pages" do
@@ -492,7 +492,7 @@ describe 'app' do
         get "/api/v1/threads/#{thread.id}"
       end
 
-      it { should be_ok }
+      it { is_expected.to be_ok }
 
       it 'returns JSON' do
         expect(subject.content_type).to eq 'application/json'
@@ -531,7 +531,7 @@ describe 'app' do
           get "/api/v1/threads/#{thread.id}", {:user_id => thread.author.id, :mark_as_read => true}
         end
 
-        it { should be_ok }
+        it { is_expected.to be_ok }
 
         # This is a test to ensure that the username is included even if the
         # thread's author is the one looking at the comment. This is because of a
@@ -550,7 +550,7 @@ describe 'app' do
           get "/api/v1/threads/#{thread.id}", recursive: true
         end
 
-        it { should be_ok }
+        it { is_expected.to be_ok }
 
         it 'get information of a single comment thread with its comments' do
           parsed = parse(subject.body)
@@ -588,7 +588,7 @@ describe 'app' do
           last_response
         end
 
-        it { should be_ok }
+        it { is_expected.to be_ok }
 
         it 'marks thread as read and confirms its value on returned response' do
           parsed = parse(subject.body)
@@ -649,7 +649,7 @@ describe 'app' do
 
         def thread_result(id, params)
           get "/api/v1/threads/#{id}", params
-          last_response.should be_ok
+          expect(last_response).to be_ok
           parse(last_response.body)
         end
 
@@ -694,42 +694,42 @@ describe 'app' do
         comment.endorsed = true
         comment.save
         put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question"
-        last_response.should be_ok
+        expect(last_response).to be_ok
         changed_thread = CommentThread.find(thread.id)
-        changed_thread.body.should == "new body"
-        changed_thread.title.should == "new title"
-        changed_thread.commentable_id.should == "new_commentable_id"
-        changed_thread.thread_type.should == "question"
+        expect(changed_thread.body).to eq("new body")
+        expect(changed_thread.title).to eq("new title")
+        expect(changed_thread.commentable_id).to eq("new_commentable_id")
+        expect(changed_thread.thread_type).to eq("question")
         comment.reload
-        comment.endorsed.should == false
-        comment.endorsement.should == nil
+        expect(comment.endorsed).to eq(false)
+        expect(comment.endorsement).to eq(nil)
         check_unread_thread_result_json(changed_thread, parse(last_response.body))
       end
       it "returns 400 when the thread does not exist" do
         put "/api/v1/threads/does_not_exist", body: "new body", title: "new title"
-        last_response.status.should == 400
-        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
+        expect(last_response.status).to eq(400)
+        expect(parse(last_response.body).first).to eq(I18n.t(:requested_object_not_found))
       end
       it "returns 503 and does not update if the post body has been blocked" do
         thread = CommentThread.first
         original_body = thread.body
         put "/api/v1/threads/#{thread.id}", body: "BLOCKED POST", title: "new title", commentable_id: "new_commentable_id"
-        last_response.status.should == 503
+        expect(last_response.status).to eq(503)
         thread.reload
-        thread.body.should == original_body
+        expect(thread.body).to eq(original_body)
         put "/api/v1/threads/#{thread.id}", body: "blocked,   post...", title: "new title", commentable_id: "new_commentable_id"
-        last_response.status.should == 503
+        expect(last_response.status).to eq(503)
         thread.reload
-        thread.body.should == original_body
+        expect(thread.body).to eq(original_body)
       end
 
       def test_unicode_data(text)
         thread = CommentThread.first
         put "/api/v1/threads/#{thread.id}", body: text, title: text
-        last_response.should be_ok
+        expect(last_response).to be_ok
         thread = CommentThread.find(thread.id)
-        thread.body.should == text
-        thread.title.should == text
+        expect(thread.body).to eq(text)
+        expect(thread.title).to eq(text)
       end
 
       include_examples "unicode data"
@@ -746,14 +746,14 @@ describe 'app' do
         user = User.first
         orig_count = thread.comment_count
         post "/api/v1/threads/#{thread.id}/comments", default_params
-        last_response.should be_ok
+        expect(last_response).to be_ok
         retrieved = parse last_response.body
         changed_thread = CommentThread.find(thread.id)
-        changed_thread.comment_count.should == orig_count + 1
+        expect(changed_thread.comment_count).to eq(orig_count + 1)
         comment = changed_thread.comments.select { |c| c["body"] == "new comment" }.first
-        comment.should_not be_nil
-        comment.author_id.should == user.id
-        retrieved["child_count"].should == 0
+        expect(comment).not_to be_nil
+        expect(comment.author_id).to eq(user.id)
+        expect(retrieved["child_count"]).to eq(0)
 
         test_thread_marked_as_read(thread.id, user.id)
       end
@@ -762,37 +762,37 @@ describe 'app' do
         user = User.first
         orig_count = thread.comment_count
         post "/api/v1/threads/#{thread.id}/comments", default_params.merge(anonymous: true)
-        last_response.should be_ok
+        expect(last_response).to be_ok
         changed_thread = CommentThread.find(thread.id)
-        changed_thread.comment_count.should == orig_count + 1
+        expect(changed_thread.comment_count).to eq(orig_count + 1)
         comment = changed_thread.comments.select { |c| c["body"] == "new comment" }.first
-        comment.should_not be_nil
-        comment.anonymous.should be true
+        expect(comment).not_to be_nil
+        expect(comment.anonymous).to be true
       end
       it "returns 400 when the thread does not exist" do
         post "/api/v1/threads/does_not_exist/comments", default_params
-        last_response.status.should == 400
-        parse(last_response.body).first.should == I18n.t(:requested_object_not_found)
+        expect(last_response.status).to eq(400)
+        expect(parse(last_response.body).first).to eq(I18n.t(:requested_object_not_found))
       end
       it "returns error when body or course_id does not exist, or when body is blank" do
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: nil)
-        last_response.status.should == 400
+        expect(last_response.status).to eq(400)
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(course_id: nil)
-        last_response.status.should == 400
+        expect(last_response.status).to eq(400)
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "    \n      \n  ")
-        last_response.status.should == 400
+        expect(last_response.status).to eq(400)
       end
       it "returns 503 and does not create when the post body has been blocked" do
         post "/api/v1/threads/#{CommentThread.first.id}/comments", default_params.merge(body: "BLOCKED POST")
-        last_response.status.should == 503
-        Comment.where(body: "BLOCKED POST").to_a.should be_empty
+        expect(last_response.status).to eq(503)
+        expect(Comment.where(body: "BLOCKED POST").to_a).to be_empty
       end
 
       def test_unicode_data(text)
         thread = CommentThread.first
         post "/api/v1/threads/#{thread.id}/comments", default_params.merge(body: text)
-        last_response.should be_ok
-        thread.comments.where(body: text).should_not be_empty
+        expect(last_response).to be_ok
+        expect(thread.comments.where(body: text)).not_to be_empty
       end
 
       include_examples "unicode data"
@@ -803,7 +803,7 @@ describe 'app' do
 
       subject { delete "/api/v1/threads/#{thread.id}" }
 
-      it { should be_ok }
+      it { is_expected.to be_ok }
 
       it 'deletes the comment thread and its comments' do
         expect(CommentThread.where(id: thread.id).count).to eq 1

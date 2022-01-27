@@ -62,7 +62,7 @@ describe "app" do
         }
       )
 
-      last_response.should be_ok
+      expect(last_response).to be_ok
       response_hash = JSON.parse(last_response.body)
       return response_hash[user.id][comment.course_id][thread.id.to_s]
     end
@@ -72,17 +72,17 @@ describe "app" do
         expected_comment_body = random_string = (0..5).map { ('a'..'z').to_a[rand(26)] }.join
         thread_notification = get_thread_notification(expected_comment_body)
         actual_comment_body = thread_notification["content"][0]["body"]
-        actual_comment_body.should eq(expected_comment_body)
+        expect(actual_comment_body).to eq(expected_comment_body)
       end
 
       it "contains cohort group_id if defined" do
         thread_notification = get_thread_notification("dummy comment content", :group_id => 1974)
-        thread_notification["group_id"].should be(1974)
+        expect(thread_notification["group_id"]).to be(1974)
       end
 
       it "does not contain cohort group_id if not defined" do
         thread_notification = get_thread_notification("dummy comment content")
-        thread_notification.has_key?("group_id").should be false
+        expect(thread_notification.has_key?("group_id")).to be false
       end
 
       it "returns only threads subscribed to by user" do
@@ -108,7 +108,7 @@ describe "app" do
 
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
 
-        last_response.should be_ok
+        expect(last_response).to be_ok
         payload = JSON.parse last_response.body
         courses = payload[user.id.to_s]
         thread_ids = []
@@ -121,7 +121,7 @@ describe "app" do
         subscriptions = Subscription.where(:subscriber_id => user.id.to_s)
         subscribed_thread_ids = subscriptions.collect { |s| s.source_id }
 
-        (subscribed_thread_ids.to_set.superset? thread_ids.to_set).should == true
+        expect(subscribed_thread_ids.to_set.superset? thread_ids.to_set).to eq(true)
 
       end
 
@@ -137,7 +137,7 @@ describe "app" do
 
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
 
-        last_response.should be_ok
+        expect(last_response).to be_ok
         payload = JSON.parse last_response.body
         courses = payload[user.id.to_s]
         thread_ids = []
@@ -155,7 +155,7 @@ describe "app" do
         end_time = Time.now + 5.seconds
 
         post "/api/v1/notifications", from: CGI::escape(start_time.to_s), to: CGI::escape(end_time.to_s), user_ids: user.id
-        last_response.should be_ok
+        expect(last_response).to be_ok
         payload = JSON.parse last_response.body
         courses = payload[user.id.to_s]
         new_thread_ids = []
@@ -165,7 +165,7 @@ describe "app" do
           end
         end
 
-        (new_thread_ids.include? thread.id).should == false
+        expect(new_thread_ids.include? thread.id).to eq(false)
 
       end
 

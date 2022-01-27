@@ -603,7 +603,7 @@ describe "app" do
         user.reload
         read_states = user.read_states.where(course_id: thread.course_id).to_a
         read_date = read_states.first.last_read_times[thread.id.to_s]
-        read_date.should >= thread.updated_at
+        expect(read_date).to be >= thread.updated_at
       end
     end
 
@@ -674,7 +674,7 @@ describe "app" do
           # User's comments should be blanked out.
           user = User.where(external_id: '2').first
           comments = user.all_comments + user.all_comment_threads
-          expect(comments.count).should_not eq(0)
+          expect(expect(comments.count)).not_to eq(0)
           comments.each do |single_comment|
             if single_comment._type == 'CommentThread'
               expect(single_comment.title).to match(RETIRED_TITLE)
@@ -722,7 +722,7 @@ describe "app" do
           expect(JSON.parse(last_response.body)['thread_count']).to eq(0)
           # User's comments should be blanked out.
           comments = user.all_comments + user.all_comment_threads
-          expect(comments.count).should_not eq(0)
+          expect(expect(comments.count)).not_to eq(0)
           comments.each do |single_comment|
             if single_comment._type == 'CommentThread'
               expect(single_comment.title).to match(RETIRED_TITLE)
@@ -795,7 +795,7 @@ describe "app" do
 
           # User's comments should all have new username.
           comments = user.all_comments + user.all_comment_threads
-          expect(comments.count).should_not eq(0)
+          expect(expect(comments.count)).not_to eq(0)
           comments.each do |single_comment|
             expect(single_comment.author_username).to match(new_username)
           end

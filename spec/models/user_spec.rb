@@ -11,12 +11,12 @@ describe User do
   end
 
   it "should have no votes if it never voted" do
-    reader.upvoted_ids.should == []
+    expect(reader.upvoted_ids).to eq([])
   end
 
   it "should have one vote if it voted once" do
-    reader.upvoted_ids.should == []
+    expect(reader.upvoted_ids).to eq([])
     reader.vote(thread, :up)
-    reader.upvoted_ids.should == [thread._id]
+    expect(reader.upvoted_ids).to eq([thread._id])
   end
 end
