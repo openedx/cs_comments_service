@@ -36,7 +36,7 @@ gem 'mongoid_magic_counter_cache'
 # function 'handle_threads_query'.
 gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
-gem 'nokogiri', "~>1.8.1"
+gem 'nokogiri', "~> 1.8.1"
 
 gem 'elasticsearch', '~> 7.8.0'
 gem 'elasticsearch-model', '~> 7.1.0'
@@ -44,6 +44,8 @@ gem 'elasticsearch-model', '~> 7.1.0'
 gem 'dalli'
 
 gem 'rest-client'
+
+gem 'rubyzip', '~> 1.2.2'
 
 group :test do
   gem 'codecov', :require => false
