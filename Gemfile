@@ -16,7 +16,7 @@ gem 'sinatra-param', '~> 1.4'
 
 gem 'yajl-ruby', '~> 1.3.1'
 
-gem 'activemodel'
+gem 'activemodel', '~> 6.0.3.1'
 gem 'protected_attributes_continued'
 
 gem 'mongoid'
@@ -46,6 +46,14 @@ gem 'dalli'
 gem 'rest-client'
 
 gem 'rubyzip', '~> 1.2.2'
+
+gem 'ffi', '~> 1.9.24'
+
+gem 'faye-websocket', '~> 0.11.0'
+
+gem 'addressable', '~> 2.8.0'
+
+gem 'activesupport', '~> 6.0.3.1'
 
 group :test do
   gem 'codecov', :require => false
