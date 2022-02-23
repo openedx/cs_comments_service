@@ -156,3 +156,11 @@ post "#{APIPREFIX}/users/:user_id/replace_username" do |user_id|
   user.replace_username_in_all_content(params["new_username"])
   user.save
 end
+
+post "#{APIPREFIX}/users/:course_id/update_stats" do |course_id|
+  author_usernames = Content.where(anonymous: false, anonymous_to_peers: false, course_id: course_id).distinct(:author_username)
+  for author_username in author_usernames do
+    user = User.find_by(username: author_username)
+    user.delay.build_course_stats_for_user(course_id)
+  end
+end

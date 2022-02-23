@@ -434,7 +434,7 @@ describe "app" do
             end
           end
         end
-        authors.map { |author| build_course_stats_for_user(author, course_id) }
+        authors.map { |author| author.delay.build_course_stats_for_user(course_id) }
         expected_data
       end
 

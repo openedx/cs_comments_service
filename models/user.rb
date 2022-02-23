@@ -254,8 +254,67 @@ class User
       stats.inc(stat)
     rescue Mongoid::Errors::DocumentNotFound
       # If the stats don't already exist, rebuild them from scratch, in which case they will have the correct counts.
-      build_course_stats_for_user(self, course_id)
+      self.delay.build_course_stats_for_user(course_id)
     end
+  end
+
+  def build_course_stats_for_user(course_id)
+    data = Content.collection.aggregate(
+      [
+        # Match all content in the course by the specified author
+        { "$match" => { :course_id => course_id, :author_id => self.external_id } },
+        # Keep a count of flags for each entry
+        {
+          "$addFields" => {
+            # Just using $ne with null will return true if the field is absent
+            # So we first fall all absent fields to null, then check if it's null,
+            # that way we match for the absence of the field or value = null
+            :is_reply => { "$ne" => [{ "$ifNull" => ["$parent_id", nil] }, nil] }
+          }
+        },
+        {
+          "$group" => {
+            # Here we're grouping items by the type (comment or thread), and whether the comment is a reply.
+            # For threads is_reply will always be false.
+            :_id => { :type => "$_type", :is_reply => "$is_reply" },
+            # This will just count each group, so we get a breakdown of how many comments and threads a user has created.
+            :count => { "$sum" => 1 },
+            # These two will sum up the active and inactive reports in each category
+            # i.e. reported threads, reported comments, reported replies
+            # The way this works is (starting from inside out), we take the size of the abuse_flaggers list, we compare
+            # it to 0 using $cmp. If it's greater than zero then $cmp results in 1 otherwise 0.
+            # So we're summing up 1 for each abuse_flagger array that has entries, and 0 for the rest. This gives us a
+            # count of how many threads and comments have active and inactive flags.
+            :active_flags => { "$sum" => { "$cmp" => [{ "$size" => "$abuse_flaggers" }, 0] } },
+            :inactive_flags => { "$sum" => { "$cmp" => [{ "$size" => "$historical_abuse_flaggers" }, 0] } },
+          }
+        }
+      ])
+    active_flags = 0
+    inactive_flags = 0
+    threads = 0
+    responses = 0
+    replies = 0
+    data.each do |counts|
+      type, is_reply = counts[:_id].values_at "type", "is_reply"
+      if type == "Comment" and is_reply
+        replies = counts["count"]
+      elsif type == "Comment" and not is_reply
+        responses = counts["count"]
+      else
+        threads = counts["count"]
+      end
+      active_flags += counts["active_flags"]
+      inactive_flags += counts["inactive_flags"]
+    end
+    stats = self.course_stats.find_or_create_by(course_id: course_id)
+    stats.replies = replies
+    stats.responses = responses
+    stats.threads = threads
+    stats.active_flags = active_flags
+    stats.inactive_flags = inactive_flags
+    stats.save
+    stats
   end
 
   begin
