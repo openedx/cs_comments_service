@@ -139,14 +139,14 @@ GEM
     pry-nav (0.2.4)
       pry (>= 0.9.10, < 0.11.0)
     public_suffix (4.0.6)
-    rack (1.6.8)
-    rack-protection (1.5.3)
+    rack (1.6.13)
+    rack-protection (1.5.5)
       rack
     rack-test (0.6.3)
       rack (>= 1.0)
     rack-timeout (0.4.2)
     raindrops (0.18.0)
-    rake (12.0.0)
+    rake (12.3.3)
     rb-fsevent (0.9.8)
     rb-inotify (0.9.10)
       ffi (>= 0.5.0, < 2)
@@ -249,9 +249,10 @@ DEPENDENCIES
   pry
   pry-nav
   rack-contrib!
+  rack-protection (~> 1.5.5)
   rack-test
   rack-timeout
-  rake
+  rake (~> 12.3.3)
   rdiscount
   rest-client
   rs_voteable_mongo (~> 1.3)
