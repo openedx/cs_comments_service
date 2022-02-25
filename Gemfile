@@ -9,7 +9,7 @@ gem 'pry-nav'
 
 gem 'bundler'
 
-gem 'rake'
+gem 'rake', '~> 12.3.3'
 
 gem 'sinatra'
 gem 'sinatra-param', '~> 1.4'
@@ -54,6 +54,8 @@ gem 'faye-websocket', '~> 0.11.0'
 gem 'addressable', '~> 2.8.0'
 
 gem 'activesupport', '~> 6.0.3.1'
+
+gem 'rack-protection', '~> 1.5.5'
 
 group :test do
   gem 'codecov', :require => false
