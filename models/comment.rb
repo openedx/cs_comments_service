@@ -2,6 +2,7 @@ require 'logger'
 require_relative 'concerns/searchable'
 require_relative 'content'
 require_relative 'constants'
+require_relative 'edit_history'
 
 logger = Logger.new(STDOUT)
 logger.level = Logger::WARN
@@ -52,7 +53,8 @@ class Comment < Content
   end
 
   belongs_to :comment_thread, index: true
-  belongs_to :author, class_name: 'User', index: true
+  belongs_to :author, class_name: 'User', inverse_of: :comments, index: true
+  embeds_many :edit_history, cascade_callbacks: true
 
   attr_accessible :body, :course_id, :anonymous, :anonymous_to_peers, :endorsed, :endorsement, :retired_username
 
@@ -127,6 +129,7 @@ class Comment < Content
                 "username" => author_username,
                 "depth" => depth,
                 "closed" => comment_thread.nil? ? false : comment_thread.closed,
+                "edit_history" => edit_history.map(&:to_hash),
                 "thread_id" => comment_thread_id,
                 "parent_id" => parent_ids[-1],
                 "commentable_id" => comment_thread.nil? ? nil : comment_thread.commentable_id,

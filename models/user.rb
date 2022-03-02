@@ -18,6 +18,7 @@ class User
   has_many :comments, inverse_of: :author
   has_many :comment_threads, inverse_of: :author
   has_many :activities, class_name: "Notification", inverse_of: :actor
+  has_many :threads_closed, class_name: 'CommentThread', inverse_of: :closed_by
   has_and_belongs_to_many :notifications, inverse_of: :receivers
 
   validates_presence_of :external_id

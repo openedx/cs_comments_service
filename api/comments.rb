@@ -55,6 +55,17 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
       updated_content["endorsement"] = new_endorsed_val ? endorsement : nil
     end
   end
+  if params[:user_id]
+    if updated_content.has_key? BODY and updated_content[BODY] != comment.body
+      edit_reason_code = params.fetch("edit_reason_code", nil)
+      comment.edit_history.build(
+        original_body: comment.body,
+        author: user,
+        reason_code: edit_reason_code,
+        editor_username: user.username,
+      )
+    end
+  end
   comment.update_attributes(updated_content)
   if comment.errors.any?
     error 400, comment.errors.full_messages.to_json
