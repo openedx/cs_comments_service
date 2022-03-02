@@ -204,7 +204,7 @@ def check_thread_result(user, thread, hash, is_json=false)
     if is_json
       item.merge("created_at"=>item["created_at"].utc.strftime("%Y-%m-%dT%H:%M:%SZ"))
     else
-      item.merge
+      item
     end
   end
   expect(hash["edit_history"]).to eq edit_history

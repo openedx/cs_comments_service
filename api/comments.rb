@@ -64,7 +64,6 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
         reason_code: edit_reason_code,
         editor_username: user.username,
       )
-      comment.save
     end
   end
   comment.update_attributes(updated_content)

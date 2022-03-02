@@ -85,7 +85,6 @@ put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
         reason_code: edit_reason_code,
         editor_username: user.username,
       )
-      thread.save
     end
   end
   thread.update_attributes(updated_content)

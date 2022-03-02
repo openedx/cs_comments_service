@@ -1,4 +1,3 @@
-
 class EditHistory
   include Mongoid::Document
   include Mongoid::Timestamps::Created
@@ -10,6 +9,7 @@ class EditHistory
   belongs_to :author, class_name: 'User', inverse_of: :comment_edits
 
   embedded_in :comment
+
   def to_hash
     as_document.slice(ORIGINAL_BODY, REASON_CODE, EDITOR_USERNAME, CREATED_AT)
   end
