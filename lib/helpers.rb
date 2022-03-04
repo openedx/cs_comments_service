@@ -172,15 +172,15 @@ helpers do
       comment_threads = context_threads
     end
 
-    if author_id
+    unless author_id.nil? or author_id.empty?
       comment_threads = comment_threads.where(:author_id => author_id)
       if author_id != user_id
         comment_threads = comment_threads.where(:anonymous => false, :anonymous_to_peers => false)
       end
     end
 
-    if thread_type
-      comment_threads = comment_threads.where({:thread_type => thread_type})
+    unless thread_type.nil? or thread_type.empty?
+      comment_threads = comment_threads.where({ :thread_type => thread_type })
     end
 
     if filter_flagged
