@@ -47,7 +47,7 @@ gem 'rest-client'
 
 gem 'rubyzip', '~> 1.2.2'
 
-gem 'ffi', '~> 1.9.24'
+gem 'ffi', '~> 1.15.5'
 
 gem 'faye-websocket', '~> 0.11.0'
 

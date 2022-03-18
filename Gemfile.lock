@@ -72,7 +72,7 @@ GEM
     faye-websocket (0.11.1)
       eventmachine (>= 0.12.0)
       websocket-driver (>= 0.5.1)
-    ffi (1.9.25)
+    ffi (1.15.5)
     formatador (0.2.5)
     guard (2.14.1)
       formatador (>= 0.2.4)
@@ -235,7 +235,7 @@ DEPENDENCIES
   factory_girl (~> 4.0)
   faker (~> 1.6)
   faye-websocket (~> 0.11.0)
-  ffi (~> 1.9.24)
+  ffi (~> 1.15.5)
   guard
   guard-unicorn
   i18n
