@@ -727,7 +727,7 @@ describe 'app' do
       it "update close reason for thread" do
         thread = CommentThread.first
         expect(thread.closed).to be false
-        put "/api/v1/threads/#{thread.id}", closed: true, user_id: User.first.id, close_reason_code: "test_code"
+        put "/api/v1/threads/#{thread.id}", closed: true, closing_user_id: User.first.id, close_reason_code: "test_code"
         last_response.should be_ok
         changed_thread = CommentThread.find(thread.id)
         expect(changed_thread.closed).to eq true
@@ -738,9 +738,9 @@ describe 'app' do
       it "closing and reopening thread clears reason code" do
         thread = CommentThread.first
         expect(thread.closed).to be false
-        put "/api/v1/threads/#{thread.id}", closed: true, user_id: User.first.id, close_reason_code: "test_code"
+        put "/api/v1/threads/#{thread.id}", closed: true, closing_user_id: User.first.id, close_reason_code: "test_code"
         last_response.should be_ok
-        put "/api/v1/threads/#{thread.id}", closed: false, user_id: User.first.id
+        put "/api/v1/threads/#{thread.id}", closed: false, closing_user_id: User.first.id
         changed_thread = CommentThread.find(thread.id)
         expect(changed_thread.closed).to be false
         expect(changed_thread.close_reason_code).to be_nil
