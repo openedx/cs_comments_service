@@ -56,15 +56,8 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
 end
 
 post "#{APIPREFIX}/users/:course_id/update_stats" do |course_id|
-  author_usernames = Content.where(
-    anonymous: false,
-    anonymous_to_peers: false,
-    course_id: course_id,
-  ).distinct(:author_username)
-  User.in(username: author_usernames).each do |user|
-    user.build_course_stats(course_id)
-  end
-  { user_count: author_usernames.length }.to_json
+  updated_users = update_all_users_in_course(course_id)
+  { user_count: updated_users.length }.to_json
 end
 
 get "#{APIPREFIX}/users/:user_id" do |user_id|

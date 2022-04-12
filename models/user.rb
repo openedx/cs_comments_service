@@ -363,3 +363,15 @@ class CourseStats
     to_json
   end
 end
+
+def update_all_users_in_course(course_id)
+  author_usernames = Content.where(
+    anonymous: false,
+    anonymous_to_peers: false,
+    course_id: course_id,
+    ).distinct(:author_username)
+  User.in(username: author_usernames).each do |user|
+    user.build_course_stats(course_id)
+  end
+  author_usernames
+end
