@@ -55,6 +55,11 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
   }.to_json
 end
 
+post "#{APIPREFIX}/users/:course_id/update_stats" do |course_id|
+  updated_users = update_all_users_in_course(course_id)
+  { user_count: updated_users.length }.to_json
+end
+
 get "#{APIPREFIX}/users/:user_id" do |user_id|
   begin
     # Get any group_ids that may have been specified (will be an empty list if none specified).

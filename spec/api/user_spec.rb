@@ -385,61 +385,63 @@ describe "app" do
       include_examples "unicode data"
     end
 
+    def add_flags(content, expected_data)
+      # Add a random number of abuse flaggers (0 to 2) and historical abuse flaggers
+      content.abuse_flaggers = (1..Random.rand(3)).to_a
+      content.historical_abuse_flaggers = (1..Random.rand(2)).to_a
+      content.save!
+      # If any flaggers were added, increment the count of reports for the user
+      expected_data[content.author.external_id]["active_flags"] += content.abuse_flaggers.empty? ? 0 : 1
+      expected_data[content.author.external_id]["inactive_flags"] += content.historical_abuse_flaggers.empty? ? 0 : 1
+    end
+
+    def build_structure_and_response(course_id, build_initial_stats=true)
+      authors = %w[author-1 author-2 author-3].map { |id| create_test_user(id) }
+      expected_data = Hash[authors.map { |author| [
+        author.external_id,
+        {
+          "username" => author.username,
+          "active_flags" => 0,
+          "inactive_flags" => 0,
+          "threads" => 0,
+          "responses" => 0,
+          "replies" => 0,
+        }
+      ]
+      }]
+      # Create 10 random threads with random authors
+      (0..10).each do
+        thread_author = authors.sample
+        expected_data[thread_author.external_id]["threads"] += 1
+        thread = make_thread(thread_author, Faker::Lorem.sentence, course_id, Faker::Lorem.word)
+        add_flags(thread, expected_data)
+        # For each thread create 5 random comments with random authors
+        (0..5).each do
+          comment_author = authors.sample
+          expected_data[comment_author.external_id]["responses"] += 1
+          comment = make_comment(comment_author, thread, Faker::Lorem.sentence)
+          add_flags(comment, expected_data)
+          # For each comment create 3 random replies with random authors
+          (0..2).each do
+            reply_author = authors.sample
+            expected_data[reply_author.external_id]["replies"] += 1
+            reply = make_comment(reply_author, comment, Faker::Lorem.sentence)
+            add_flags(reply, expected_data)
+          end
+        end
+      end
+      if build_initial_stats
+        authors.map { |author| author.build_course_stats(course_id) }
+      end
+      expected_data
+    end
+
     describe "GET /api/v1/users/:course_id/stats" do
 
       let(:course_id) { Faker::Lorem.word }
 
-      def add_flags(content, expected_data)
-        # Add a random number of abuse flaggers (0 to 2) and historical abuse flaggers
-        content.abuse_flaggers = (1..Random.rand(3)).to_a
-        content.historical_abuse_flaggers = (1..Random.rand(2)).to_a
-        content.save!
-        # If any flaggers were added, increment the count of reports for the user
-        expected_data[content.author.external_id]["active_flags"] += content.abuse_flaggers.empty? ? 0 : 1
-        expected_data[content.author.external_id]["inactive_flags"] += content.historical_abuse_flaggers.empty? ? 0 : 1
-      end
-
-      def build_structure_and_response
-        authors = %w[author-1 author-2 author-3].map { |id| create_test_user(id) }
-        expected_data = Hash[authors.map { |author| [
-          author.external_id,
-          {
-            "username" => author.username,
-            "active_flags" => 0,
-            "inactive_flags" => 0,
-            "threads" => 0,
-            "responses" => 0,
-            "replies" => 0,
-          }
-        ]
-        }]
-        # Create 10 random threads with random authors
-        (0..10).each do
-          thread_author = authors.sample
-          expected_data[thread_author.external_id]["threads"] += 1
-          thread = make_thread(thread_author, Faker::Lorem.sentence, course_id, Faker::Lorem.word)
-          add_flags(thread, expected_data)
-          # For each thread create 5 random comments with random authors
-          (0..5).each do
-            comment_author = authors.sample
-            expected_data[comment_author.external_id]["responses"] += 1
-            comment = make_comment(comment_author, thread, Faker::Lorem.sentence)
-            add_flags(comment, expected_data)
-            # For each comment create 3 random replies with random authors
-            (0..2).each do
-              reply_author = authors.sample
-              expected_data[reply_author.external_id]["replies"] += 1
-              reply = make_comment(reply_author, comment, Faker::Lorem.sentence)
-              add_flags(reply, expected_data)
-            end
-          end
-        end
-        authors.map { |author| build_course_stats_for_user(author, course_id) }
-        expected_data
-      end
-
       it "returns user's stats with default/activity sort" do
-        expected_data = build_structure_and_response
+        expected_data = build_structure_and_response course_id
         # Sort the map entries using the default sort
         expected_result = expected_data.values.sort_by { |val| [val["threads"], val["responses"], val["replies"]] }.reverse
 
@@ -450,7 +452,7 @@ describe "app" do
       end
 
       it "returns user's stats with flagged sort" do
-        expected_data = build_structure_and_response
+        expected_data = build_structure_and_response course_id
         # Sort the map entries using the default sort
         expected_result = expected_data.values.sort_by { |val| [val["active_flags"], val["inactive_flags"]] }.reverse
 
@@ -463,7 +465,7 @@ describe "app" do
       describe "changes to content" do
 
         before(:each) do
-          expected_data = build_structure_and_response
+          expected_data = build_structure_and_response course_id
           get "/api/v1/users/#{course_id}/stats"
           res = parse(last_response.body)
           # Save stats for first entry
@@ -491,7 +493,7 @@ describe "app" do
         it "handles updating threads" do
           thread = CommentThread.where(:author_username => @original_username, :course_id => course_id).first
           put "/api/v1/threads/#{thread.id}", body: "new body", title: "new title", commentable_id: "new_commentable_id", thread_type: "question", user_id: 1
-          last_response.should be_ok
+          expect(last_response).to be_ok
           new_stats = get_new_stats
           # Counts should stay the same
           expect(new_stats["threads"]).to eq @original_stats["threads"]
@@ -505,7 +507,7 @@ describe "app" do
                body: "new thread",
                course_id: course_id,
                user_id: @original_username.delete_prefix("user")
-          last_response.should be_ok
+          expect(last_response).to be_ok
           new_stats = get_new_stats
           # Thread count should stay the same
           expect(new_stats["threads"]).to eq @original_stats["threads"] + 1
@@ -525,7 +527,7 @@ describe "app" do
         it "handles updating responses" do
           comment = Comment.where(:author_username => @original_username, :course_id => course_id, :parent_id => nil).first
           put "/api/v1/comments/#{comment.id}", body: "new body", user_id: 1
-          last_response.should be_ok
+          expect(last_response).to be_ok
           new_stats = get_new_stats
           # Thread count should stay the same
           expect(new_stats["threads"]).to eq @original_stats["threads"]
@@ -537,7 +539,7 @@ describe "app" do
           thread = CommentThread.where(:author_username => @original_username, :course_id => course_id, :parent_id => nil).first
           puts "adding comment to #{thread.id}"
           post "/api/v1/threads/#{thread.id}/comments", body: "new comment", course_id: course_id, user_id: @original_username.delete_prefix("user")
-          last_response.should be_ok
+          expect(last_response).to be_ok
           new_stats = get_new_stats
           # Thread count should stay the same
           expect(new_stats["threads"]).to eq @original_stats["threads"]
@@ -589,6 +591,33 @@ describe "app" do
           expect(new_stats["active_flags"]).to eq @original_stats["active_flags"] - 1
         end
       end
+    end
+
+    describe "POST /api/v1/users/:course_id/update_stats" do
+
+      let(:course_id) { Faker::Lorem.word }
+
+      it 'should update user stats when requested' do
+        expected_data = build_structure_and_response course_id, false
+        # Sort the map entries using the default sort
+        expected_result = expected_data.values.sort_by { |val| [val["threads"], val["responses"], val["replies"]] }.reverse
+
+        get "/api/v1/users/#{course_id}/stats"
+        expect(last_response.status).to eq(200)
+        res = parse(last_response.body)
+        expect(res["user_stats"]).not_to eq expected_result
+
+        post "/api/v1/users/#{course_id}/update_stats"
+        expect(last_response.status).to eq(200)
+        res = parse(last_response.body)
+        expect(res["user_count"]).to eq 3
+
+        get "/api/v1/users/#{course_id}/stats"
+        expect(last_response.status).to eq(200)
+        res = parse(last_response.body)
+        expect(res["user_stats"]).to eq expected_result
+      end
+
     end
 
     describe "POST /api/v1/users/:user_id/read" do
