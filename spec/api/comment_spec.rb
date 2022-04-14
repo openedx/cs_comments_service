@@ -112,7 +112,7 @@ describe 'Comment API' do
     it 'updates body correctly' do
       comment = thread.comments.first
       original_body = comment.body
-      put "/api/v1/comments/#{comment.id}", body: 'new body', user_id: User.first.id, edit_reason_code: "test_reason"
+      put "/api/v1/comments/#{comment.id}", body: 'new body', editing_user_id: User.first.id, edit_reason_code: "test_reason"
       expect(last_response).to be_ok
       comment.reload
       expect(comment.body).to eq 'new body'

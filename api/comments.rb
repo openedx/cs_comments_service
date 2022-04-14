@@ -20,6 +20,12 @@ get "#{APIPREFIX}/comments" do
     query = query.where(:abuse_flaggers.nin => [nil, []])
   end
 
+  if params["order_by"] and params["order_by"] == "flagged"
+      query = query.order(:abuse_flaggers.desc)
+  end
+
+  query = query.order(:created_at.desc)
+
   # handle pagination
   page = (params['page'] || DEFAULT_PAGE).to_i
   per_page = (params['per_page'] || DEFAULT_PER_PAGE).to_i
@@ -55,14 +61,15 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
       updated_content["endorsement"] = new_endorsed_val ? endorsement : nil
     end
   end
-  if params[:user_id]
+  if params[:editing_user_id]
     if updated_content.has_key? BODY and updated_content[BODY] != comment.body
       edit_reason_code = params.fetch("edit_reason_code", nil)
+      editor = User.find_by(external_id: params[:editing_user_id])
       comment.edit_history.build(
         original_body: comment.body,
-        author: user,
+        author: editor,
         reason_code: edit_reason_code,
-        editor_username: user.username,
+        editor_username: editor.username,
       )
     end
   end
