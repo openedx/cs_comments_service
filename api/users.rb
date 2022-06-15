@@ -17,6 +17,8 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
   per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
   per_page = DEFAULT_PER_PAGE if per_page <= 0
 
+  usernames = params.fetch("usernames", '').split(',')
+
   # There are two sorts available, activity sort and flagged sort.
   sort_by = params["sort_key"]
   if sort_by == "flagged"
@@ -34,11 +36,14 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
     ]
   end
 
-  paginated_stats = User
-                      .where("course_stats.course_id" => course_id)
-                      .only(:username, :'course_stats.$')  # Only return the username and the course stats document matched above.
-                      .order_by(sort_criterion)
-                      .paginate(:page => page, :per_page => per_page)
+  stats_query = User
+                  .where("course_stats.course_id" => course_id)
+                  .only(:username, :'course_stats.$') # Only return the username and the course stats document matched above.
+                  .order_by(sort_criterion)
+  unless usernames.empty?
+    stats_query = stats_query.in(username: usernames)
+  end
+  paginated_stats = stats_query.paginate(:page => page, :per_page => per_page)
   total_count = paginated_stats.total_entries
 
   data = paginated_stats.to_a.map do |user_stats|

@@ -449,6 +449,22 @@ describe "app" do
         expect(last_response.status).to eq(200)
         res = parse(last_response.body)
         expect(res["user_stats"]).to eq expected_result
+        end
+
+      it "returns user's stats filtered by user with default/activity sort" do
+        usernames = %w[userauthor-1 userauthor-2 userauthor-3].sample(2).join(',')
+        full_data = build_structure_and_response course_id
+        # Sort the map entries using the default sort
+        expected_result = full_data.values
+                                       .select {|val| usernames.include? val["username"]}
+                                       .sort_by { |val| [val["threads"], val["responses"], val["replies"]] }
+                                       .reverse
+
+        get "/api/v1/users/#{course_id}/stats", usernames: usernames
+        expect(last_response.status).to eq(200)
+        res = parse(last_response.body)
+        puts res
+        expect(res["user_stats"]).to eq expected_result
       end
 
       it "returns user's stats with flagged sort" do
