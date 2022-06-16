@@ -39,12 +39,18 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
   stats_query = User
                   .where("course_stats.course_id" => course_id)
                   .only(:username, :'course_stats.$') # Only return the username and the course stats document matched above.
-                  .order_by(sort_criterion)
-  unless usernames.empty?
+  if usernames.empty?
+  	stats_query = stats_query.order_by(sort_criterion)
+    paginated_stats = stats_query.paginate(:page => page, :per_page => per_page)
+    total_count = paginated_stats.total_entries
+  else
+    # If a list of usernames is provided, then sort by the order in which those names appear
     stats_query = stats_query.in(username: usernames)
+    paginated_stats = stats_query.sort_by {|u| usernames.index(u.username)}
+    # Search results are not paginated
+    total_count = paginated_stats.length
+    per_page = total_count
   end
-  paginated_stats = stats_query.paginate(:page => page, :per_page => per_page)
-  total_count = paginated_stats.total_entries
 
   data = paginated_stats.to_a.map do |user_stats|
     {

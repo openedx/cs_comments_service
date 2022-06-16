@@ -452,18 +452,17 @@ describe "app" do
         end
 
       it "returns user's stats filtered by user with default/activity sort" do
-        usernames = %w[userauthor-1 userauthor-2 userauthor-3].sample(2).join(',')
+        usernames = %w[userauthor-1 userauthor-2 userauthor-3].sample(2)
+        usernames = usernames.shuffle.join(',')
         full_data = build_structure_and_response course_id
         # Sort the map entries using the default sort
         expected_result = full_data.values
                                        .select {|val| usernames.include? val["username"]}
-                                       .sort_by { |val| [val["threads"], val["responses"], val["replies"]] }
-                                       .reverse
+                                       .sort_by { |val| usernames.index val["username"] }
 
         get "/api/v1/users/#{course_id}/stats", usernames: usernames
         expect(last_response.status).to eq(200)
         res = parse(last_response.body)
-        puts res
         expect(res["user_stats"]).to eq expected_result
       end
 
