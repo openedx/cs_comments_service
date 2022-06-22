@@ -251,11 +251,21 @@ class User
   #   update_stats_for_course("abc", active_flags: -1) will decrement active flags by 1
   def update_stats_for_course(course_id, **stat)
     begin
-      stats = course_stats.find(course_id: course_id)
+      stats = course_stats.find_by(course_id: course_id)
       stats.inc(stat)
     rescue Mongoid::Errors::DocumentNotFound
       # If the stats don't already exist, rebuild them from scratch, in which case they will have the correct counts.
       self.build_course_stats(course_id)
+    end
+  end
+
+  def update_activity_timestamp(course_id)
+    begin
+      stats = course_stats.find_by(course_id: course_id)
+      stats.last_activity_at = Time.now.utc
+      stats.save
+    rescue Mongoid::Errors::DocumentNotFound
+      return
     end
   end
 
@@ -288,6 +298,7 @@ class User
             # count of how many threads and comments have active and inactive flags.
             :active_flags => { "$sum" => { "$cmp" => [{ "$size" => "$abuse_flaggers" }, 0] } },
             :inactive_flags => { "$sum" => { "$cmp" => [{ "$size" => "$historical_abuse_flaggers" }, 0] } },
+            :latest_update_at => { "$max" => "$updated_at" },
           }
         }
       ])
@@ -296,8 +307,10 @@ class User
     threads = 0
     responses = 0
     replies = 0
+    updated_at = Time.at(0)
     data.each do |counts|
       type, is_reply = counts[:_id].values_at "type", "is_reply"
+      last_update_at = counts["latest_update_at"] || Time.at(0)
       if type == "Comment" and is_reply
         replies = counts["count"]
       elsif type == "Comment" and not is_reply
@@ -305,6 +318,7 @@ class User
       else
         threads = counts["count"]
       end
+      updated_at = [last_update_at, updated_at].max
       active_flags += counts["active_flags"]
       inactive_flags += counts["inactive_flags"]
     end
@@ -314,6 +328,7 @@ class User
     stats.threads = threads
     stats.active_flags = active_flags
     stats.inactive_flags = inactive_flags
+    stats.last_activity_at = updated_at
     stats.save
     stats
   end
@@ -355,6 +370,7 @@ class CourseStats
   field :threads, type: Integer, default: 0
   field :responses, type: Integer, default: 0
   field :replies, type: Integer, default: 0
+  field :last_activity_at, type: Time, default: nil
   embedded_in :user
 
   validates_presence_of :course_id

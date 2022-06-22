@@ -16,6 +16,7 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
   page = [1, page].max
   per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
   per_page = DEFAULT_PER_PAGE if per_page <= 0
+  with_timestamps = value_to_boolean(params["with_timestamps"])
 
   usernames = params.fetch("usernames", '').split(',')
 
@@ -28,6 +29,11 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
       "course_stats.inactive_flags" => -1,
       "username" => -1,
     }
+  elsif sort_by == "recency"
+    sort_criterion = {
+      "course_stats.last_activity_at" => -1,
+      "username" => -1,
+    }
   else
     # If sorting by activity (default) sort by thread count, then responses, then replies.
     sort_criterion = {
@@ -36,6 +42,11 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
       "course_stats.replies" => -1,
       "username" => -1,
     }
+  end
+
+  exclude_from_stats = ["_id", "course_id"]
+  unless with_timestamps
+    exclude_from_stats.append "last_activity_at"
   end
 
   if usernames.empty?
@@ -54,7 +65,7 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
     data = paginated_stats.to_a.map do |user_stats|
       {
         :username => user_stats["username"]
-      }.merge(user_stats["course_stats"].except("_id", "course_id"))
+      }.merge(user_stats["course_stats"].except(*exclude_from_stats))
     end
   else
     # If a list of usernames is provided, then sort by the order in which those names appear
@@ -68,7 +79,7 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
     data = paginated_stats.to_a.map do |user_stats|
       {
         :username => user_stats["username"]
-      }.merge(user_stats["course_stats"].first.except("_id", "course_id"))
+      }.merge(user_stats["course_stats"].first.except(*exclude_from_stats))
     end
   end
 
