@@ -43,13 +43,14 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
   	stats_query = stats_query.order_by(sort_criterion)
     paginated_stats = stats_query.paginate(:page => page, :per_page => per_page)
     total_count = paginated_stats.total_entries
+    num_pages = [1, (total_count / per_page.to_f).ceil].max
   else
     # If a list of usernames is provided, then sort by the order in which those names appear
     stats_query = stats_query.in(username: usernames)
     paginated_stats = stats_query.sort_by {|u| usernames.index(u.username)}
     # Search results are not paginated
     total_count = paginated_stats.length
-    per_page = total_count
+    num_pages = 1
   end
 
   data = paginated_stats.to_a.map do |user_stats|
@@ -60,7 +61,7 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
 
   {
     user_stats: data,
-    num_pages: [1, (total_count / per_page.to_f).ceil].max,
+    num_pages: num_pages,
     page: page,
     count: total_count,
   }.to_json
