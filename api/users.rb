@@ -23,40 +23,53 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
   sort_by = params["sort_key"]
   if sort_by == "flagged"
     # If sorting by flags we sort by active flags and then inactive flags
-    sort_criterion = [
-      ["course_stats.active_flags", :desc],
-      ["course_stats.inactive_flags", :desc],
-    ]
+    sort_criterion = {
+      "course_stats.active_flags" => -1,
+      "course_stats.inactive_flags" => -1,
+      "username" => -1,
+    }
   else
     # If sorting by activity (default) sort by thread count, then responses, then replies.
-    sort_criterion = [
-      ["course_stats.threads", :desc],
-      ["course_stats.responses", :desc],
-      ["course_stats.replies", :desc],
-    ]
+    sort_criterion = {
+      "course_stats.threads" => -1,
+      "course_stats.responses" => -1,
+      "course_stats.replies" => -1,
+      "username" => -1,
+    }
   end
 
-  stats_query = User
-                  .where("course_stats.course_id" => course_id)
-                  .only(:username, :'course_stats.$') # Only return the username and the course stats document matched above.
   if usernames.empty?
-  	stats_query = stats_query.order_by(sort_criterion)
-    paginated_stats = stats_query.paginate(:page => page, :per_page => per_page)
-    total_count = paginated_stats.total_entries
+    paginated_stats = User.collection
+                          .aggregate([
+                                       { '$match' => { "course_stats.course_id" => course_id } },
+                                       { '$project' => { 'username' => 1, 'course_stats' => 1 } },
+                                       { '$unwind' => '$course_stats' },
+                                       { '$match' => { "course_stats.course_id" => course_id } },
+                                       { '$sort' => sort_criterion },
+                                       { '$limit' => per_page },
+                                       { '$skip' => (page - 1) * per_page },
+                                     ])
+    total_count = paginated_stats.count
     num_pages = [1, (total_count / per_page.to_f).ceil].max
+    data = paginated_stats.to_a.map do |user_stats|
+      {
+        :username => user_stats["username"]
+      }.merge(user_stats["course_stats"].except("_id", "course_id"))
+    end
   else
     # If a list of usernames is provided, then sort by the order in which those names appear
-    stats_query = stats_query.in(username: usernames)
-    paginated_stats = stats_query.sort_by {|u| usernames.index(u.username)}
+    stats_query = User.where("course_stats.course_id" => course_id)
+                      .in(username: usernames)
+                      .only(:username, :'course_stats.$') # Only return the username and the course stats document matched above.
+    paginated_stats = stats_query.sort_by { |u| usernames.index(u.username) }
     # Search results are not paginated
     total_count = paginated_stats.length
     num_pages = 1
-  end
-
-  data = paginated_stats.to_a.map do |user_stats|
-    {
-      :username => user_stats["username"]
-    }.merge(user_stats["course_stats"].first.except("_id", "course_id"))
+    data = paginated_stats.to_a.map do |user_stats|
+      {
+        :username => user_stats["username"]
+      }.merge(user_stats["course_stats"].first.except("_id", "course_id"))
+    end
   end
 
   {

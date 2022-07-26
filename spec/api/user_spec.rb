@@ -395,8 +395,7 @@ describe "app" do
       expected_data[content.author.external_id]["inactive_flags"] += content.historical_abuse_flaggers.empty? ? 0 : 1
     end
 
-    def build_structure_and_response(course_id, build_initial_stats=true)
-      authors = %w[author-1 author-2 author-3].map { |id| create_test_user(id) }
+    def build_structure_and_response(course_id, authors, build_initial_stats=true)
       expected_data = Hash[authors.map { |author| [
         author.external_id,
         {
@@ -439,22 +438,27 @@ describe "app" do
     describe "GET /api/v1/users/:course_id/stats" do
 
       let(:course_id) { Faker::Lorem.word }
+      let(:authors) { %w[author-1 author-2 author-3 author-4 author-5 author-6].map { |id| create_test_user(id) } }
+
+      before(:each) do
+        build_structure_and_response Faker::Lorem.word, authors
+      end
 
       it "returns user's stats with default/activity sort" do
-        expected_data = build_structure_and_response course_id
+        expected_data = build_structure_and_response course_id, authors
         # Sort the map entries using the default sort
-        expected_result = expected_data.values.sort_by { |val| [val["threads"], val["responses"], val["replies"]] }.reverse
+        expected_result = expected_data.values.sort_by { |val| [val["threads"], val["responses"], val["replies"], val["username"]] }.reverse
 
         get "/api/v1/users/#{course_id}/stats"
         expect(last_response.status).to eq(200)
         res = parse(last_response.body)
         expect(res["user_stats"]).to eq expected_result
-        end
+      end
 
       it "returns user's stats filtered by user with default/activity sort" do
         usernames = %w[userauthor-1 userauthor-2 userauthor-3].sample(2)
         usernames = usernames.shuffle.join(',')
-        full_data = build_structure_and_response course_id
+        full_data = build_structure_and_response course_id, authors
         # Sort the map entries using the default sort
         expected_result = full_data.values
                                        .select {|val| usernames.include? val["username"]}
@@ -467,9 +471,9 @@ describe "app" do
       end
 
       it "returns user's stats with flagged sort" do
-        expected_data = build_structure_and_response course_id
+        expected_data = build_structure_and_response course_id, authors
         # Sort the map entries using the default sort
-        expected_result = expected_data.values.sort_by { |val| [val["active_flags"], val["inactive_flags"]] }.reverse
+        expected_result = expected_data.values.sort_by { |val| [val["active_flags"], val["inactive_flags"], val["username"]] }.reverse
 
         get "/api/v1/users/#{course_id}/stats", sort_key: "flagged"
         expect(last_response.status).to eq(200)
@@ -480,7 +484,7 @@ describe "app" do
       describe "changes to content" do
 
         before(:each) do
-          expected_data = build_structure_and_response course_id
+          expected_data = build_structure_and_response course_id, authors
           get "/api/v1/users/#{course_id}/stats"
           res = parse(last_response.body)
           # Save stats for first entry
@@ -552,7 +556,6 @@ describe "app" do
 
         it "handles adding responses" do
           thread = CommentThread.where(:author_username => @original_username, :course_id => course_id, :parent_id => nil).first
-          puts "adding comment to #{thread.id}"
           post "/api/v1/threads/#{thread.id}/comments", body: "new comment", course_id: course_id, user_id: @original_username.delete_prefix("user")
           expect(last_response).to be_ok
           new_stats = get_new_stats
@@ -613,7 +616,8 @@ describe "app" do
       let(:course_id) { Faker::Lorem.word }
 
       it 'should update user stats when requested' do
-        expected_data = build_structure_and_response course_id, false
+        authors = %w[author-1 author-2 author-3 author-4 author-5 author-6].map { |id| create_test_user(id) }
+        expected_data = build_structure_and_response course_id, authors, false
         # Sort the map entries using the default sort
         expected_result = expected_data.values.sort_by { |val| [val["threads"], val["responses"], val["replies"]] }.reverse
 
@@ -625,7 +629,7 @@ describe "app" do
         post "/api/v1/users/#{course_id}/update_stats"
         expect(last_response.status).to eq(200)
         res = parse(last_response.body)
-        expect(res["user_count"]).to eq 3
+        expect(res["user_count"]).to eq 6
 
         get "/api/v1/users/#{course_id}/stats"
         expect(last_response.status).to eq(200)
