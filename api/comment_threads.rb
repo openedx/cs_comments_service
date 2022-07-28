@@ -20,6 +20,7 @@ get "#{APIPREFIX}/threads" do # retrieve threads by course
     value_to_boolean(params["flagged"]),
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),
+    value_to_boolean(params["unresponded"]),
     value_to_boolean(params["count_flagged"]),
     params["sort_key"],
     params["page"],

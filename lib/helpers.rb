@@ -157,6 +157,7 @@ helpers do
     filter_flagged,
     filter_unread,
     filter_unanswered,
+    filter_unresponded,
     count_flagged,
     sort_key,
     page,
@@ -201,6 +202,10 @@ helpers do
         collect{|c| c.comment_thread_id}.uniq
 
       comment_threads = comment_threads.where({"thread_type" => :question}).nin({"_id" => endorsed_thread_ids})
+    end
+
+    if filter_unresponded
+      comment_threads = comment_threads.where(:comment_count => 0)
     end
 
     sort_criteria = get_sort_criteria(sort_key)

@@ -13,6 +13,7 @@ get "#{APIPREFIX}/users/:user_id/subscribed_threads" do |user_id|
     value_to_boolean(params["flagged"]),
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),
+    value_to_boolean(params["unresponded"]),
     value_to_boolean(params["count_flagged"]),
     params["sort_key"],
     params["page"],
