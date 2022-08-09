@@ -162,7 +162,8 @@ helpers do
     sort_key,
     page,
     per_page,
-    context=:course
+    context = :course,
+    raw_query: false
   )
     context_threads = comment_threads.where({:context => context})
 
@@ -209,14 +210,15 @@ helpers do
     end
 
     sort_criteria = get_sort_criteria(sort_key)
-    if not sort_criteria
-      {}
-    else
+
+    if sort_criteria or raw_query
       request_user = user_id ? user : nil
       page = (page || DEFAULT_PAGE).to_i
       per_page = (per_page || DEFAULT_PER_PAGE).to_i
 
-      comment_threads = comment_threads.order_by(sort_criteria)
+      unless raw_query
+        comment_threads = comment_threads.order_by(sort_criteria)
+      end
 
       if request_user and filter_unread
         # Filter and paginate based on user read state.  Requires joining a subdocument of the
@@ -237,7 +239,7 @@ helpers do
         comment_threads.batch_size(CommentService.config["manual_pagination_batch_size"].to_i).each do |thread|
          thread_key = thread._id.to_s
           if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
-            if skipped >= to_skip
+            if skipped >= to_skip or raw_query
               if threads.length == per_page
                 has_more = true
                 break
@@ -257,24 +259,32 @@ helpers do
         # that don't actually reveal the total number of pages to the user onscreen.
         num_pages = has_more ? page + 1 : page
       else
-        # let the installed paginator library handle pagination
-        page = [1, page].max
-        paginated_collection = comment_threads.paginate(:page => page, :per_page => per_page)
-        threads = paginated_collection.to_a
+        if raw_query
+          threads = comment_threads
+        else
+          # let the installed paginator library handle pagination
+          page = [1, page].max
+          paginated_collection = comment_threads.paginate(:page => page, :per_page => per_page)
+          threads = paginated_collection.to_a
 
-        # Before updating will_paginate gem version, we need to make sure that property 'total_entries'
-        # exists otherwise use updated property name to fetch total collection count.
-        thread_count = paginated_collection.total_entries
-        num_pages = [1, (thread_count / per_page.to_f).ceil].max
+          # Before updating will_paginate gem version, we need to make sure that property 'total_entries'
+          # exists otherwise use updated property name to fetch total collection count.
+          thread_count = paginated_collection.total_entries
+          num_pages = [1, (thread_count / per_page.to_f).ceil].max
+        end
       end
 
-      if threads.length == 0
+      if raw_query
+        return threads
+      elsif threads.length == 0
         collection = []
       else
         pres_threads = ThreadListPresenter.new(threads, request_user, course_id, count_flagged)
         collection = pres_threads.to_hash
       end
-      {collection: collection, num_pages: num_pages, page: page, thread_count: thread_count}
+      { collection: collection, num_pages: num_pages, page: page, thread_count: thread_count }
+    else
+      {}
     end
   end
 
@@ -288,7 +298,7 @@ helpers do
       "comments" => :comment_count,
     }
 
-    sort_key = sort_key_mapper[params["sort_key"] || "date"]
+    sort_key = sort_key_mapper[sort_key || "date"]
 
     if sort_key
       # only sort order of :desc is supported.  support for :asc would require new indices.

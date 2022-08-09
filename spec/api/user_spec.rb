@@ -287,23 +287,69 @@ describe "app" do
         expect(rs.length).to eq(9)
       end
 
-      it "correctly orders results by most recent update by selected user" do
-        user = @users["u100"]
-        base_time = DateTime.now
-        @comments["t2 c2"].author = user
-        @comments["t2 c2"].updated_at = base_time
-        @comments["t2 c2"].save!
-        @comments["t4 c4"].author = user
-        @comments["t4 c4"].updated_at = base_time + 1
-        @comments["t4 c4"].save!
-        @threads["t2"].updated_at = base_time + 2
-        @threads["t2"].save!
-        @threads["t3"].author = user
-        @threads["t3"].updated_at = base_time + 4
-        @threads["t3"].save!
-        rs = thread_result 100, course_id: "xyz"
-        actual_order = rs.map { |v| v["title"] }
-        expect(actual_order).to eq(["t3", "t4", "t2", "t0"])
+      context "sorting" do
+
+        before(:each) do
+          user = @users["u100"]
+          base_time = DateTime.now
+          @comments["t2 c2"].author = user
+          @comments["t2 c2"].updated_at = base_time
+          @comments["t2 c2"].save!
+          @comments["t4 c4"].author = user
+          @comments["t4 c4"].updated_at = base_time + 1
+          @comments["t4 c4"].save!
+          @threads["t2"].updated_at = base_time + 2
+          @threads["t2"].save!
+          @threads["t3"].author = user
+          @threads["t3"].updated_at = base_time + 4
+          @threads["t3"].save!
+          @threads["t11"] = setup_thread_with_comments user, "t11", 7
+          @threads["t12"] = setup_thread_with_comments user, "t12", 9
+          @threads["t13"] = setup_thread_with_comments user, "t13", 3
+          @threads["t11"].created_at = base_time - 10
+          @threads["t11"].save!
+          user.vote(@threads["t2"], :up)
+          user.vote(@threads["t11"], :up)
+          @users["u101"].vote @threads["t11"], :up
+          make_comment user, @threads["t2"], Faker::Lorem.sentence
+        end
+
+        it "correctly orders results by default order" do
+          rs = thread_result 100, course_id: "xyz"
+          actual_order = rs.map { |v| v["title"] }
+          expect(actual_order).to eq(%w[t3 t4 t2 t11 t13 t12 t0])
+        end
+
+        it "correctly orders results by most recent update by selected user" do
+          rs = thread_result 100, { course_id: "xyz", sort_key: "user_activity" }
+          actual_order = rs.map { |v| v["title"] }
+          expect(actual_order).to eq(%w[t3 t4 t2 t11 t13 t12 t0])
+        end
+
+        it "correctly orders results by most recent update by date" do
+          rs = thread_result 100, { course_id: "xyz", sort_key: "date" }
+          actual_order = rs.map { |v| v["title"] }
+          expect(actual_order).to eq(%w[t13 t12 t4 t3 t2 t0 t11])
+        end
+
+        it "correctly orders results by most recent update by activity" do
+          rs = thread_result 100, { course_id: "xyz", sort_key: "activity" }
+          actual_order = rs.map { |v| v["title"] }
+          expect(actual_order).to eq(%w[t2 t13 t12 t11 t4 t3 t0])
+        end
+
+        it "correctly orders results by most recent update by votes" do
+          rs = thread_result 100, { course_id: "xyz", sort_key: "votes" }
+          actual_order = rs.map { |v| v["title"] }
+          expect(actual_order).to eq(%w[t11 t2 t13 t12 t4 t3 t0])
+        end
+
+        it "correctly orders results by most recent update by comments" do
+          rs = thread_result 100, { course_id: "xyz", sort_key: "comments" }
+          actual_order = rs.map { |v| v["title"] }
+          expect(actual_order).to eq(%w[t12 t11 t2 t4 t3 t0 t13])
+        end
+
       end
 
       context "pagination" do
@@ -354,12 +400,6 @@ describe "app" do
         end
         it "accepts negative parameters" do
           result = thread_result_page(-5, -5)
-          expect(result["collection"].length).to eq(10)
-          expect(result["num_pages"]).to eq(1)
-          expect(result["page"]).to eq(1)
-        end
-        it "accepts excessively large parameters" do
-          result = thread_result_page(9999, 9999)
           expect(result["collection"].length).to eq(10)
           expect(result["num_pages"]).to eq(1)
           expect(result["page"]).to eq(1)

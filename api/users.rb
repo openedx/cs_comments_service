@@ -96,46 +96,75 @@ get "#{APIPREFIX}/users/:user_id" do |user_id|
 end
 
 get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
-  return {}.to_json if not params["course_id"]
+  return {}.to_json unless params["course_id"]
 
   page = (params["page"] || DEFAULT_PAGE).to_i
   per_page = (params["per_page"] || DEFAULT_PER_PAGE).to_i
   per_page = DEFAULT_PER_PAGE if per_page <= 0
+  sort_key = params["sort_key"] || 'user_activity'
+  raw_query = (sort_key == 'user_activity')
 
-  active_contents = Content.where(author_id: user_id, anonymous: false, anonymous_to_peers: false, course_id: params["course_id"])
-                           .order_by(updated_at: :desc)
+  filter_flagged = value_to_boolean(params["flagged"])
+
+  active_contents = Content.where(
+    author_id: user_id,
+    anonymous: false,
+    anonymous_to_peers: false,
+    course_id: params["course_id"]
+  )
+
+  if filter_flagged
+    active_contents = active_contents.where(
+        :abuse_flaggers.ne => [],
+        :abuse_flaggers.exists => true
+    )
+  end
+
+  active_contents = active_contents.order_by(updated_at: :desc)
 
   # Get threads ordered by most recent activity, taking advantage of the fact
   # that active_contents is already sorted that way
   active_thread_ids = active_contents.inject([]) do |thread_ids, content|
     thread_id = content._type == "Comment" ? content.comment_thread_id : content.id
-    thread_ids << thread_id if not thread_ids.include?(thread_id)
+    thread_ids << thread_id unless thread_ids.include?(thread_id)
     thread_ids
   end
 
-  threads = CommentThread.course_context.in({"_id" => active_thread_ids})
+  threads = CommentThread.in({ "_id" => active_thread_ids })
 
-  group_ids = get_group_ids_from_params(params)
-  if not group_ids.empty?
-    threads = get_group_id_criteria(threads, group_ids)
+  threads_data = handle_threads_query(
+    threads,
+    params["user_id"],
+    params["course_id"],
+    get_group_ids_from_params(params),
+    params["author_id"],
+    params["thread_type"],
+    false, # Filter flagged is already applied
+    value_to_boolean(params["unread"]),
+    value_to_boolean(params["unanswered"]),
+    value_to_boolean(params["unresponded"]),
+    value_to_boolean(params["count_flagged"]),
+    sort_key,
+    page,
+    per_page,
+    raw_query: raw_query
+  )
+
+  if sort_key == 'user_activity'
+    num_pages = [1, (threads_data.count / per_page.to_f).ceil].max
+    page = [num_pages, [1, page].max].min
+
+    sorted_threads = threads_data.sort_by { |t| active_thread_ids.index(t.id) }
+    paged_threads = sorted_threads[(page - 1) * per_page, per_page]
+    presenter = ThreadListPresenter.new(paged_threads, user, params[:course_id])
+    {
+      collection: presenter.to_hash,
+      num_pages: num_pages,
+      page: page,
+    }.to_json
+  else
+    threads_data.to_json
   end
-
-  num_pages = [1, (threads.count / per_page.to_f).ceil].max
-  page = [num_pages, [1, page].max].min
-
-  sorted_threads = threads.sort_by {|t| active_thread_ids.index(t.id)}
-  paged_threads = sorted_threads[(page - 1) * per_page, per_page]
-
-  presenter = ThreadListPresenter.new(paged_threads, user, params[:course_id])
-  collection = presenter.to_hash
-
-  json_output = nil
-  json_output = {
-  collection: collection,
-  num_pages: num_pages,
-  page: page,
-  }.to_json
-  json_output
 
 end
 
