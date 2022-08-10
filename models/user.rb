@@ -27,6 +27,7 @@ class User
   validates_uniqueness_of :username
 
   index( {external_id: 1}, {unique: true, background: true} )
+  index( {'course_stats.course_id': 1}, {background: true} )
 
   logger = Logger.new(STDOUT)
   logger.level = Logger::WARN
