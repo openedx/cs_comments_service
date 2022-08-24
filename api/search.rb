@@ -126,6 +126,7 @@ def get_threads(context, group_ids, local_params, search_text)
       value_to_boolean(local_params['flagged']),
       value_to_boolean(local_params['unread']),
       value_to_boolean(local_params['unanswered']),
+      value_to_boolean(local_params['unresponded']),
       value_to_boolean(local_params["count_flagged"]),
       local_params['sort_key'],
       local_params['page'],

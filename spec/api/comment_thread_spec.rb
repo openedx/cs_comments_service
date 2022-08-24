@@ -224,6 +224,19 @@ describe 'app' do
           rs3 = thread_result course_id: DFLT_COURSE_ID, unanswered: true
           expect(rs3.length).to eq(0)
         end
+        it "filters unresponded threads" do
+          author = create_test_user("unrespond")
+          rs = thread_result course_id: DFLT_COURSE_ID, unresponded: true
+          expect(rs.length).to eq(0)
+          thread = make_thread(author, "Unresponded thread", DFLT_COURSE_ID, "t-empty")
+          rs = thread_result course_id: DFLT_COURSE_ID, unresponded: true
+          expect(rs.length).to eq(1)
+          expect(rs.first["title"]).to eq("Unresponded thread")
+          expect(rs.first["comments_count"]).to eq(0)
+          make_comment(author, thread, "response to unresponded thread")
+          rs = thread_result course_id: DFLT_COURSE_ID, unresponded: true
+          expect(rs.length).to eq(0)
+        end
         it "ignores endorsed comments that are not question responses" do
           thread = @threads["t0"]
           thread.thread_type = :question
@@ -728,7 +741,7 @@ describe 'app' do
         thread = CommentThread.first
         expect(thread.closed).to be false
         put "/api/v1/threads/#{thread.id}", closed: true, closing_user_id: User.first.id, close_reason_code: "test_code"
-        last_response.should be_ok
+        expect(last_response).to be_ok
         changed_thread = CommentThread.find(thread.id)
         expect(changed_thread.closed).to eq true
         expect(changed_thread.close_reason_code).to eq "test_code"
@@ -739,7 +752,7 @@ describe 'app' do
         thread = CommentThread.first
         expect(thread.closed).to be false
         put "/api/v1/threads/#{thread.id}", closed: true, closing_user_id: User.first.id, close_reason_code: "test_code"
-        last_response.should be_ok
+        expect(last_response).to be_ok
         put "/api/v1/threads/#{thread.id}", closed: false, closing_user_id: User.first.id
         changed_thread = CommentThread.find(thread.id)
         expect(changed_thread.closed).to be false
