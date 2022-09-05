@@ -393,6 +393,14 @@ end
 
 DFLT_COURSE_ID = "xyz"
 
+def setup_thread_with_comments(author, title,  comment_count=5)
+  thread = make_thread author, title, DFLT_COURSE_ID, "pdq"
+  comment_count.times do |i|
+    make_comment author, thread, Faker::Lorem.sentence
+  end
+  thread
+end
+
 def setup_10_threads
   User.all.delete
   Content.all.delete
