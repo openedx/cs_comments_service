@@ -7,7 +7,7 @@
 # for processing longer queries in the background. The timeout has been set back
 # to 20s. Until these slow queries that benefit from being cached in the 
 # background are resolved, reducing the timeout is not suggested. 
-# More conversation at https://github.com/edx/cs_comments_service/pull/146
+# More conversation at https://github.com/openedx/cs_comments_service/pull/146
 # -Nov 18th, 2015
 
 puts "Loading config.ru."
