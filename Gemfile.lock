@@ -104,7 +104,7 @@ GEM
     mime-types-data (3.2016.0521)
     mini_portile2 (2.3.0)
     minitest (5.15.0)
-    mongo (2.5.3)
+    mongo (2.10.2)
       bson (>= 4.3.0, < 5.0.0)
     mongoid (7.0.5)
       activemodel (>= 5.1, < 6.1)
