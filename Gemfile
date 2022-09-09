@@ -45,7 +45,7 @@ gem 'dalli'
 
 gem 'rest-client'
 
-gem 'rubyzip', '~> 1.2.2'
+gem 'rubyzip', '~> 1.3.0'
 
 gem 'ffi', '~> 1.9.24'
 
