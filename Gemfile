@@ -12,7 +12,7 @@ gem 'bundler'
 gem 'rake', '~> 12.3.3'
 
 gem 'sinatra'
-gem 'sinatra-param', '~> 1.4'
+gem 'sinatra-param', '~> 1.6'
 
 gem 'yajl-ruby', '~> 1.3.1'
 
@@ -55,7 +55,7 @@ gem 'addressable', '~> 2.8.0'
 
 gem 'activesupport', '~> 6.0.3.1'
 
-gem 'rack-protection', '~> 1.5.5'
+gem 'rack-protection', '~> 2.2.2'
 
 group :test do
   gem 'codecov', :require => false
