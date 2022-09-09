@@ -435,7 +435,8 @@ describe "app" do
       expected_data[content.author.external_id]["inactive_flags"] += content.historical_abuse_flaggers.empty? ? 0 : 1
     end
 
-    def build_structure_and_response(course_id, authors, build_initial_stats=true)
+    def build_structure_and_response(course_id, authors, build_initial_stats = true, with_timestamps = false)
+      Timecop.scale(1000)
       expected_data = Hash[authors.map { |author| [
         author.external_id,
         {
@@ -452,18 +453,21 @@ describe "app" do
       (0..10).each do
         thread_author = authors.sample
         expected_data[thread_author.external_id]["threads"] += 1
+        expected_data[thread_author.external_id]["last_activity_at"] = Time.now.strftime("%Y-%m-%dT%H:%M:%SZ") if with_timestamps
         thread = make_thread(thread_author, Faker::Lorem.sentence, course_id, Faker::Lorem.word)
         add_flags(thread, expected_data)
         # For each thread create 5 random comments with random authors
         (0..5).each do
           comment_author = authors.sample
           expected_data[comment_author.external_id]["responses"] += 1
+          expected_data[comment_author.external_id]["last_activity_at"] = Time.now.strftime("%Y-%m-%dT%H:%M:%SZ") if with_timestamps
           comment = make_comment(comment_author, thread, Faker::Lorem.sentence)
           add_flags(comment, expected_data)
           # For each comment create 3 random replies with random authors
           (0..2).each do
             reply_author = authors.sample
             expected_data[reply_author.external_id]["replies"] += 1
+            expected_data[reply_author.external_id]["last_activity_at"] = Time.now.strftime("%Y-%m-%dT%H:%M:%SZ") if with_timestamps
             reply = make_comment(reply_author, comment, Faker::Lorem.sentence)
             add_flags(reply, expected_data)
           end
@@ -472,6 +476,7 @@ describe "app" do
       if build_initial_stats
         authors.map { |author| author.build_course_stats(course_id) }
       end
+      Timecop.return
       expected_data
     end
 
@@ -501,13 +506,21 @@ describe "app" do
         full_data = build_structure_and_response course_id, authors
         # Sort the map entries using the default sort
         expected_result = full_data.values
-                                       .select {|val| usernames.include? val["username"]}
-                                       .sort_by { |val| usernames.index val["username"] }
+                                   .select { |val| usernames.include? val["username"] }
+                                   .sort_by { |val| usernames.index val["username"] }
 
         get "/api/v1/users/#{course_id}/stats", usernames: usernames
         expect(last_response.status).to eq(200)
         res = parse(last_response.body)
         expect(res["user_stats"]).to eq expected_result
+      end
+
+      it "returns user's stats with recency sort" do
+        get "/api/v1/users/#{course_id}/stats", sort_key: "recency", with_timestamps: true
+        expect(last_response.status).to eq(200)
+        res = parse(last_response.body)
+        sorted_order = res["user_stats"].sort_by { |val| [val["last_activity_at"], val["username"]] }.reverse
+        expect(res["user_stats"]).to eq(sorted_order)
       end
 
       it "returns user's stats with flagged sort" do

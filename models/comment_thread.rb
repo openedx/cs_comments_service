@@ -81,6 +81,11 @@ class CommentThread < Content
 
   before_create :set_last_activity_at
   after_update :clear_endorsements
+  before_save do
+    unless anonymous or anonymous_to_peers or not body_changed?
+      author.update_activity_timestamp course_id
+    end
+  end
   before_destroy :destroy_subscriptions
   after_destroy do
     unless anonymous or anonymous_to_peers

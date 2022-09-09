@@ -68,6 +68,11 @@ class Comment < Content
   before_destroy :destroy_children
   before_create :set_thread_last_activity_at
   before_save :set_sk
+  before_save do
+    unless anonymous or anonymous_to_peers or not body_changed?
+      author.update_activity_timestamp course_id
+    end
+  end
   after_destroy do
     unless anonymous or anonymous_to_peers
       if parent_id.nil?
