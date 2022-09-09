@@ -157,7 +157,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
 
   threads_data = handle_threads_query(
     threads,
-    params["user_id"],
+    user_id,
     params["course_id"],
     get_group_ids_from_params(params),
     params["author_id"],
@@ -173,7 +173,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
     raw_query: raw_query
   )
 
-  if sort_key == 'user_activity'
+  if raw_query
     num_pages = [1, (threads_data.count / per_page.to_f).ceil].max
     page = [num_pages, [1, page].max].min
 

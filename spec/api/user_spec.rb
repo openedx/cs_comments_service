@@ -236,55 +236,76 @@ describe "app" do
         end
       end
 
-      it "filters by group_id" do
-        @threads["t1"].author = @users["u100"]
-        @threads["t1"].save!
-        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
-        expect(rs.length).to eq(2)
-        @threads["t1"].group_id = 43
-        @threads["t1"].save!
-        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
-        expect(rs.length).to eq(1)
-        @threads["t1"].group_id = 42
-        @threads["t1"].save!
-        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
-        expect(rs.length).to eq(2)
-      end
+      context 'filtering' do
 
-      it "filters by group_ids" do
-        @threads["t1"].author = @users["u100"]
-        @threads["t1"].save!
-        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42"
-        expect(rs.length).to eq(2)
-        @threads["t1"].group_id = 43
-        @threads["t1"].save!
-        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42"
-        expect(rs.length).to eq(1)
-        rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42,43"
-        expect(rs.length).to eq(2)
-      end
-
-      it "does not return threads in which the user has only participated anonymously" do
-        @comments["t3 c4"].author = @users["u100"]
-        @comments["t3 c4"].anonymous_to_peers = true
-        @comments["t3 c4"].save!
-        @comments["t5 c1"].author = @users["u100"]
-        @comments["t5 c1"].anonymous = true
-        @comments["t5 c1"].save!
-        rs = thread_result 100, course_id: "xyz"
-        expect(rs.length).to eq(1)
-        check_thread_result_json(@users["u100"], @threads["t0"], rs.first)
-      end
-
-      it "only returns threads from the specified course" do
-        @threads.each do |k, v|
-          v.author = @users["u100"]
-          v.save!
+        it "filters by unread", :new => true do
+          # All 10 threads are are assigned to the requesting user
+          (1...10).each { |tid|
+            @threads["t#{tid}"].author = @users["u100"]
+            @threads["t#{tid}"].save!
+          }
+          # However one of them is marked as read
+          @users["u100"].mark_as_read(@threads["t3"])
+          # The results should include 9 entries, and exclude t3 which is marked as read.
+          rs = thread_result 100, course_id: DFLT_COURSE_ID, unread: true, per_page: 5
+          expect(rs.length).to eq(5)
+          expect(rs).not_to include have_attributes(:title => "t3")
+          rs2 = thread_result 100, course_id: DFLT_COURSE_ID, unread: true, per_page: 5, page: 2
+          expect(rs2.length).to eq(4)
+          expect(rs2).not_to include have_attributes(:title => "t3")
         end
-        @threads["t9"].course_id = "zzz"
-        @threads["t9"].save!
-        rs = thread_result 100, course_id: "xyz"
-        expect(rs.length).to eq(9)
+
+        it "filters by group_id" do
+          @threads["t1"].author = @users["u100"]
+          @threads["t1"].save!
+          rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
+          expect(rs.length).to eq(2)
+          @threads["t1"].group_id = 43
+          @threads["t1"].save!
+          rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
+          expect(rs.length).to eq(1)
+          @threads["t1"].group_id = 42
+          @threads["t1"].save!
+          rs = thread_result 100, course_id: DFLT_COURSE_ID, group_id: 42
+          expect(rs.length).to eq(2)
+        end
+
+        it "filters by group_ids" do
+          @threads["t1"].author = @users["u100"]
+          @threads["t1"].save!
+          rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42"
+          expect(rs.length).to eq(2)
+          @threads["t1"].group_id = 43
+          @threads["t1"].save!
+          rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42"
+          expect(rs.length).to eq(1)
+          rs = thread_result 100, course_id: DFLT_COURSE_ID, group_ids: "42,43"
+          expect(rs.length).to eq(2)
+        end
+
+        it "does not return threads in which the user has only participated anonymously" do
+          @comments["t3 c4"].author = @users["u100"]
+          @comments["t3 c4"].anonymous_to_peers = true
+          @comments["t3 c4"].save!
+          @comments["t5 c1"].author = @users["u100"]
+          @comments["t5 c1"].anonymous = true
+          @comments["t5 c1"].save!
+          rs = thread_result 100, course_id: "xyz"
+          expect(rs.length).to eq(1)
+          check_thread_result_json(@users["u100"], @threads["t0"], rs.first)
+        end
+
+        it "only returns threads from the specified course" do
+          @threads.each do |k, v|
+            v.author = @users["u100"]
+            v.save!
+          end
+          @threads["t9"].course_id = "zzz"
+          @threads["t9"].save!
+          rs = thread_result 100, course_id: "xyz"
+          expect(rs.length).to eq(9)
+        end
+
       end
 
       context "sorting" do
