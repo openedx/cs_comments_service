@@ -11,17 +11,47 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        ruby-version: ['2.5.7']
+        mongodb-version: ['4.2.14']
+    env:
+      SEARCH_SERVER_ES7: http://localhost:9200
+      MONGOHQ_URL: mongodb://localhost:27017/cs_comments_service_test
+      MONGOID_AUTH_MECH: ""
+      NEW_RELIC_ENABLE: false
+      RACK_ENV: staging
+      SINATRA_ENV: staging
+      API_KEY: password
+    services:
+      elasticsearch:
+        image: elasticsearch:7.8.0
+        env:
+          discovery.type: single-node
+          bootstrap.memory_lock: true
+          ES_JAVA_OPTS: -Xms512m -Xmx512m
+          network.host: 0.0.0.0
+          cluster.routing.allocation.disk.watermark.low: 150mb
+          cluster.routing.allocation.disk.watermark.high: 100mb
+          cluster.routing.allocation.disk.watermark.flood_stage: 50mb
+        ports:
+          - 9200:9200
+      mongodb:
+        image: mongo:${{ matrix.mongodb-version }}
+        ports:
+          - 27017:27017
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Install Ruby
-        uses: ruby/setup-ruby@477b21f02be01bcb8030d50f37cfec92bfa615b6
+      - name: Set up Ruby ${{ matrix.ruby-version }}
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.5
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
 
-      - name: Build the stack
-        run: docker-compose -f ./.github/docker-compose-ci.yml build test-forum
+      - name: Install dependencies
+        run: bundle install
 
-      - name: Test
-        run: docker-compose -f ./.github/docker-compose-ci.yml run --rm test-forum
+      - name: Run tests
+        run: bin/rspec -fd
