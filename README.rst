@@ -4,8 +4,8 @@ __ http://code.edx.org/
 
 edX Comments Service/Forums   |Build|_ |Codecov|_
 ==================================================
-.. |Build| image:: https://github.com/edx/cs_comments_service/workflows/RUBY%20CI/badge.svg?branch=master
-.. _Build: https://github.com/edx/cs_comments_service/actions?query=workflow%3A%22RUBY+CI%22
+.. |Build| image:: https://github.com/openedx/cs_comments_service/workflows/RUBY%20CI/badge.svg?branch=master
+.. _Build: https://github.com/openedx/cs_comments_service/actions?query=workflow%3A%22RUBY+CI%22
 
 .. |Codecov| image:: http://codecov.io/github/edx/cs_comments_service/coverage.svg?branch=master
 .. _Codecov: http://codecov.io/github/edx/cs_comments_service?branch=master
@@ -21,8 +21,8 @@ devstack, it is strongly recommended to read `those setup documents`__ first.  N
 devstack will take care of just about all of the installation, configuration, and
 service management on your behalf. If running outside of devstack, continue reading below.
 
-__ https://github.com/edx/edx-platform
-__ https://github.com/edx/configuration/wiki/edX-Developer-Stack
+__ https://github.com/openedx/edx-platform
+__ https://github.com/openedx/configuration/wiki/edX-Developer-Stack
 
 This service relies on Elasticsearch and MongoDB. By default the service will use the Elasticsearch server available at
 `http://localhost:9200` and the MongoDB server available at `localhost:27017`. This is suitable for local development;
@@ -145,7 +145,7 @@ users via the frontend in edx-platform__.  These will be
 translated to ``SERVICE_LANGUAGE`` assuming a suitable translation file is
 found in the locale/ directory.
 
-__ https://github.com/edx/edx-platform
+__ https://github.com/openedx/edx-platform
 
 edX uses Transifex to host translations. To use the Transifex client, be sure
 it is installed (``pip install transifex-client`` will do this for you), and
