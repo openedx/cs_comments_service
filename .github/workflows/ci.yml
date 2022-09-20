@@ -13,8 +13,17 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        ruby-version: ['2.5.7']
+        ruby-version:
+         - 2.5.7
+         - 3.0.4
         mongodb-version: ['4.2.14']
+        include:
+          - ruby-version: 2.5.7
+            gemfile: Gemfile
+            allow-failure: false
+          - ruby-version: 3.0.4
+            gemfile: Gemfile3
+            allow-failure: true
     env:
       SEARCH_SERVER_ES7: http://localhost:9200
       MONGOHQ_URL: mongodb://localhost:27017/cs_comments_service_test
@@ -23,6 +32,7 @@ jobs:
       RACK_ENV: staging
       SINATRA_ENV: staging
       API_KEY: password
+      BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
     services:
       elasticsearch:
         image: elasticsearch:7.8.0
@@ -55,3 +65,4 @@ jobs:
 
       - name: Run tests
         run: bin/rspec -fd
+        continue-on-error: ${{ matrix.allow-failure }}
