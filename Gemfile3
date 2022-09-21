@@ -60,15 +60,15 @@ gem 'rack-protection', '~> 1.5.5'
 group :test do
   gem 'codecov', :require => false
   gem 'mongoid_cleaner', '~> 1.2.0'
-  gem 'factory_girl', '~> 4.0'
-  gem 'faker', '~> 1.6'
+  gem 'factory_bot'
+  gem 'faker'
   gem 'guard'
   gem 'guard-unicorn'
   gem 'rack-test', :require => 'rack/test'
   gem 'rspec', '~> 3.6.0'
   gem 'rspec-its'
   gem 'rspec-collection_matchers'
-  gem 'webmock', '~> 3.0.1'
+  gem 'webmock'
 end
 
 group 'newrelic_rpm' do

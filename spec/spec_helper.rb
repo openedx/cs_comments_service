@@ -17,7 +17,7 @@ require 'yajl'
 
 require 'support/database_cleaner'
 require 'support/elasticsearch'
-require 'support/factory_girl'
+require 'support/factory_bot'
 require 'support/rake'
 require 'support/matchers'
 require 'webmock/rspec'

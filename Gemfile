@@ -60,7 +60,7 @@ gem 'rack-protection', '~> 1.5.5'
 group :test do
   gem 'codecov', :require => false
   gem 'mongoid_cleaner', '~> 1.2.0'
-  gem 'factory_girl', '~> 4.0'
+  gem 'factory_bot'
   gem 'faker', '~> 1.6'
   gem 'guard'
   gem 'guard-unicorn'
