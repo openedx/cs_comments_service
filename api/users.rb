@@ -1,3 +1,4 @@
+require 'will_paginate/array'
 require_relative '../mongoutil'
 
 post "#{APIPREFIX}/users" do
@@ -50,19 +51,19 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
   end
 
   if usernames.empty?
-    paginated_stats = User.collection
+    course_stats = User.collection
                           .aggregate([
                                        { '$match' => { "course_stats.course_id" => course_id } },
                                        { '$project' => { 'username' => 1, 'course_stats' => 1 } },
                                        { '$unwind' => '$course_stats' },
                                        { '$match' => { "course_stats.course_id" => course_id } },
                                        { '$sort' => sort_criterion },
-                                       { '$limit' => per_page },
-                                       { '$skip' => (page - 1) * per_page },
                                      ])
-    total_count = paginated_stats.count
+    total_count = course_stats.count
+    paginated_stats = course_stats.to_a.paginate(:page => page, :per_page => per_page)
+
     num_pages = [1, (total_count / per_page.to_f).ceil].max
-    data = paginated_stats.to_a.map do |user_stats|
+    data = paginated_stats.map do |user_stats|
       {
         :username => user_stats["username"]
       }.merge(user_stats["course_stats"].except(*exclude_from_stats))
