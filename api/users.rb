@@ -115,6 +115,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
   sort_key = params["sort_key"] || 'user_activity'
   raw_query = (sort_key == 'user_activity')
 
+  count_flagged = value_to_boolean(params["count_flagged"])
   filter_flagged = value_to_boolean(params["flagged"])
 
   active_contents = Content.where(
@@ -154,7 +155,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
     value_to_boolean(params["unread"]),
     value_to_boolean(params["unanswered"]),
     value_to_boolean(params["unresponded"]),
-    value_to_boolean(params["count_flagged"]),
+    count_flagged,
     sort_key,
     page,
     per_page,
@@ -167,7 +168,7 @@ get "#{APIPREFIX}/users/:user_id/active_threads" do |user_id|
 
     sorted_threads = threads_data.sort_by { |t| active_thread_ids.index(t.id) }
     paged_threads = sorted_threads[(page - 1) * per_page, per_page]
-    presenter = ThreadListPresenter.new(paged_threads, user, params[:course_id])
+    presenter = ThreadListPresenter.new(paged_threads, user, params[:course_id], count_flagged)
     {
       collection: presenter.to_hash,
       num_pages: num_pages,
