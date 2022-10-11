@@ -31,6 +31,7 @@ jobs:
       SINATRA_ENV: staging
       API_KEY: password
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
+      RACK_TIMEOUT_SERVICE_TIMEOUT: 20
     services:
       elasticsearch:
         image: elasticsearch:7.8.0
