@@ -52,17 +52,28 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
   if usernames.empty?
     paginated_stats = User.collection
                           .aggregate([
+                                       # Match only users that have stats for this course
                                        { '$match' => { "course_stats.course_id" => course_id } },
+                                       # Get only the username and course stats since that's all we need
                                        { '$project' => { 'username' => 1, 'course_stats' => 1 } },
+                                       # Get rid of other course entries by expanding the course stats
+                                       # and filtering out other courses
                                        { '$unwind' => '$course_stats' },
                                        { '$match' => { "course_stats.course_id" => course_id } },
                                        { '$sort' => sort_criterion },
-                                       { '$limit' => per_page },
-                                       { '$skip' => (page - 1) * per_page },
-                                     ])
-    total_count = paginated_stats.count
+                                       # Split the query and get a total count in one facet and
+                                       # perform the pagination iin the other
+                                       { '$facet' => {
+                                         'pagination' => [{"$count" => "total_count"}],
+                                         'data' => [
+                                           { '$skip' => (page - 1) * per_page },
+                                           { '$limit' => per_page },
+                                         ]
+                                       }}
+                                     ]).to_a[0]
+    total_count = paginated_stats["pagination"][0]["total_count"]
     num_pages = [1, (total_count / per_page.to_f).ceil].max
-    data = paginated_stats.to_a.map do |user_stats|
+    data = paginated_stats["data"].map do |user_stats|
       {
         :username => user_stats["username"]
       }.merge(user_stats["course_stats"].except(*exclude_from_stats))
