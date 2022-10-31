@@ -254,39 +254,42 @@ def check_unread_thread_result_json(thread, json_response)
   check_thread_result(nil, thread, json_response, true)
 end
 
-def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
+def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false, reverse_order=false)
   case thread.thread_type
     when "discussion"
-      check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive)
+      check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive, reverse_order)
     when "question"
-      check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive)
+      check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive, reverse_order)
   end
 end
 
-def check_comment(comment, hash, is_json, recursive = false)
+def check_comment(comment, hash, is_json, recursive=false, reverse_order=false)
+  sorting_key_order = reverse_order ? -1 : 1
   expect(hash["id"]).to eq(is_json ? comment.id.to_s : comment.id) # Convert from ObjectId if necessary
   expect(hash["body"]).to eq comment.body
   expect(hash["user_id"]).to eq comment.author_id
   expect(hash["username"]).to eq comment.author_username
   expect(hash["endorsed"]).to eq comment.endorsed
   expect(hash["endorsement"]).to eq comment.endorsement
-  children = Comment.where({ "parent_id" => comment.id }).sort({ "sk" => 1 }).to_a
+  children = Comment.where({ "parent_id" => comment.id }).sort({ "sk" => sorting_key_order }).to_a
   expect(hash["child_count"]).to eq children.length
   if recursive
     expect(hash["children"].length).to eq children.length
     hash["children"].each_with_index do |child_hash, i|
-      check_comment(children[i], child_hash, is_json)
+      check_comment(children[i], child_hash, is_json, recursive, reverse_order)
     end
   end
 end
 
 
-def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
+def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false, reverse_order=false)
+  sorting_key_order = reverse_order ? -1 : 1
+
   if resp_limit.nil?
     resp_limit = CommentService.config["thread_response_default_size"]
   end
 
-  all_responses = thread.root_comments.sort({"sk" => 1}).to_a
+  all_responses = thread.root_comments.sort({"sk" => sorting_key_order}).to_a
   total_responses = all_responses.length
   expect(hash["resp_total"]).to eq total_responses
   expected_responses = resp_limit.nil? ?
@@ -295,19 +298,20 @@ def check_discussion_response_paging(thread, hash, resp_skip=0, resp_limit=nil, 
   expect(hash["children"].length).to eq expected_responses.length
 
   hash["children"].each_with_index do |response_hash, i|
-    check_comment(expected_responses[i], response_hash, is_json, recursive)
+    check_comment(expected_responses[i], response_hash, is_json, recursive, reverse_order)
   end
   expect(hash["resp_skip"].to_i).to eq resp_skip
   expect(hash["resp_limit"].to_i).to eq resp_limit
 end
 
-def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false)
-  all_responses = thread.root_comments.sort({"sk" => 1}).to_a
+def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false, reverse_order=false)
+  sorting_key_order = reverse_order ? -1 : 1
+  all_responses = thread.root_comments.sort({"sk" => sorting_key_order}).to_a
   endorsed_responses, non_endorsed_responses = all_responses.partition { |resp| resp.endorsed }
 
   expect(hash["endorsed_responses"].length).to eq endorsed_responses.length
   hash["endorsed_responses"].each_with_index do |response_hash, i|
-    check_comment(endorsed_responses[i], response_hash, is_json, recursive)
+    check_comment(endorsed_responses[i], response_hash, is_json, recursive, reverse_order)
   end
 
   hash["non_endorsed_resp_total"] == non_endorsed_responses.length
@@ -316,7 +320,7 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
       non_endorsed_responses.drop(resp_skip).take(resp_limit)
   expect(hash["non_endorsed_responses"].length).to eq expected_non_endorsed_responses.length
   hash["non_endorsed_responses"].each_with_index do |response_hash, i|
-    check_comment(expected_non_endorsed_responses[i], response_hash, is_json, recursive)
+    check_comment(expected_non_endorsed_responses[i], response_hash, is_json, recursive, reverse_order)
   end
   total_responses = endorsed_responses.length + non_endorsed_responses.length
   expect(hash["resp_total"]).to eq total_responses
@@ -329,8 +333,8 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
   end
 end
 
-def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil, recursive=false)
-  check_thread_response_paging(thread, hash, resp_skip, resp_limit, true, recursive)
+def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil, recursive=false, reverse_order=false)
+  check_thread_response_paging(thread, hash, resp_skip, resp_limit, true, recursive, reverse_order)
 end
 
 # general purpose factory helpers
