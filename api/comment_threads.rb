@@ -62,7 +62,9 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
   unless (resp_limit <= size_limit)
     error 400, [t(:param_exceeds_limit, :param => resp_limit, :limit => size_limit)].to_json
   end
-  presenter.to_hash(bool_with_responses, resp_skip, resp_limit, bool_recursive, bool_flagged_comments).to_json
+  presenter.to_hash(
+    bool_with_responses, resp_skip, resp_limit, bool_recursive, bool_flagged_comments, bool_reverse_order
+  ).to_json
 end
 
 put "#{APIPREFIX}/threads/:thread_id" do |thread_id|
