@@ -28,7 +28,7 @@ namespace :benchmark do
 
       x.report "create new threads" do
         (1..THREADS).each do |t|
-          data = {title: Faker::Lorem.sentence(6) + " token#{rand(10)} token#{rand(10)}", body: Faker::Lorem.paragraphs.join("\n\n") + " token#{rand(10)} token#{rand(10)}", anonymous: false, \
+          data = {title: Faker::Lorem.sentence(word_count: 6) + " token#{rand(10)} token#{rand(10)}", body: Faker::Lorem.paragraphs.join("\n\n") + " token#{rand(10)} token#{rand(10)}", anonymous: false, \
                             course_id: "1", user_id: (rand(USERS) + 1).to_s, \
                             tags: (1..5).map{|x| "tag#{rand(TAGS)}"}.join(",")}
 

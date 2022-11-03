@@ -9,17 +9,17 @@ gem 'pry-nav'
 
 gem 'bundler'
 
-gem 'rake', '~> 12.3.3'
+gem 'rake'
 
-gem 'sinatra'
+gem 'sinatra', '< 2.0'
 gem 'sinatra-param', '~> 1.4'
 
 gem 'yajl-ruby', '~> 1.3.1'
 
-gem 'activemodel', '~> 6.0.3.1'
+gem 'activemodel'
 gem 'protected_attributes_continued'
 
-gem 'mongoid'
+gem 'mongoid', '~>7.0.0'
 gem 'bson'
 gem 'bson_ext'
 
@@ -45,30 +45,18 @@ gem 'dalli'
 
 gem 'rest-client'
 
-gem 'rubyzip', '~> 1.2.2'
-
-gem 'ffi', '~> 1.9.24'
-
-gem 'faye-websocket', '~> 0.11.0'
-
-gem 'addressable', '~> 2.8.0'
-
-gem 'activesupport', '~> 6.0.3.1'
-
-gem 'rack-protection', '~> 1.5.5'
-
 group :test do
   gem 'codecov', :require => false
   gem 'mongoid_cleaner', '~> 1.2.0'
   gem 'factory_bot'
-  gem 'faker', '~> 1.6'
+  gem 'faker'
   gem 'guard'
   gem 'guard-unicorn'
   gem 'rack-test', :require => 'rack/test'
   gem 'rspec', '~> 3.6.0'
   gem 'rspec-its'
   gem 'rspec-collection_matchers'
-  gem 'webmock', '~> 3.0.1'
+  gem 'webmock'
 end
 
 group 'newrelic_rpm' do

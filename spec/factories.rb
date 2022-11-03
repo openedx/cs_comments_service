@@ -30,7 +30,7 @@ FactoryBot.define do
     end
 
     trait :with_group_id do
-      group_id { Faker::Number.number(4) }
+      group_id { Faker::Number.number(digits: 4) }
     end
   end
 
