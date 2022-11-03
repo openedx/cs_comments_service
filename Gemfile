@@ -11,7 +11,7 @@ gem 'bundler'
 
 gem 'rake'
 
-gem 'sinatra', '< 2.0'
+gem 'sinatra'
 gem 'sinatra-param', '~> 1.4'
 
 gem 'yajl-ruby', '~> 1.3.1'
@@ -19,7 +19,7 @@ gem 'yajl-ruby', '~> 1.3.1'
 gem 'activemodel'
 gem 'protected_attributes_continued'
 
-gem 'mongoid', '~>7.0.0'
+gem 'mongoid'
 gem 'bson'
 gem 'bson_ext'
 
@@ -53,7 +53,7 @@ group :test do
   gem 'guard'
   gem 'guard-unicorn'
   gem 'rack-test', :require => 'rack/test'
-  gem 'rspec', '~> 3.6.0'
+  gem 'rspec'
   gem 'rspec-its'
   gem 'rspec-collection_matchers'
   gem 'webmock'

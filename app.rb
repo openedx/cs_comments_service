@@ -45,7 +45,7 @@ end
 def get_logger(progname, threshold=nil)
   logger = Logger.new(STDERR)
   logger.progname = progname
-  logger.level = threshold || Logger::INFO
+  logger.level = threshold || Logger::WARN
   logger
 end
 
@@ -79,8 +79,8 @@ I18n::Backend::Simple.send(:include, I18n::Backend::Fallbacks)
 use Rack::Locale
 
 helpers do
-  def t(*args)
-    I18n.t(*args)
+  def t(*args, **kwargs)
+    I18n.t(*args, **kwargs)
   end
 end
 

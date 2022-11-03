@@ -96,7 +96,7 @@ class ThreadPresenter
     paged_response_ids = limit.nil? ? response_ids.drop(skip) : response_ids.drop(skip).take(limit)
     if recursive
       content = Comment.where(comment_thread_id: thread_id).
-        or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
+        any_of({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
         sort({"sk" => 1})
     else
       content = Comment.where(comment_thread_id: thread_id, "parent_ids" => []).
