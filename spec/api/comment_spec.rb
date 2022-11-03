@@ -253,68 +253,68 @@ describe 'Comment API' do
 
     it "doesn't allow retrieving all comments" do
       get "/api/v1/comments"
-      last_response.should_not be_ok
+      expect(last_response).not_to be_ok
     end
 
     let(:user) { User.first }
 
     it "does not allow filtering only by user" do
       get "/api/v1/comments", user_id: user.id
-      last_response.should_not be_ok
+      expect(last_response).not_to be_ok
     end
 
     it "does not allow filtering only by course" do
       get "/api/v1/comments", course_id: "abc"
-      last_response.should_not be_ok
+      expect(last_response).not_to be_ok
     end
 
     it "allows filtering by course and user" do
       get "/api/v1/comments", user_id: user.id, course_id: "abc"
-      last_response.should be_ok
+      expect(last_response).to be_ok
       parsed = parse last_response.body
-      parsed["comment_count"].should == 25
+      expect(parsed["comment_count"]).to eq(25)
       for item in parsed["collection"]
-        item["username"].should == user.username
-        item["course_id"].should == "abc"
+        expect(item["username"]).to eq(user.username)
+        expect(item["course_id"]).to eq("abc")
       end
     end
 
     it "allows filtering by flagged status" do
       get "/api/v1/comments", user_id: user.id, course_id: "abc", flagged: true
-      last_response.should be_ok
+      expect(last_response).to be_ok
       parsed = parse last_response.body
-      parsed["comment_count"].should == 5
+      expect(parsed["comment_count"]).to eq(5)
       for item in parsed["collection"]
-        item["abuse_flaggers"].should_not be_empty
+        expect(item["abuse_flaggers"]).not_to be_empty
       end
     end
 
     it "paginates the comments with default values" do
       get "/api/v1/comments", user_id: user.id, course_id: "abc"
       parsed = parse last_response.body
-      parsed["page"].should == 1
-      parsed["collection"].length.should == DEFAULT_PER_PAGE
-      parsed["num_pages"].should == (25 / DEFAULT_PER_PAGE.to_f).ceil
+      expect(parsed["page"]).to  eq(1)
+      expect(parsed["collection"].length).to  eq(DEFAULT_PER_PAGE)
+      expect(parsed["num_pages"]).to  eq((25 / DEFAULT_PER_PAGE.to_f).ceil)
     end
 
     it "allows specifying a page size" do
       get "/api/v1/comments", user_id: user.id, course_id: "abc", per_page: 5
-      last_response.should be_ok
+      expect(last_response).to be_ok
       parsed = parse last_response.body
-      parsed["collection"].length.should == 5
-      parsed["num_pages"].should == 5
+      expect(parsed["collection"].length).to eq(5)
+      expect(parsed["num_pages"]).to eq(5)
     end
 
     it "allows specifying a page number" do
       get "/api/v1/comments", user_id: user.id, course_id: "abc", page: 2
       parsed = parse last_response.body
-      parsed["page"].should == 2
+      expect(parsed["page"]).to eq(2)
     end
 
     it "handles the end of pagination correctly" do
       get "/api/v1/comments", user_id: user.id, course_id: "abc", page: 2
       parsed = parse last_response.body
-      parsed["collection"].length.should == 5
+      expect(parsed["collection"].length).to eq(5)
     end
 
     it "returns the correct items for each page" do
@@ -331,7 +331,7 @@ describe 'Comment API' do
       page_3 = parse last_response.body
 
 
-      all_items["collection"].should == (
+      expect(all_items["collection"]).to eq(
         page_1["collection"] +
         page_2["collection"] +
         page_3["collection"]
