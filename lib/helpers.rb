@@ -239,7 +239,9 @@ helpers do
         comment_threads.batch_size(CommentService.config["manual_pagination_batch_size"].to_i).each do |thread|
          thread_key = thread._id.to_s
           if !read_dates.has_key?(thread_key) || read_dates[thread_key] < thread.last_activity_at
-            if skipped >= to_skip or raw_query
+            if raw_query
+              threads << thread
+            elsif skipped >= to_skip
               if threads.length == per_page
                 has_more = true
                 break
