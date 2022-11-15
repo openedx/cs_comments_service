@@ -158,6 +158,28 @@ describe ThreadPresenter do
         end
       end
 
+      it "handles reversed_order and recursive" do
+        @threads_with_num_comments.each do |thread, num_comments|
+          is_endorsed = num_comments > 0 && endorse_responses
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed, nil).to_hash(true, 0, default_resp_limit, true, false, true)
+          check_thread_result(@reader, thread, hash)
+          check_thread_response_paging(thread, hash, 0, default_resp_limit, false, false, true)
+        end
+      end
+
+      it "handles reversed_order and recursive with skip and limit" do
+        @threads_with_num_comments.each do |thread, num_comments|
+          is_endorsed = num_comments > 0 && endorse_responses
+          [1, 2, 3, 9, 10, 11, 1000].each do |limit|
+            [0, 1, 2, 9, 10, 11, 1000].each do |skip|
+              hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed, nil).to_hash(true, skip, limit, true, false, true)
+              check_thread_result(@reader, thread, hash)
+              check_thread_response_paging(thread, hash, skip, limit, false, false, true)
+            end
+          end
+        end
+      end
+
       it "fails with invalid arguments" do
         @threads_with_num_comments.each do |thread, num_comments|
           is_endorsed = num_comments > 0 && endorse_responses

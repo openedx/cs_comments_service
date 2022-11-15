@@ -29,7 +29,14 @@ class ThreadPresenter
     @abuse_flagged_count = abuse_flagged_count
   end
 
-  def to_hash(with_responses=false, resp_skip=0, resp_limit=nil, recursive=true, flagged_comments=false)
+  def to_hash(
+    with_responses=false,
+    resp_skip=0,
+    resp_limit=nil,
+    recursive=true,
+    flagged_comments=false,
+    reverse_order=false
+  )
     raise ArgumentError unless resp_skip >= 0
     raise ArgumentError unless resp_limit.nil? or resp_limit >= 1
     h = @thread.to_hash
@@ -39,12 +46,13 @@ class ThreadPresenter
     unless @abuse_flagged_count.nil?
       h["abuse_flagged_count"] = @abuse_flagged_count
     end
+    sorting_key_order = reverse_order ? -1 : 1
     if with_responses
       if @thread.thread_type.discussion? && resp_skip == 0 && resp_limit.nil?
         if recursive
-          content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => 1})
+          content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => sorting_key_order})
         else
-          content = Comment.where(comment_thread_id: @thread._id, "parent_ids" => []).order_by({"sk" => 1})
+          content = Comment.where(comment_thread_id: @thread._id, "parent_ids" => []).order_by({"sk" => sorting_key_order})
         end
         if flagged_comments
           content = content.where(:abuse_flaggers.nin => [nil, []])
@@ -60,20 +68,35 @@ class ThreadPresenter
         when "question"
           endorsed_responses = responses.where(endorsed: true)
           non_endorsed_responses = responses.where(endorsed: false)
-          endorsed_response_info = get_paged_merged_responses(@thread._id, endorsed_responses, 0, nil, recursive)
+          endorsed_response_info = get_paged_merged_responses(
+            @thread._id,
+            endorsed_responses,
+            0,
+            nil,
+            recursive,
+            sorting_key_order
+          )
           non_endorsed_response_info = get_paged_merged_responses(
             @thread._id,
             non_endorsed_responses,
             resp_skip,
             resp_limit,
-            recursive
+            recursive,
+            sorting_key_order
           )
           h["endorsed_responses"] = endorsed_response_info["responses"]
           h["non_endorsed_responses"] = non_endorsed_response_info["responses"]
           h["non_endorsed_resp_total"] = non_endorsed_response_info["response_count"]
           h["resp_total"] = non_endorsed_response_info["response_count"] + endorsed_response_info["response_count"]
         when "discussion"
-          response_info = get_paged_merged_responses(@thread._id, responses, resp_skip, resp_limit, recursive)
+          response_info = get_paged_merged_responses(
+            @thread._id,
+            responses,
+            resp_skip,
+            resp_limit,
+            recursive,
+            sorting_key_order
+          )
           h["children"] = response_info["responses"]
           h["resp_total"] = response_info["response_count"]
         end
@@ -91,16 +114,16 @@ class ThreadPresenter
   #     children, if recursive is true)
   #   response_count
   #     The total number of responses
-  def get_paged_merged_responses(thread_id, responses, skip, limit, recursive=false)
-    response_ids = responses.only(:_id).sort({"sk" => 1}).to_a.map{|doc| doc["_id"]}
+  def get_paged_merged_responses(thread_id, responses, skip, limit, recursive=false, sorting_key_order)
+    response_ids = responses.only(:_id).sort({"sk" => sorting_key_order}).to_a.map{|doc| doc["_id"]}
     paged_response_ids = limit.nil? ? response_ids.drop(skip) : response_ids.drop(skip).take(limit)
     if recursive
       content = Comment.where(comment_thread_id: thread_id).
         or({:parent_id => {"$in" => paged_response_ids}}, {:id => {"$in" => paged_response_ids}}).
-        sort({"sk" => 1})
+        sort({"sk" => sorting_key_order})
     else
       content = Comment.where(comment_thread_id: thread_id, "parent_ids" => []).
-        where({:id => {"$in" => paged_response_ids}}).sort({"sk" => 1})
+        where({:id => {"$in" => paged_response_ids}}).sort({"sk" => sorting_key_order})
     end
     {"responses" => merge_response_content(content), "response_count" => response_ids.length}
   end
@@ -111,24 +134,43 @@ class ThreadPresenter
   def merge_response_content(content)
     top_level = []
     ancestry = []
+    orphans = []
     content.each do |item|
       item_hash = item.to_hash.merge!("children" => [])
       if item.parent_id.nil?
         top_level << item_hash
         ancestry = [item_hash]
+        # When the content is reversed, we collect orphan items
+        # until reach their parent. Here we iterate through
+        # orphans and assign as children to the top item.
+        unless orphans.empty?
+          orphans.each do |orphan|
+            if item.id == orphan["parent_id"]
+              item_hash["children"] << orphan
+            end
+          end
+          orphans = []
+        end
       else
+        # "ancestry" can be empty only when the order is reversed.
+        if ancestry.empty?
+          ancestry << item_hash
+          orphans << item_hash
+          next
+        end
+
         while ancestry.length > 0 do
           if item.parent_id == ancestry.last["id"]
             ancestry.last["children"] << item_hash
             ancestry << item_hash
             break
+          elsif ancestry.length == 1
+            # "ancestry" here can equal to 1 only when the order is reversed.
+            orphans << item_hash
+            ancestry.pop
           else
             ancestry.pop
-            next
           end
-        end
-        if ancestry.empty? # invalid parent; ignore item
-          next
         end
       end
     end

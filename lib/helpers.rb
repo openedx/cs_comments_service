@@ -143,6 +143,10 @@ helpers do
     value_to_boolean params["flagged_comments"]
   end
 
+  def bool_reverse_order
+    value_to_boolean params["reverse_order"]
+  end
+
   def handle_paged_threads_query(paged_comment_threads)
 
   end
