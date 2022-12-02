@@ -47,7 +47,7 @@ describe TaskHelpers do
         create(:comment_thread, body: 'the best test body', course_id: 'test_course_id')
         TaskHelpers::ElasticsearchHelper.refresh_indices
         expect(Elasticsearch::Model.client.search(
-            index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES
+            index: TaskHelpers::ElasticsearchHelper::index_names
         )['hits']['total']['value']).to be > 0
       end
 
@@ -66,6 +66,31 @@ describe TaskHelpers do
         Elasticsearch::Model.client.indices.delete(index: TaskHelpers::ElasticsearchHelper::temporary_index_names[1])
       end
 
+    end
+
+    context("#validate_prefixes") do
+      subject { TaskHelpers::ElasticsearchHelper}
+      PREFIX = 'prefix_'
+
+      before(:each) do
+        CommentService.config[:elasticsearch_index_prefix] = PREFIX
+      end
+
+      after(:each) do
+        CommentService.config[:elasticsearch_index_prefix] = ""
+      end
+
+      it "fails if comment model isn't prefixed" do
+        expect(Comment.index_name).to start_with(PREFIX)
+      end
+
+      it "fails if comment thread model isn't prefixed" do
+        expect(CommentThread.index_name).to start_with(PREFIX)
+      end
+
+      it "fails if indexes created indexes aren't prefixed" do
+        expect(TaskHelpers::ElasticsearchHelper.index_names.all? {|v| v.start_with?(PREFIX)} ).to be_truthy
+      end
     end
 
   end

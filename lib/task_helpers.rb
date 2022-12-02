@@ -6,8 +6,12 @@ module TaskHelpers
   module ElasticsearchHelper
     LOG = Logger.new(STDERR)
     INDEX_MODELS = [Comment, CommentThread].freeze
-    INDEX_NAMES = [Comment.index_name, CommentThread.index_name].freeze
     # local variable which store actual indices for future deletion
+
+    def self.index_names
+      [Comment.index_name, CommentThread.index_name].freeze
+    end
+
     @@temporary_index_names = []
 
     def self.temporary_index_names
@@ -186,7 +190,7 @@ module TaskHelpers
 
     def self.refresh_indices
       if temporary_index_names.length > 0
-        Elasticsearch::Model.client.indices.refresh(index: INDEX_NAMES)
+        Elasticsearch::Model.client.indices.refresh(index: self.index_names)
       else
         fail "No indices to refresh"
       end
@@ -194,7 +198,7 @@ module TaskHelpers
 
     def self.initialize_indices(force_new_index = false)
       # When force_new_index is true, fresh indices will be created even if it already exists.
-      if force_new_index or not exists_aliases(INDEX_NAMES)
+      if force_new_index or not exists_aliases(self.index_names)
         index_names = create_indices
         index_names.each do |index_name|
           model = get_index_model_rel(index_name)
@@ -211,7 +215,7 @@ module TaskHelpers
     # Validates that each index includes the proper mappings.
     # There is no return value, but an exception is raised if the index is invalid.
     def self.validate_indices
-      actual_mappings = Elasticsearch::Model.client.indices.get_mapping(index: INDEX_NAMES)
+      actual_mappings = Elasticsearch::Model.client.indices.get_mapping(index: self.index_names)
 
       if actual_mappings.length == 0
         fail "Indices are not exist!"
