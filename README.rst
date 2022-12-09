@@ -80,6 +80,11 @@ By default Sinatra runs on port `4567`. If you'd like to use a different port pa
 
     $ ruby app.rb -p 5678
 
+Rake timeout configuration should be set as env varaiable, the default value is 15 second. to set to 20 second:
+
+.. code-block::
+
+    $ RACK_TIMEOUT_SERVICE_TIMEOUT=20 ruby app.rb -p 5678
 
 Running Tests
 -------------

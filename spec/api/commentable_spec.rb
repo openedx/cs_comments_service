@@ -13,8 +13,8 @@ describe 'app' do
         id_map = Hash.new
         (1..5).each do
           commentable_id = SecureRandom.uuid
-          question_count = Faker::Number.between(5, 15)
-          discussion_count = Faker::Number.between(5, 15)
+          question_count = Faker::Number.between(from: 5, to: 15)
+          discussion_count = Faker::Number.between(from: 5, to: 15)
           create_list(:comment_thread, question_count, commentable_id: commentable_id, course_id: course_id, thread_type: :question)
           create_list(:comment_thread, discussion_count, commentable_id: commentable_id, course_id: course_id, thread_type: :discussion)
           id_map[commentable_id] = {
@@ -89,7 +89,7 @@ describe 'app' do
       end
 
       context 'when filtering by group_id' do
-        let(:group_id) { Faker::Number.number(4) }
+        let(:group_id) { Faker::Number.number(digits: 4) }
         let(:parameters) { {group_id: group_id} }
         let!(:threads) { create_list(:comment_thread, 3, commentable_id: commentable_id, group_id: group_id) }
 
@@ -98,7 +98,7 @@ describe 'app' do
       end
 
       context 'when filtering by multiple group_id values' do
-        let(:group_ids) { [Faker::Number.number(4), Faker::Number.number(4)] }
+        let(:group_ids) { [Faker::Number.number(digits: 4), Faker::Number.number(digits: 4)] }
         let(:parameters) { {group_ids: group_ids.join(',')} }
 
 

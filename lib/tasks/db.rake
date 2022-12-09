@@ -1,7 +1,7 @@
-require 'factory_girl'
+require 'factory_bot'
 
 namespace :db do
-  FactoryGirl.find_definitions
+  FactoryBot.find_definitions
 
   def create_test_user(id)
     User.create!(external_id: id, username: "user#{id}")
@@ -43,7 +43,7 @@ namespace :db do
       inner_top_comments = []
 
       # Create a new thread
-      comment_thread = FactoryGirl::create(:comment_thread, commentable_id: commentable_id, author: users.sample, course_id: COURSE_ID)
+      comment_thread = FactoryBot::create(:comment_thread, commentable_id: commentable_id, author: users.sample, course_id: COURSE_ID)
       threads << comment_thread
 
       # Subscribe a few users to the thread
@@ -52,7 +52,7 @@ namespace :db do
       # Create a few top-level comments for the thread
       (1 + rand(num_top_comments)).times do
         endorsed = [true, false].sample
-        comment = FactoryGirl::create(:comment, author: users.sample, comment_thread: comment_thread, endorsed: endorsed, course_id: COURSE_ID)
+        comment = FactoryBot::create(:comment, author: users.sample, comment_thread: comment_thread, endorsed: endorsed, course_id: COURSE_ID)
         top_comments << comment
         inner_top_comments << comment
       end
@@ -64,7 +64,7 @@ namespace :db do
         (1 + rand(num_subcomments)).times do
           parent = parent_comments.sample
           endorsed = [true, false].sample
-          child = FactoryGirl::create(:comment, author: users.sample, parent: parent, endorsed: endorsed)
+          child = FactoryBot::create(:comment, author: users.sample, parent: parent, endorsed: endorsed)
           current_level_comments << child
         end
         parent_comments = current_level_comments
