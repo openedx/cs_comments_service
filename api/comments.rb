@@ -51,7 +51,7 @@ put "#{APIPREFIX}/comments/:comment_id" do |comment_id|
   filter_blocked_content params["body"]
   updated_content = params.slice(*%w[body endorsed])
   if params.has_key?("endorsed")
-    new_endorsed_val = Boolean.mongoize(params["endorsed"])
+    new_endorsed_val = Mongoid::Boolean.mongoize(params["endorsed"])
     if new_endorsed_val != comment.endorsed
       if params["endorsement_user_id"].nil?
         endorsement = nil
