@@ -30,7 +30,7 @@ end
 
 describe "search:catchup" do
   include_context "rake"
-  let(:indices) { TaskHelpers::ElasticsearchHelper::INDEX_NAMES }
+  let(:indices) { TaskHelpers::ElasticsearchHelper::index_names }
   let(:comments_index_name) { Comment.index_name }
   let(:comment_threads_index_name) { CommentThread.index_name }
 

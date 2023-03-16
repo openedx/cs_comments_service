@@ -33,7 +33,10 @@ class Comment < Content
   index({_type: 1, comment_thread_id: 1, author_id: 1, updated_at: 1})
   index({comment_thread_id: 1, author_id: 1, created_at: 1})
 
-  index_name = "comment"
+  index_name do
+    prefix = ::CommentService.config[:elasticsearch_index_prefix]
+    "#{prefix}comments"
+  end
 
   mapping dynamic: 'false' do
     indexes :body, type: :text, store: true, term_vector: :with_positions_offsets
