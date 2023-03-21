@@ -19,4 +19,9 @@ pid "#{data_dir}/forum_unicorn.pid"
 
 after_fork do |server, worker|
   ::Mongoid.default_client.close
+  ::Mongoid.default_client.reconnect
+end
+
+before_fork do |server, worker|
+  ::Mongoid.disconnect_clients
 end
