@@ -9,7 +9,6 @@ get "#{APIPREFIX}/threads" do # retrieve threads by course
   if params[:commentable_ids]
     threads = threads.in({"commentable_id" => params[:commentable_ids].split(",")})
   end
-
   handle_threads_query(
     threads,
     params["user_id"],
@@ -24,7 +23,8 @@ get "#{APIPREFIX}/threads" do # retrieve threads by course
     value_to_boolean(params["count_flagged"]),
     params["sort_key"],
     params["page"],
-    params["per_page"]
+    params["per_page"],
+    review_content: value_to_boolean(params["review_content"])
   ).to_json
 end
 

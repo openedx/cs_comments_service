@@ -107,6 +107,20 @@ helpers do
     obj.reload.to_hash.to_json
   end
 
+  def review_reject(obj)
+    raise ArgumentError, t(:user_id_is_required) unless user
+    obj.review_status = "REJECTED"
+    obj.save
+    obj.reload.to_hash.to_json
+  end
+
+  def review_accept(obj)
+    raise ArgumentError, t(:user_id_is_required) unless user
+    obj.review_status = "ACCEPTED"
+    obj.save
+    obj.reload.to_hash.to_json
+  end
+
   def value_to_boolean(value)
     !!(value.to_s =~ /^true$/i)
   end
@@ -167,7 +181,8 @@ helpers do
     page,
     per_page,
     context = :course,
-    raw_query: false
+    raw_query: false,
+    review_content: false
   )
     context_threads = comment_threads.where({:context => context})
 
@@ -187,6 +202,22 @@ helpers do
 
     unless thread_type.nil? or thread_type.empty?
       comment_threads = comment_threads.where({ :thread_type => thread_type })
+    end
+
+    unless review_content
+      # add here if we want to ignore these only the learners and not moderators.
+      # add before condition if we want to ignore these for everyone.
+      # TODO: comment_threads = comments_threads.not(:review_status => "REJECTED") # Ignore rejected content
+      comment_threads = comment_threads.or(
+        {:review_status => "ACCEPTED"},
+        {:review_status => nil},
+        {:review_status => ""},
+        {:author_id => user_id}
+      )
+
+      if author_id != user_id
+        comment_threads = comment_threads.where(:anonymous => false, :anonymous_to_peers => false)
+      end
     end
 
     if filter_flagged

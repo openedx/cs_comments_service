@@ -39,3 +39,5 @@ EDITOR_USERNAME = "editor_username".freeze
 
 RETIRED_TITLE = "[deleted]".freeze
 RETIRED_BODY = "[deleted]".freeze
+
+REVIEW_STATUS = "review_status".freeze

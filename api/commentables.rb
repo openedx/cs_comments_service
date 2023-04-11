@@ -60,6 +60,7 @@ post "#{APIPREFIX}/:commentable_id/threads" do |commentable_id|
   thread.thread_type = params["thread_type"] || :discussion
   thread.anonymous = bool_anonymous || false
   thread.anonymous_to_peers = bool_anonymous_to_peers || false
+  thread.review_status = params["review_status"] || nil
   
   if params["group_id"]
     thread.group_id = params["group_id"]

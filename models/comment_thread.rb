@@ -36,6 +36,7 @@ class CommentThread < Content
   field :pinned, type: Boolean
   field :retired_username, type: String, default: nil
   field :close_reason_code, type: String, default: nil # string code that represents why a thread was closed.
+  field :review_status, type: String, default: nil
 
   index({ author_id: 1, course_id: 1 })
 
@@ -72,7 +73,7 @@ class CommentThread < Content
   embeds_many :edit_history, cascade_callbacks: true
 
   attr_accessible :title, :body, :course_id, :commentable_id, :anonymous, :anonymous_to_peers, :closed,
-                  :thread_type, :retired_username, :close_reason_code, :closed_by
+                  :thread_type, :retired_username, :close_reason_code, :closed_by, :review_status
 
   validates_presence_of :thread_type
   validates_presence_of :context
@@ -152,7 +153,7 @@ class CommentThread < Content
 
   def to_hash(params={})
     as_document
-      .slice(THREAD_TYPE, TITLE, BODY, COURSE_ID, ANONYMOUS, ANONYMOUS_TO_PEERS, COMMENTABLE_ID, CREATED_AT, UPDATED_AT, AT_POSITION_LIST, CLOSED, CONTEXT, LAST_ACTIVITY_AT, CLOSE_REASON_CODE)
+      .slice(THREAD_TYPE, TITLE, BODY, COURSE_ID, ANONYMOUS, ANONYMOUS_TO_PEERS, COMMENTABLE_ID, CREATED_AT, UPDATED_AT, AT_POSITION_LIST, CLOSED, CONTEXT, LAST_ACTIVITY_AT, CLOSE_REASON_CODE, REVIEW_STATUS)
       .merge!("id" => _id,
               "user_id" => author_id,
               "username" => author_username,
@@ -164,7 +165,9 @@ class CommentThread < Content
               "type" => THREAD,
               "group_id" => group_id,
               "pinned" => pinned?,
-              "comments_count" => comment_count)
+              "comments_count" => comment_count,
+              "review_status" => review_status,
+              )
   end
 
   def comment_thread_id
