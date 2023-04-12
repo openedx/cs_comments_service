@@ -207,13 +207,9 @@ helpers do
     unless review_content
       # add here if we want to ignore these only the learners and not moderators.
       # add before condition if we want to ignore these for everyone.
-      # TODO: comment_threads = comments_threads.not(:review_status => "REJECTED") # Ignore rejected content
-      comment_threads = comment_threads.or(
-        {:review_status => "ACCEPTED"},
-        {:review_status => nil},
-        {:review_status => ""},
-        {:author_id => user_id}
-      )
+      comment_threads = comment_threads.where(:review_status.ne => "REJECTED") # Ignore rejected content
+      comment_threads = comment_threads.where(:review_status.in => ["ACCEPTED", nil, ""])
+                                       .or(:review_status => "PENDING", :author_id => user_id)
 
       if author_id != user_id
         comment_threads = comment_threads.where(:anonymous => false, :anonymous_to_peers => false)
