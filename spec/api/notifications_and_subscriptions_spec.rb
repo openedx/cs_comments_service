@@ -38,7 +38,7 @@ describe "app" do
         end
         it "returns an empty result when no posts were flagged" do
           rs = thread_result course_id: DFLT_COURSE_ID, flagged: true
-          expect(rs.length).to eq(0) 
+          expect(rs.length).to eq(0)
         end
       end
       it "filters by group_id" do
@@ -131,6 +131,23 @@ describe "app" do
         delete "/api/v1/users/#{subscriber.external_id}/subscriptions", source_type: "thread", source_id: thread.id
         expect(last_response).to be_ok
         expect(thread.subscribers.length).to eq(0)
+      end
+    end
+    describe "GET /api/v1/subscriptions/:thread_id" do
+      it "Get subscribers of thread" do
+        thread = @threads["t2"]
+        subscriber.subscribe(thread)
+        expect(thread.subscribers.length).to eq(1)
+
+        get "/api/v1/subscriptions/#{thread.id}", { 'page': 1 }
+        expect(last_response).to be_ok
+        response = parse(last_response.body)
+        expect(response['collection'].length).to eq(1)
+        expect(response['num_pages']).to eq(1)
+        expect(response['page']).to eq(1)
+        expect(response['subscriptions_count']).to eq(1)
+        puts last_response.body
+
       end
     end
 
