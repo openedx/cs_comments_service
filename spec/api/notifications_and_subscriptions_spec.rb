@@ -151,5 +151,36 @@ describe "app" do
       end
     end
 
+    describe "GET /api/v1/subscriptions/:thread_id" do
+      it "Get subscribers of thread with pagination" do
+        thread = @threads["t2"]
+
+        subscriber.subscribe(thread)
+        create_test_user(43).subscribe(thread)
+        create_test_user(44).subscribe(thread)
+        create_test_user(45).subscribe(thread)
+        create_test_user(46).subscribe(thread)
+        create_test_user(47).subscribe(thread)
+
+        expect(thread.subscribers.length).to eq(6)
+
+        get "/api/v1/subscriptions/#{thread.id}", { 'page': 1, 'per_page': 2 }
+        expect(last_response).to be_ok
+        response = parse(last_response.body)
+        expect(response['collection'].length).to eq(2)
+        expect(response['num_pages']).to eq(3)
+        expect(response['page']).to eq(1)
+        expect(response['subscriptions_count']).to eq(6)
+
+        get "/api/v1/subscriptions/#{thread.id}", { 'page': 2, 'per_page': 2 }
+        expect(last_response).to be_ok
+        response = parse(last_response.body)
+        expect(response['collection'].length).to eq(2)
+        expect(response['num_pages']).to eq(3)
+        expect(response['page']).to eq(2)
+        expect(response['subscriptions_count']).to eq(6)
+      end
+    end
+
   end
 end
