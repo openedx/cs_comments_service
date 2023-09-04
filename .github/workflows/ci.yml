@@ -13,12 +13,9 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        ruby-version: ['2.5.7', '3.0.4']
+        ruby-version: ['3.0.4']
         mongodb-version: ['4.2.14']
         include:
-          - ruby-version: 2.5.7
-            gemfile: Gemfile
-            allow-failure: false
           - ruby-version: 3.0.4
             gemfile: Gemfile3
             allow-failure: false
