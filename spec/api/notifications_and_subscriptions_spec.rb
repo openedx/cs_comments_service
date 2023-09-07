@@ -133,13 +133,13 @@ describe "app" do
         expect(thread.subscribers.length).to eq(0)
       end
     end
-    describe "GET /api/v1/subscriptions/:thread_id" do
+    describe "GET /api/v1/threads/:thread_id/subscriptions" do
       it "Get subscribers of thread" do
         thread = @threads["t2"]
         subscriber.subscribe(thread)
         expect(thread.subscribers.length).to eq(1)
 
-        get "/api/v1/subscriptions/#{thread.id}", { 'page': 1 }
+        get "/api/v1/threads/#{thread.id}/subscriptions", { 'page': 1 }
         expect(last_response).to be_ok
         response = parse(last_response.body)
         expect(response['collection'].length).to eq(1)
@@ -151,7 +151,7 @@ describe "app" do
       end
     end
 
-    describe "GET /api/v1/subscriptions/:thread_id" do
+    describe "GET /api/v1/threads/:thread_id/subscriptions" do
       it "Get subscribers of thread with pagination" do
         thread = @threads["t2"]
 
@@ -164,7 +164,7 @@ describe "app" do
 
         expect(thread.subscribers.length).to eq(6)
 
-        get "/api/v1/subscriptions/#{thread.id}", { 'page': 1, 'per_page': 2 }
+        get "/api/v1/threads/#{thread.id}/subscriptions", { 'page': 1, 'per_page': 2 }
         expect(last_response).to be_ok
         response = parse(last_response.body)
         expect(response['collection'].length).to eq(2)
@@ -172,7 +172,7 @@ describe "app" do
         expect(response['page']).to eq(1)
         expect(response['subscriptions_count']).to eq(6)
 
-        get "/api/v1/subscriptions/#{thread.id}", { 'page': 2, 'per_page': 2 }
+        get "/api/v1/threads/#{thread.id}/subscriptions", { 'page': 2, 'per_page': 2 }
         expect(last_response).to be_ok
         response = parse(last_response.body)
         expect(response['collection'].length).to eq(2)

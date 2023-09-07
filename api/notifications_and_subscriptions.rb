@@ -29,13 +29,12 @@ delete "#{APIPREFIX}/users/:user_id/subscriptions" do |user_id|
   user.unsubscribe(source).to_hash.to_json
 end
 
-get "#{APIPREFIX}/subscriptions/:thread_id" do |thread_id|
+get "#{APIPREFIX}/threads/:thread_id/subscriptions" do |thread_id|
   page = (params['page'] || DEFAULT_PAGE).to_i
   per_page = (params['per_page'] || DEFAULT_PER_PAGE).to_i
 
   # Build a query hash based on the query parameters
   query = {}
-  query[:subscriber_id] = params[:subscriber_id] if params[:subscriber_id]
   query[:source_id] = thread_id
   query[:source_type] = params[:source_type] if params[:source_type]
 
