@@ -36,7 +36,7 @@ get "#{APIPREFIX}/threads/:thread_id/subscriptions" do |thread_id|
   # Build a query hash based on the query parameters
   query = {}
   query[:source_id] = thread_id
-  query[:source_type] = params[:source_type] if params[:source_type]
+  query[:source_type] = 'CommentThread'
 
   subscriptions = Subscription.where(query).paginate(:page => page, :per_page => per_page)
   subscriptions_count = subscriptions.total_entries
