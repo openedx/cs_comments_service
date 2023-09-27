@@ -13,10 +13,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        ruby-version: ['3.0.4']
+        ruby-version: ['3.0.4', '3.1.0']
         mongodb-version: ['4.2.14']
         include:
           - ruby-version: 3.0.4
+            gemfile: Gemfile3
+            allow-failure: false
+          - ruby-version: 3.1.0
             gemfile: Gemfile3
             allow-failure: false
     env:
@@ -54,7 +57,9 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true
+
+      - name: Install packages required
+        run: sudo apt-get install libxslt-dev libxml2-dev
 
       - name: Install dependencies
         run: bundle install
