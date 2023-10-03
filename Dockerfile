@@ -43,6 +43,7 @@ RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc
 RUN source ~/.bashrc
 
 RUN rbenv install $RUBY_VERSION
+RUN rbenv global $RUBY_VERSION
 RUN gem update --system
 RUN gem install bundler -v $BUNDLER_VERSION && \
     gem install rake -v $RAKE_VERSION
