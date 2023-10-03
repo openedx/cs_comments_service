@@ -1,4 +1,4 @@
-name: RUBY CI
+name: CI
 
 on:
   push:
@@ -13,11 +13,12 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        ruby-version: ['3.0.4']
+        ruby-version: ['3.2.2']
         mongodb-version: ['4.2.14']
+        elasticsearch-version: ['7.8.0']
         include:
-          - ruby-version: 3.0.4
-            gemfile: Gemfile3
+          - ruby-version: 3.2.2
+            gemfile: Gemfile
             allow-failure: false
     env:
       SEARCH_SERVER_ES7: http://localhost:9200
@@ -31,7 +32,7 @@ jobs:
       RACK_TIMEOUT_SERVICE_TIMEOUT: 20
     services:
       elasticsearch:
-        image: elasticsearch:7.8.0
+        image: elasticsearch:${{ matrix.elasticsearch-version }}
         env:
           discovery.type: single-node
           bootstrap.memory_lock: true
