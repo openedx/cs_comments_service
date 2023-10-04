@@ -3,8 +3,6 @@ FROM ubuntu:focal as app
 ENV DEBIAN_FRONTEND noninteractive
 
 ENV RUBY_VERSION 3.2.2
-ENV BUNDLER_VERSION 2.4.19
-ENV RAKE_VERSION 13.0.6
 
 # # System requirements.
 RUN apt update && \
@@ -45,8 +43,6 @@ RUN source ~/.bashrc
 RUN rbenv install $RUBY_VERSION
 RUN rbenv global $RUBY_VERSION
 RUN gem update --system
-RUN gem install bundler -v $BUNDLER_VERSION && \
-    gem install rake -v $RAKE_VERSION
 
 ARG COMMON_APP_DIR="/edx/app"
 ARG CS_COMMENTS_SERVICE_NAME="cs_comments_service"
@@ -59,7 +55,7 @@ COPY ./Gemfile ${CS_COMMENTS_SERVICE_APP_DIR}/Gemfile
 COPY ./Gemfile.lock ${CS_COMMENTS_SERVICE_APP_DIR}/Gemfile.lock
 COPY . ${CS_COMMENTS_SERVICE_APP_DIR}
 
-RUN bundle install --deployment
+RUN bundle install
 
 RUN useradd -m --shell /bin/false app
 
