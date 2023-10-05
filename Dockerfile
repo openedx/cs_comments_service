@@ -61,4 +61,4 @@ RUN useradd -m --shell /bin/false app
 
 USER app
 
-CMD unicorn -c /edx/app/forums/cs_comments_service/config/unicorn_tcp.rb -I '.'
+CMD unicorn -c ${CS_COMMENTS_SERVICE_APP_DIR}/config/unicorn_tcp.rb -I '.'
