@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 ENV RUBY_VERSION 3.2.2
 
-# # System requirements.
+# System requirements.
 RUN apt update && \
     apt upgrade -y && \
     apt install -qy \
