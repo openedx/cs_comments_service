@@ -37,20 +37,24 @@ ENV LC_ALL en_US.UTF-8
 
 # Install Ruby
 RUN curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
-RUN echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
-RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc
-RUN source ~/.bashrc
+ENV PATH=/root/.rbenv/shims:/root/.rbenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN echo 'eval "$(rbenv init -)"' >> /etc/profile.d/rbenv.sh
+RUN echo 'eval "$(rbenv init -)"' >> .bashrc
 
 RUN rbenv install $RUBY_VERSION
+RUN echo 'gem: --no-rdoc --no-ri' >> /.gemrc
 RUN rbenv global $RUBY_VERSION
+RUN ruby --version
 RUN gem update --system
 
 ARG COMMON_APP_DIR="/edx/app"
 ARG CS_COMMENTS_SERVICE_NAME="cs_comments_service"
-ARG CS_COMMENTS_SERVICE_APP_DIR = "${COMMON_APP_DIR}/forums/${CS_COMMENTS_SERVICE_NAME}"
+ARG CS_COMMENTS_SERVICE_APP_DIR="${COMMON_APP_DIR}/forum/${CS_COMMENTS_SERVICE_NAME}"
 
 WORKDIR ${CS_COMMENTS_SERVICE_APP_DIR}
 EXPOSE 4567
+
+FROM app as dev
 
 COPY ./Gemfile ${CS_COMMENTS_SERVICE_APP_DIR}/Gemfile
 COPY ./Gemfile.lock ${CS_COMMENTS_SERVICE_APP_DIR}/Gemfile.lock
@@ -58,8 +62,14 @@ COPY . ${CS_COMMENTS_SERVICE_APP_DIR}
 
 RUN bundle install
 
-RUN useradd -m --shell /bin/false app
+CMD while true; do unicorn -c /edx/app/forum/cs_comments_service/config/unicorn_tcp.rb -I '.'; sleep 2; done
 
-USER app
+FROM app as prod
 
-CMD unicorn -c ${CS_COMMENTS_SERVICE_APP_DIR}/config/unicorn_tcp.rb -I '.'
+COPY ./Gemfile ${CS_COMMENTS_SERVICE_APP_DIR}/Gemfile
+COPY ./Gemfile.lock ${CS_COMMENTS_SERVICE_APP_DIR}/Gemfile.lock
+COPY . ${CS_COMMENTS_SERVICE_APP_DIR}
+
+RUN bundle install
+
+CMD ["unicorn", "--workers=2", "--name", "forum", "-c", "/edx/app/forum/cs_comments_service/config/unicorn_tcp.rb", "-I", ".", "--log-file", "-", "--max-requests=1000"]
