@@ -71,12 +71,18 @@ get "#{APIPREFIX}/users/:course_id/stats" do |course_id|
                                          ]
                                        }}
                                      ]).to_a[0]
-    total_count = paginated_stats["pagination"][0]["total_count"]
-    num_pages = [1, (total_count / per_page.to_f).ceil].max
-    data = paginated_stats["data"].map do |user_stats|
-      {
-        :username => user_stats["username"]
-      }.merge(user_stats["course_stats"].except(*exclude_from_stats))
+    data = []
+    num_pages = 0
+    page = 0
+    total_count = 0
+    if not paginated_stats["pagination"].empty?
+      total_count = paginated_stats["pagination"][0]["total_count"]
+      num_pages = [1, (total_count / per_page.to_f).ceil].max
+      data = paginated_stats["data"].map do |user_stats|
+        {
+          :username => user_stats["username"]
+        }.merge(user_stats["course_stats"].except(*exclude_from_stats))
+      end
     end
   else
     # If a list of usernames is provided, then sort by the order in which those names appear
