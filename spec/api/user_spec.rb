@@ -521,6 +521,14 @@ describe "app" do
         expect(res["user_stats"]).to eq expected_result
       end
 
+      it "handle stats for user with no activity" do
+        invalid_course_id = "course-v1:edX+DNE+Not_EXISTS"
+        get "/api/v1/users/#{invalid_course_id}/stats"
+        expect(last_response.status).to eq(200)
+        res = parse(last_response.body)
+        expect(res["user_stats"]).to eq []
+      end
+
       it "returns user's stats filtered by user with default/activity sort" do
         usernames = %w[userauthor-1 userauthor-2 userauthor-3].sample(2)
         usernames = usernames.shuffle.join(',')
