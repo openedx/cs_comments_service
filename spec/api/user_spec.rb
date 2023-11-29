@@ -684,6 +684,29 @@ describe "app" do
           expect(new_stats["active_flags"]).to eq @original_stats["active_flags"] - 1
         end
       end
+      describe "build_course_stats" do
+        let(:user) { create_test_user 3}
+        let(:course_id) { DFLT_COURSE_ID }
+
+        context 'when the user has made anonymous posts' do
+          before do
+            make_anonymous_to_peers_thread(user, "anon thread 1 by author", DFLT_COURSE_ID, "anon_thread_1")
+            make_anonymous_thread(user, "anon thread 2 by author", DFLT_COURSE_ID, "anon_thread_2")
+          end
+
+          it 'does not include anonymous posts in the counts after making a non-anonymous post' do
+
+            make_thread(user, "thread by new author #{user}", DFLT_COURSE_ID, "new_thread")
+
+            get "/api/v1/users/#{course_id}/stats"
+            expect(last_response.status).to eq(200)
+            stats = parse(last_response.body)
+            expect(stats["user_stats"][0]["replies"]).to eq(0)
+            expect(stats["user_stats"][0]["responses"]).to eq(0)
+            expect(stats["user_stats"][0]["threads"]).to eq(1)
+          end
+        end
+      end
     end
 
     describe "POST /api/v1/users/:course_id/update_stats" do
