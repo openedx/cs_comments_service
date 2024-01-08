@@ -347,6 +347,24 @@ def make_thread(author, text, course_id, commentable_id, thread_type=:discussion
   thread
 end
 
+def make_anonymous_to_peers_thread(author, text, course_id, commentable_id, thread_type=:discussion, context=:course)
+   thread = CommentThread.new(title: text, body: text, course_id: course_id, commentable_id: commentable_id, anonymous_to_peers: true)
+   thread.thread_type = thread_type
+   thread.author = author
+   thread.context = context
+   thread.save!
+   thread
+ end
+
+ def make_anonymous_thread(author, text, course_id, commentable_id, thread_type=:discussion, context=:course)
+   thread = CommentThread.new(title: text, body: text, course_id: course_id, commentable_id: commentable_id, anonymous: true)
+   thread.thread_type = thread_type
+   thread.author = author
+   thread.context = context
+   thread.save!
+   thread
+ end
+
 def make_comment(author, parent, text)
   if parent.is_a?(CommentThread)
     coll = parent.comments
