@@ -67,8 +67,9 @@ Mongo::Logger.logger.level = ENV["ENABLE_MONGO_DEBUGGING"] ? Logger::DEBUG : Log
 # NOTE: You can also add a logger, but it will log some FATAL warning during index creation.
 # Example: Elasticsearch::Client.new(logger: get_logger('elasticsearch', Logger::WARN))
 Elasticsearch::Model.client = Elasticsearch::Client.new(
-    host: CommentService.config[:elasticsearch_server],
-    log: false
+    url: CommentService.config[:elasticsearch_server],
+    log: false,
+    transport_options: CommentService.config[:elasticsearch_transport_options],
 )
 
 # Setup i18n

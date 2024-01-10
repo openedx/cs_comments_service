@@ -39,7 +39,10 @@ class CommentThread < Content
 
   index({ author_id: 1, course_id: 1 })
 
-  index_name = "comment_thread"
+  index_name do
+    prefix = ::CommentService.config[:elasticsearch_index_prefix]
+    "#{prefix}comment_threads"
+  end
 
   mapping dynamic: 'false' do
     indexes :title, type: :text, boost: 5.0, store: true, term_vector: :with_positions_offsets

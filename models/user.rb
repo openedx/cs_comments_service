@@ -273,7 +273,8 @@ class User
     data = Content.collection.aggregate(
       [
         # Match all content in the course by the specified author
-        { "$match" => { :course_id => course_id, :author_id => self.external_id } },
+        { "$match" => { :course_id => course_id,
+          :author_id => self.external_id, "anonymous_to_peers" => false, "anonymous" => false } },
         # Keep a count of flags for each entry
         {
           "$addFields" => {

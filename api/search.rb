@@ -47,7 +47,7 @@ def get_thread_ids(context, group_ids, local_params, search_text)
     }
   }
 
-  response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES, body: body)
+  response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::index_names, body: body)
 
   thread_ids = Set.new
   response['hits']['hits'].each do |hit|
@@ -81,7 +81,7 @@ def get_suggested_text(search_text)
     }
   }
 
-  response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::INDEX_NAMES, body: body)
+  response = Elasticsearch::Model.client.search(index: TaskHelpers::ElasticsearchHelper::index_names, body: body)
   body_suggestions = response['suggest'].fetch('body_suggestions', [])
   title_suggestions = response['suggest'].fetch('title_suggestions', [])
 
