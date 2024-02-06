@@ -35,6 +35,8 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
     error 404, [t(:requested_object_not_found)].to_json
   end
 
+  merge_question_type_responses = value_to_boolean(params["merge_question_type_responses"])
+
   # user is required to return user-specific fields, such as "read" (even if bool_mark_as_read is False)
   if params["user_id"]
     user = User.only([:id, :username, :read_states]).find_by(external_id: params["user_id"])
@@ -63,7 +65,8 @@ get "#{APIPREFIX}/threads/:thread_id" do |thread_id|
     error 400, [t(:param_exceeds_limit, :param => resp_limit, :limit => size_limit)].to_json
   end
   presenter.to_hash(
-    bool_with_responses, resp_skip, resp_limit, bool_recursive, bool_flagged_comments, bool_reverse_order
+    bool_with_responses, resp_skip, resp_limit, bool_recursive, bool_flagged_comments, bool_reverse_order,
+    merge_question_type_responses
   ).to_json
 end
 

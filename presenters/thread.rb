@@ -35,7 +35,8 @@ class ThreadPresenter
     resp_limit=nil,
     recursive=true,
     flagged_comments=false,
-    reverse_order=false
+    reverse_order=false,
+    merge_question_type_responses=false
   )
     raise ArgumentError unless resp_skip >= 0
     raise ArgumentError unless resp_limit.nil? or resp_limit >= 1
@@ -48,7 +49,8 @@ class ThreadPresenter
     end
     sorting_key_order = reverse_order ? -1 : 1
     if with_responses
-      if @thread.thread_type.discussion? && resp_skip == 0 && resp_limit.nil?
+      if (@thread.thread_type.discussion? || (@thread.thread_type.question? && merge_question_type_responses)) &&
+         resp_skip == 0 && resp_limit.nil?
         if recursive
           content = Comment.where(comment_thread_id: @thread._id).order_by({"sk" => sorting_key_order})
         else
@@ -66,28 +68,41 @@ class ThreadPresenter
         end
         case @thread.thread_type
         when "question"
-          endorsed_responses = responses.where(endorsed: true)
-          non_endorsed_responses = responses.where(endorsed: false)
-          endorsed_response_info = get_paged_merged_responses(
+          if merge_question_type_responses
+            response_info = get_paged_merged_responses(
             @thread._id,
-            endorsed_responses,
-            0,
-            nil,
-            recursive,
-            sorting_key_order
-          )
-          non_endorsed_response_info = get_paged_merged_responses(
-            @thread._id,
-            non_endorsed_responses,
+            responses,
             resp_skip,
             resp_limit,
             recursive,
             sorting_key_order
-          )
-          h["endorsed_responses"] = endorsed_response_info["responses"]
-          h["non_endorsed_responses"] = non_endorsed_response_info["responses"]
-          h["non_endorsed_resp_total"] = non_endorsed_response_info["response_count"]
-          h["resp_total"] = non_endorsed_response_info["response_count"] + endorsed_response_info["response_count"]
+            )
+            h["children"] = response_info["responses"]
+            h["resp_total"] = response_info["response_count"]
+          else
+            endorsed_responses = responses.where(endorsed: true)
+            non_endorsed_responses = responses.where(endorsed: false)
+            endorsed_response_info = get_paged_merged_responses(
+              @thread._id,
+              endorsed_responses,
+              0,
+              nil,
+              recursive,
+              sorting_key_order
+            )
+            non_endorsed_response_info = get_paged_merged_responses(
+              @thread._id,
+              non_endorsed_responses,
+              resp_skip,
+              resp_limit,
+              recursive,
+              sorting_key_order
+            )
+            h["endorsed_responses"] = endorsed_response_info["responses"]
+            h["non_endorsed_responses"] = non_endorsed_response_info["responses"]
+            h["non_endorsed_resp_total"] = non_endorsed_response_info["response_count"]
+            h["resp_total"] = non_endorsed_response_info["response_count"] + endorsed_response_info["response_count"]
+          end
         when "discussion"
           response_info = get_paged_merged_responses(
             @thread._id,
