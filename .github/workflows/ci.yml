@@ -13,11 +13,10 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        ruby-version: ['3.0.4']
-        mongodb-version: ['4.2.14']
+        ruby-version: ['3.0.4', '3.1.4']
+        mongodb-version: ['4.2.14']  #, '6', '7']
         include:
-          - ruby-version: 3.0.4
-            gemfile: Gemfile3
+          - gemfile: Gemfile3
             allow-failure: false
     env:
       SEARCH_SERVER_ES7: http://localhost:9200
