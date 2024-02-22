@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-ruby "2.5.7"
+ruby ">= 3.1"
 
 gem 'pry'
 gem 'pry-nav'
@@ -36,7 +36,6 @@ gem 'mongoid_magic_counter_cache'
 # function 'handle_threads_query'.
 gem 'will_paginate_mongoid', "~>2.0"
 gem 'rdiscount'
-gem 'nokogiri', "~> 1.8.1"
 
 gem 'elasticsearch', '~> 7.8.0'
 gem 'elasticsearch-model', '~> 7.1.0'
