@@ -669,7 +669,14 @@ describe 'app' do
         it "limits responses when no skip/limit params given" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {}
-            check_thread_response_paging_json thread, res, 0, nil, false
+            check_thread_response_paging_json thread, res, 0, nil, false, false
+          end
+        end
+
+        it "handles responses when merge_question_type_responses param is given" do
+          @threads.each do |n, thread|
+            res = thread_result thread.id, {}
+            check_thread_response_paging_json thread, res, 0, nil, false, true
           end
         end
 

@@ -254,12 +254,12 @@ def check_unread_thread_result_json(thread, json_response)
   check_thread_result(nil, thread, json_response, true)
 end
 
-def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false, reverse_order=false)
-  case thread.thread_type
-    when "discussion"
-      check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive, reverse_order)
-    when "question"
-      check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive, reverse_order)
+def check_thread_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is_json=false, recursive=false, reverse_order=false, merge_question_type_responses=false)
+
+  if (thread.thread_type == "discussion" || (thread.thread_type == "question" && merge_question_type_responses))
+     check_discussion_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive, reverse_order)
+  else
+    check_question_response_paging(thread, hash, resp_skip, resp_limit, is_json, recursive, reverse_order)
   end
 end
 
@@ -333,8 +333,8 @@ def check_question_response_paging(thread, hash, resp_skip=0, resp_limit=nil, is
   end
 end
 
-def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil, recursive=false, reverse_order=false)
-  check_thread_response_paging(thread, hash, resp_skip, resp_limit, true, recursive, reverse_order)
+def check_thread_response_paging_json(thread, hash, resp_skip=0, resp_limit=nil, recursive=false, reverse_order=false, merge_question_type_responses=false)
+  check_thread_response_paging(thread, hash, resp_skip, resp_limit, true, recursive, reverse_order, merge_question_type_responses)
 end
 
 # general purpose factory helpers
