@@ -669,7 +669,7 @@ describe 'app' do
         it "limits responses when no skip/limit params given" do
           @threads.each do |n, thread|
             res = thread_result thread.id, {}
-            check_thread_response_paging_json thread, res, 0, nil, false
+            check_thread_response_paging_json thread, res, 0, nil, false, false
           end
         end
 
@@ -694,6 +694,41 @@ describe 'app' do
           end
         end
 
+      end
+    end
+
+    context "response pagination" do
+        def thread_result(id, params)
+          get "/api/v1/threads/#{id}", params
+          expect(last_response).to be_ok
+          parse(last_response.body)
+        end
+
+        it "handles responses when merge_question_type_responses=true" do
+          User.all.delete
+          Content.all.delete
+          @user = create_test_user(999)
+          @threads = {}
+          @comments = {}
+          [201, 10, 3, 2, 1, 0].each do |n|
+            thread_key = "t#{n}"
+            thread = make_thread(@user, thread_key, DFLT_COURSE_ID, "pdq", :question)
+            @threads[n] = thread
+            n.times do |i|
+              # generate n responses in this thread
+              comment_key = "#{thread_key} r#{i}"
+              comment = make_comment(@user, thread, comment_key)
+              2.times do |j|
+                subcomment_key = "#{comment_key} c#{j}"
+                subcomment = make_comment(@user, comment, subcomment_key)
+              end
+              @comments[comment_key] = comment
+            end
+          end
+          @threads.each do |n, thread|
+            res = thread_result thread.id, {:merge_question_type_responses => true}
+            check_thread_response_paging_json thread, res, 0, nil, false, false, true
+          end
       end
     end
 

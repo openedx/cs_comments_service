@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe ThreadPresenter do
-  
+
   context "#to_hash" do
     let(:default_resp_limit) { CommentService.config["thread_response_default_size"] }
 
@@ -164,6 +164,15 @@ describe ThreadPresenter do
           hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed, nil).to_hash(true, 0, default_resp_limit, true, false, true)
           check_thread_result(@reader, thread, hash)
           check_thread_response_paging(thread, hash, 0, default_resp_limit, false, false, true)
+        end
+      end
+
+      it "handles merge_question_type_responses=true" do
+        @threads_with_num_comments.each do |thread, num_comments|
+          is_endorsed = num_comments > 0 && endorse_responses
+          hash = ThreadPresenter.new(thread, @reader, false, num_comments, is_endorsed, nil).to_hash(true, 0, default_resp_limit, true, false, true, true)
+          check_thread_result(@reader, thread, hash)
+          check_thread_response_paging(thread, hash, 0, default_resp_limit, false, false, true, true)
         end
       end
 
