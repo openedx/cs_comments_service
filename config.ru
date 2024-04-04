@@ -20,3 +20,4 @@ use Mongoid::QueryCache::Middleware
 
 require './app'
 run Sinatra::Application
+
