@@ -69,3 +69,4 @@ gem "rack-contrib", :git => 'https://github.com/rack/rack-contrib.git', :ref => 
 
 
 gem "timecop", "~> 0.9.5"
+gem 'ddtrace', require: 'ddtrace/auto_instrument'
