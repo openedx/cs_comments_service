@@ -69,3 +69,9 @@ jobs:
       - name: Run tests
         run: bin/rspec -fd
         continue-on-error: ${{ matrix.allow-failure }}
+      - name: Send test coverage report to codecov.io
+        uses: codecov/codecov-action@v4
+        with:
+          lags: unittests
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
