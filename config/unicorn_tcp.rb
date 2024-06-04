@@ -11,7 +11,7 @@ timeout 25
 preload_app true
 
 service_name = 'forum'
-if ENV['ENABlE_DATA_DOG']
+if ENV['ENABLE_DATA_DOG']
   require 'ddtrace'
   # Add Datadog APM configuration
   Datadog.configure do |c|
