@@ -45,7 +45,7 @@ gem 'dalli'
 gem 'rest-client'
 
 group :test do
-  gem 'codecov', :require => false
+  gem 'simplecov-cobertura', :require => false
   gem 'mongoid_cleaner', '~> 1.2.0'
   gem 'factory_bot'
   gem 'faker'
@@ -69,3 +69,4 @@ gem "rack-contrib", :git => 'https://github.com/rack/rack-contrib.git', :ref => 
 
 
 gem "timecop", "~> 0.9.5"
+gem 'ddtrace', require: 'ddtrace/auto_instrument'
