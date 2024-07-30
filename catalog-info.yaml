@@ -1,0 +1,16 @@
+# This file records information about this repo. Its use is described in OEP-0055:
+# https://open-edx-proposals.readthedocs.io/en/latest/processes/oep-0055/decisions/0001-use-backstage-to-support-maintainers.html
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'cs_comments_service'
+  description: "Forum service backend for Open edX."
+  links:
+    - url: "https://github.com/openedx/cs_comments_service/"
+      title: "cs_comments_service"
+      icon: "Web"
+spec:
+  owner: group:edx-infinity
+  type: 'service'
+  lifecycle: 'production'
