@@ -10,6 +10,9 @@ metadata:
     - url: "https://github.com/openedx/cs_comments_service/"
       title: "cs_comments_service"
       icon: "Web"
+  annotations:
+    openedx.org/arch-interest-groups: ""
+    openedx.org/release: "master"    
 spec:
   owner: group:edx-infinity
   type: 'service'
