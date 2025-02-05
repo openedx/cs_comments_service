@@ -13,18 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby-version: ['3.0.4', '3.1.4', '3.3.0']
-        mongodb-version: ['4.2.14', '6', '7']
+        ruby-version: ['3.1.4', '3.3.0']
+        mongodb-version: ['7']
         include:
-          - ruby-version: '3.0.4'
-            gemfile: Gemfile3
-            allow-failure: false
           - ruby-version: '3.1.4'
             gemfile: Gemfile
-            allow-failure: true
+            allow-failure: false
           - ruby-version: '3.3.0'
             gemfile: Gemfile
-            allow-failure: true
+            allow-failure: false
 
     env:
       SEARCH_SERVER_ES7: http://localhost:9200
