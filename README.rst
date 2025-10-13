@@ -1,3 +1,10 @@
+This Repository has been Archived
+==================================================
+
+The functionalty of this repo has been taken over by: https://github.com/openedx/forum
+
+For more details, please see: https://github.com/openedx/public-engineering/issues/424
+
 Part of `edX code`__.
 
 __ http://code.edx.org/
